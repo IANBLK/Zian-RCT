@@ -143,6 +143,9 @@ jobs:
 
           wait_for_log "Done (" 180
           echo "Dedicated server reached ready state."
+          wait_for_log "Zian RCT medal store ready" 120
+          wait_for_log "Registered Zian RCT BATTLE_ENDED listener on RCTApi instance 'rctmod'" 120
+          echo "Phase 4 medal runtime initialized with persistent store and RCT BATTLE_ENDED hook."
           wait_for_log "Generated 11 Zian RCT virtual resources" 120
           wait_for_log "generated progression verified for 10 trainers" 120
           wait_for_log "rassvet_leader_novato=0" 120
