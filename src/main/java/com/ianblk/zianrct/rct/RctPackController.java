@@ -32,6 +32,7 @@ import java.util.Collections;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 
 public final class RctPackController {
     private static final int VERIFICATION_MAX_TICKS = 100;
@@ -69,10 +70,15 @@ public final class RctPackController {
     }
 
     private void onTagsUpdated(TagsUpdatedEvent event) {
+        if (event.getUpdateCause() != TagsUpdatedEvent.UpdateCause.SERVER_DATA_LOAD) {
+            return;
+        }
+
         MinecraftServer server = activeServer;
         if (server == null || generatedReloadInFlight) {
             return;
         }
+
         server.execute(() -> {
             if (server == activeServer && !generatedReloadInFlight) {
                 regenerate(server, "server data reload");
@@ -115,58 +121,50 @@ public final class RctPackController {
         }
     }
 
-    private void regenerate(MinecraftServer server, String reason) {
+    public void regenerate(MinecraftServer server, String reason) {
         try {
             ZianRctConfig config = ConfigState.current();
             ZianRctConfig.Profile profile = config.activeProfileConfig();
-            RCTMod rct = RCTMod.getInstance();
-            TrainerManager trainerManager = rct.getTrainerManager();
 
-            if (!rct.getSeriesManager().getSeriesIds().contains(profile.series())) {
-                deactivate(server, "configured RCT series '" + profile.series() + "' is not loaded");
+            ResourceLocation seriesLocation = ResourceLocation.fromNamespaceAndPath(
+                    ZianRctVirtualPack.RCT_NAMESPACE,
+                    "series/" + profile.series() + ".json"
+            );
+            Optional<String> seriesJson = readOriginalJsonIfPresent(server, seriesLocation);
+            if (seriesJson.isEmpty()) {
+                deactivate(server, "configured RCT series resource is not loaded: " + seriesLocation);
                 return;
             }
 
-            List<String> missing = profile.chain().stream()
-                    .map(ZianRctConfig.ChainEntry::trainer)
-                    .filter(id -> !trainerManager.isValidId(id))
-                    .toList();
-            if (!missing.isEmpty()) {
-                deactivate(server, "configured RCT trainers are not loaded: " + String.join(", ", missing));
-                return;
-            }
-
-            SeriesPackSnapshot series = new SeriesPackSnapshot(readOriginalJson(
-                    server,
-                    ResourceLocation.fromNamespaceAndPath(
-                            ZianRctVirtualPack.RCT_NAMESPACE,
-                            "series/" + profile.series() + ".json"
-                    )
-            ));
-
+            SeriesPackSnapshot series = new SeriesPackSnapshot(seriesJson.get());
             LinkedHashMap<String, TrainerPackSnapshot> snapshots = new LinkedHashMap<>();
+
             for (ZianRctConfig.ChainEntry entry : profile.chain()) {
                 String id = entry.trainer();
-                String mobJson = readOriginalJson(
-                        server,
-                        ResourceLocation.fromNamespaceAndPath(
-                                ZianRctVirtualPack.RCT_NAMESPACE,
-                                "mobs/trainers/single/" + id + ".json"
-                        )
+                ResourceLocation mobLocation = ResourceLocation.fromNamespaceAndPath(
+                        ZianRctVirtualPack.RCT_NAMESPACE,
+                        "mobs/trainers/single/" + id + ".json"
                 );
-                String teamJson = readOriginalJson(
-                        server,
-                        ResourceLocation.fromNamespaceAndPath(
-                                ZianRctVirtualPack.RCT_NAMESPACE,
-                                "trainers/" + id + ".json"
-                        )
+                ResourceLocation teamLocation = ResourceLocation.fromNamespaceAndPath(
+                        ZianRctVirtualPack.RCT_NAMESPACE,
+                        "trainers/" + id + ".json"
                 );
-                int maxTeamLevel = maxTeamLevel(teamJson, id);
+
+                Optional<String> mobJson = readOriginalJsonIfPresent(server, mobLocation);
+                Optional<String> teamJson = readOriginalJsonIfPresent(server, teamLocation);
+                if (mobJson.isEmpty() || teamJson.isEmpty()) {
+                    String missing = mobJson.isEmpty() ? mobLocation.toString() : teamLocation.toString();
+                    deactivate(server, "configured RCT trainer resource is not loaded: " + missing);
+                    return;
+                }
+
+                int maxTeamLevel = maxTeamLevel(teamJson.get(), id);
                 if (maxTeamLevel <= 0) {
                     deactivate(server, "trainer '" + id + "' has no usable team level");
                     return;
                 }
-                snapshots.put(id, new TrainerPackSnapshot(id, mobJson, maxTeamLevel));
+
+                snapshots.put(id, new TrainerPackSnapshot(id, mobJson.get(), maxTeamLevel));
             }
 
             Map<String, TrainerPackSnapshot> stableSnapshots =
@@ -192,12 +190,23 @@ public final class RctPackController {
             requestGeneratedReload(server, profile, stableSnapshots, reason);
         } catch (RuntimeException exception) {
             pendingVerification = null;
+            generatedReloadInFlight = false;
             ZianRCT.LOGGER.error(
-                    "Zian RCT progression regeneration failed after {}; generated overrides were not applied. "
-                            + "The server remains online.",
+                    "Zian RCT progression regeneration failed after {}. Generated overrides will be disabled "
+                            + "so RCT can fall back to the original data. The server remains online.",
                     reason,
                     exception
             );
+            try {
+                deactivate(server, "regeneration failed after " + reason);
+            } catch (RuntimeException deactivateException) {
+                generatedReloadInFlight = false;
+                ZianRCT.LOGGER.error(
+                        "Zian RCT could not disable generated overrides after a regeneration failure. "
+                                + "The server remains online, but another reload may be required.",
+                        deactivateException
+                );
+            }
         }
     }
 
@@ -206,20 +215,27 @@ public final class RctPackController {
         boolean changed = pack.clearIfChanged();
         ZianRCT.LOGGER.warn("Zian RCT progression pack is inactive because {}.", reason);
         if (!changed) {
+            generatedReloadInFlight = false;
             return;
         }
 
         generatedReloadInFlight = true;
-        server.reloadResources(server.getPackRepository().getSelectedIds())
-                .whenComplete((ignored, error) -> server.execute(() -> {
-                    generatedReloadInFlight = false;
-                    if (error != null) {
-                        ZianRCT.LOGGER.error(
-                                "Failed to reload after disabling Zian RCT generated overrides. The server remains online.",
-                                error
-                        );
-                    }
-                }));
+        try {
+            server.reloadResources(server.getPackRepository().getSelectedIds())
+                    .whenComplete((ignored, error) -> server.execute(() -> {
+                        generatedReloadInFlight = false;
+                        if (error != null) {
+                            ZianRCT.LOGGER.error(
+                                    "Failed to reload after disabling Zian RCT generated overrides. "
+                                            + "The server remains online.",
+                                    error
+                            );
+                        }
+                    }));
+        } catch (RuntimeException exception) {
+            generatedReloadInFlight = false;
+            throw exception;
+        }
     }
 
     private void requestGeneratedReload(
@@ -229,23 +245,25 @@ public final class RctPackController {
             String reason
     ) {
         generatedReloadInFlight = true;
-        server.reloadResources(server.getPackRepository().getSelectedIds())
-                .whenComplete((ignored, error) -> server.execute(() -> {
-                    generatedReloadInFlight = false;
-                    if (error != null) {
-                        pendingVerification = null;
-                        ZianRCT.LOGGER.error(
-                                "Failed to reload generated Zian RCT progression pack. The server remains online.",
-                                error
-                        );
-                        return;
-                    }
+        try {
+            server.reloadResources(server.getPackRepository().getSelectedIds())
+                    .whenComplete((ignored, error) -> server.execute(() -> {
+                        generatedReloadInFlight = false;
+                        if (error != null) {
+                            pendingVerification = null;
+                            ZianRCT.LOGGER.error(
+                                    "Failed to reload generated Zian RCT progression pack. The server remains online.",
+                                    error
+                            );
+                            return;
+                        }
 
-                    // RCT registers its trainers from its own reload listener after Minecraft's
-                    // reload future can complete. Verification therefore happens on subsequent
-                    // server ticks instead of forcing TrainerManager#loadTrainers() a second time.
-                    scheduleVerification(profile, snapshots, reason + " (generated reload)");
-                }));
+                        scheduleVerification(profile, snapshots, reason + " (generated reload)");
+                    }));
+        } catch (RuntimeException exception) {
+            generatedReloadInFlight = false;
+            throw exception;
+        }
     }
 
     private void scheduleVerification(
@@ -261,7 +279,10 @@ public final class RctPackController {
         );
     }
 
-    private static String readOriginalJson(MinecraftServer server, ResourceLocation location) {
+    private static Optional<String> readOriginalJsonIfPresent(
+            MinecraftServer server,
+            ResourceLocation location
+    ) {
         List<Resource> stack = server.getResourceManager().getResourceStack(location);
         for (int index = stack.size() - 1; index >= 0; index--) {
             Resource resource = stack.get(index);
@@ -269,12 +290,12 @@ public final class RctPackController {
                 continue;
             }
             try (BufferedReader reader = resource.openAsReader()) {
-                return reader.lines().collect(java.util.stream.Collectors.joining("\n"));
+                return Optional.of(reader.lines().collect(java.util.stream.Collectors.joining("\n")));
             } catch (IOException exception) {
                 throw new IllegalStateException("Could not read original RCT resource: " + location, exception);
             }
         }
-        throw new IllegalStateException("No original RCT resource found below Zian RCT for " + location);
+        return Optional.empty();
     }
 
     private static int maxTeamLevel(String sourceJson, String trainerId) {
