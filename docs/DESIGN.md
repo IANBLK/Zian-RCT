@@ -2,21 +2,21 @@
 
 ## Estado
 
-Fase 0 completada para el objetivo Minecraft 1.21.1 / NeoForge 21.1.x / Java 21, con Radical Cobblemon Trainers 0.19.2-beta (`rctmod`) y Radical Cobblemon Trainers API 0.16.1-beta (`rctapi`).
+Fase 0 completada para Minecraft 1.21.1 / NeoForge 21.1.x / Java 21, con Radical Cobblemon Trainers 0.19.2-beta (`rctmod`) y Radical Cobblemon Trainers API 0.16.1-beta (`rctapi`).
 
-Este documento define únicamente arquitectura e integración. En esta fase no se añade código del mod.
+Este documento define la arquitectura de integración. Zian-RCT no copia, adapta ni decompila código de RCT/RCTAPI; usa exclusivamente API y formatos públicos.
 
 ## Restricción legal
 
-Zian-RCT será código propio bajo MIT. No se copiará, pegará, decompilará ni adaptará código de RCT o RCTAPI. La integración se limitará a interfaces, clases, métodos, eventos y formatos de datos públicos.
+Zian-RCT usa licencia MIT para su código y recursos propios. RCT y RCTAPI son dependencias externas y no se redistribuyen dentro del JAR de Zian-RCT.
 
-La distribución de RCT/RCTAPI debe tratarse como externa. La información pública de licencia no es completamente uniforme entre todos los artefactos y páginas históricas: las fuentes actuales del proyecto muestran MCOML, mientras que se han observado metadatos de artefactos con referencias distintas. Zian-RCT no incluirá código ni recursos de RCT/RCTAPI. La advertencia visible de licencia se añadirá al README antes de la entrega pública.
+La información pública de licencia de RCT/RCTAPI no ha sido históricamente uniforme entre metadatos de artefactos y páginas de distribución. Las fuentes actuales revisadas muestran MCOML. El README de Zian-RCT debe advertir esta situación y dejar claro que el proyecto no incluye código ni recursos de RCT/RCTAPI.
 
 ## Evidencia pública revisada
 
 ### RCT 0.19.2-beta
 
-La clase pública `com.gitlab.srcmc.rctmod.api.RCTMod` expone:
+`com.gitlab.srcmc.rctmod.api.RCTMod` expone, entre otros:
 
 - `static RCTMod getInstance()`
 - `TrainerManager getTrainerManager()`
@@ -24,7 +24,7 @@ La clase pública `com.gitlab.srcmc.rctmod.api.RCTMod` expone:
 - `IServerConfig getServerConfig()`
 - `boolean makeBattle(TrainerMob mob, Player player)`
 
-`com.gitlab.srcmc.rctmod.api.service.TrainerManager` expone, entre otros:
+`com.gitlab.srcmc.rctmod.api.service.TrainerManager` expone:
 
 - `TrainerMobData getData(String trainerId)`
 - `TrainerMobData getData(TrainerMob mob)`
@@ -34,9 +34,7 @@ La clase pública `com.gitlab.srcmc.rctmod.api.RCTMod` expone:
 - `TrainerBattleMemory getBattleMemory(ServerLevel level, String trainerId)`
 - `void loadTrainers()`
 
-`loadTrainers()` vuelve a cargar los entrenadores desde el `ResourceManager`; no constituye una API de mutación arbitraria de los objetos ya cargados.
-
-`com.gitlab.srcmc.rctmod.api.data.save.TrainerPlayerData` expone:
+`TrainerPlayerData` expone:
 
 - `int getLevelCap()`
 - `Set<String> getDefeatedTrainerIds()`
@@ -49,17 +47,15 @@ La clase pública `com.gitlab.srcmc.rctmod.api.RCTMod` expone:
 - `Map<String, Integer> getCompletedSeries()`
 - `void sync()`
 
-El tope no es un entero persistido con un setter público en `TrainerPlayerData`: `getLevelCap()` lo calcula mediante la lógica de RCT. Por tanto, no se ha verificado una API pública soportada para imponer un tope arbitrario por jugador sin modificar su progreso o sin añadir una capa propia de override.
+No existe un `setLevelCap(int)` público equivalente. El cap normal es calculado por RCT a partir del progreso y la configuración de la serie/entrenadores.
 
-`com.gitlab.srcmc.rctmod.api.data.save.TrainerBattleMemory` expone:
+`TrainerBattleMemory` expone:
 
 - `void addDefeatedBy(String trainerId, Player player)`
 - `void setDefeatedBy(String trainerId, Player player, int count)`
 - `int getDefeatByCount(String trainerId, Player player)`
 
-Para reconstruir medallas antiguas, `getDefeatByCount(...) > 0` es más apropiado que depender únicamente de `TrainerPlayerData#getDefeatedTrainerIds()`, porque representa memoria de derrotas del entrenador y no solo el conjunto de derrotas de progreso de la serie activa.
-
-`com.gitlab.srcmc.rctmod.api.data.pack.TrainerMobData` permite leer datos ya cargados, incluyendo:
+`TrainerMobData` permite leer, entre otros:
 
 - `int getRequiredLevelCap(Player player)`
 - `int getRewardLevelCap(Player player)`
@@ -69,11 +65,11 @@ Para reconstruir medallas antiguas, `getDefeatByCount(...) > 0` es más apropiad
 - `Map<Integer, ?> getWinCommands()`
 - `TrainerTeam getTrainerTeam()`
 
-No se encontró un setter público equivalente para `relativeLevelCap`, `requiredDefeats` o `winCommands`. Existen mutadores puntuales de estructuras derivadas, como `addFollowedBy`, pero no se consideran una API soportada para reconfigurar en caliente toda la definición de un entrenador.
+No se encontró una API pública completa para reescribir en caliente `relativeLevelCap`, `requiredDefeats` o `winCommands` de un entrenador ya cargado.
 
 ### RCTAPI 0.16.1-beta
 
-La API pública contiene un estado de batalla `com.gitlab.srcmc.rctapi.api.battle.BattleState` con:
+`com.gitlab.srcmc.rctapi.api.battle.BattleState` expone:
 
 - `PokemonBattle getBattle()`
 - `List<Trainer> getParticipants1()`
@@ -84,193 +80,187 @@ La API pública contiene un estado de batalla `com.gitlab.srcmc.rctapi.api.battl
 - `int getLoserSide()`
 - `boolean isEndForced()`
 
-La interfaz pública `com.gitlab.srcmc.rctapi.api.trainer.Trainer` expone `LivingEntity getEntity()`, por lo que un estado de batalla permite relacionar participantes con entidades de Minecraft sin acceder a campos privados.
+`com.gitlab.srcmc.rctapi.api.trainer.Trainer` expone `LivingEntity getEntity()`.
 
-La familia pública de eventos de RCTAPI contiene eventos de inicio y fin de batalla (`Events.BATTLE_STARTED` y `Events.BATTLE_ENDED`) cuyo valor es un `BattleState`. La API de contexto de eventos utiliza listeners registrados en su `EventContext`.
-
-Antes de implementar Fase 4 se hará una verificación de compilación contra el artefacto exacto 0.16.1-beta para congelar la firma de registro del listener. Si esa firma no coincide con la documentación/fuente pública revisada, no se usará reflexión ni acceso interno: se activará el plan B basado en `winCommands`.
+`Events.BATTLE_STARTED` y `Events.BATTLE_ENDED` son eventos públicos con `BattleState` como valor. `EventContext` permite registrar listeners públicos.
 
 ## Respuestas de Fase 0
 
-### 1. ¿Se puede leer o modificar progreso, tope y entrenadores cargados? ¿Hay evento de victoria?
+### 1. Progreso, cap, entrenadores y victoria
 
-**Progreso: sí, parcialmente y mediante API pública de RCT.**
+**Progreso:** se puede leer y modificar mediante `TrainerPlayerData`, incluyendo añadir y retirar derrotas de progreso.
 
-`RCTMod.getInstance().getTrainerManager().getData(player)` entrega `TrainerPlayerData`. Este objeto permite consultar la serie, las derrotas de progreso y el tope calculado, además de añadir o retirar derrotas de progreso.
+**Cap:** se puede leer mediante `getLevelCap()`, pero no se encontró un setter directo. Por ello Zian-RCT no mantendrá un entero paralelo fingiendo que RCT lo respeta.
 
-**Tope: lectura sí; escritura arbitraria por jugador no verificada.**
+**Entrenadores cargados:** se pueden inspeccionar mediante `TrainerManager`, pero la reconfiguración completa en caliente no está expuesta como API pública soportada.
 
-`TrainerPlayerData#getLevelCap()` es público, pero no se encontró un `setLevelCap(int)` persistente equivalente en la API pública de progreso. El cap normal seguirá siendo responsabilidad de RCT. Los futuros comandos administrativos de Zian-RCT deberán respetar esta limitación: no se presentará como soportado un override que RCT luego ignore.
+**Victoria:** RCTAPI expone `Events.BATTLE_ENDED`; el camino primario de medallas usará ese evento y `BattleState#getWinners()/getLosers()`.
 
-**Datos de entrenadores cargados: lectura sí; reconfiguración completa en caliente no.**
+### 2. Data pack generado
 
-`TrainerManager#getData`, `getAllData` e `isValidId` permiten inspeccionarlos. `TrainerManager#loadTrainers()` fuerza una recarga desde recursos. No hay una API pública completa para sustituir de forma segura todos los campos de un `TrainerMobData` vivo.
+Es viable generar o exponer un data pack propio desde Zian-RCT usando el sistema de packs de NeoForge (`AddPackFindersEvent` / `RepositorySource`).
 
-**Victoria: existe un evento público de fin de batalla en RCTAPI.**
+La configuración de Zian-RCT será la fuente de verdad y generará recursos propios de mayor prioridad para la serie y los entrenadores de Liga Rassvet. No se parchearán archivos de RCT ni se tocarán sus mapas privados.
 
-`Events.BATTLE_ENDED` entrega `BattleState`, y `BattleState#getWinners()` / `getLosers()` permiten determinar el resultado. Por diseño, Zian-RCT usará ese evento como camino primario. No interpretará texto de chat, advancements ni archivos internos.
+Un cambio de perfil o `/zianrct reload` requerirá reconstruir el snapshot del pack y recargar recursos. En Fase 3 se probará el orden exacto con `TrainerManager#loadTrainers()`.
 
-### 2. ¿Es viable generar un data pack desde la configuración?
+### 3. Hook de inicio de combate
 
-Sí.
+El hook público previsto es `Events.BATTLE_STARTED` de RCTAPI. `RCTMod#makeBattle(...)` es público, pero Zian-RCT no lo interceptará ni lo reemplazará.
 
-NeoForge expone `AddPackFindersEvent` en el mod event bus para añadir fuentes de packs. Para un pack estático empaquetado dentro del JAR existe el helper `addPackFinders(...)`; para contenido creado desde la configuración y que no vive como recurso fijo del JAR, la arquitectura correcta es registrar una `RepositorySource` mediante `addRepositorySource(...)` o materializar un pack antes de la recarga de recursos y exponerlo al repositorio de packs.
+### 4. Reconciliación con victorias existentes
 
-Zian-RCT no escribirá dentro del JAR ni parcheará JSON de RCT. Construirá recursos propios bajo el namespace `zianrct` y, cuando sea necesario sustituir propiedades de la Liga Rassvet, generará definiciones de data pack de mayor prioridad para los IDs configurados.
+Hay dos fuentes públicas:
 
-Cambiar de perfil o ejecutar `/zianrct reload` requerirá reconstruir el pack virtual y provocar una recarga de recursos del servidor. Después de esa recarga se permitirá que RCT vuelva a cargar sus `TrainerMobData` mediante su flujo público de recursos. No se mutarán mapas privados ni se usará reflexión.
+1. `TrainerPlayerData#getDefeatedTrainerIds()` para progreso de la serie activa.
+2. `TrainerManager#getBattleMemory(level, trainerId).getDefeatByCount(trainerId, player)` para memoria histórica de derrotas del entrenador.
 
-Limitación importante: `AddPackFindersEvent` ocurre durante la creación del repositorio de packs. Por ello el perfil activo debe poder resolverse antes de construir la fuente del pack, o la fuente registrada debe leer el snapshot de configuración vigente al abrir sus recursos. Este detalle se cerrará con una prueba de arranque y `/reload` en Fase 3.
+Para medallas existentes se usará preferentemente la segunda.
 
-### 3. Hook público para inicio de combate RCT
+#### Semántica de dimensión de `getBattleMemory`
 
-El hook previsto es `Events.BATTLE_STARTED` de RCTAPI, cuyo payload es `BattleState`.
+Aunque la firma recibe `ServerLevel`, en RCT 0.19.2-beta la implementación de `TrainerManager#getBattleMemory(ServerLevel, String)` obtiene el almacenamiento con:
 
-Además, `RCTMod#makeBattle(TrainerMob, Player)` es público y es la entrada usada por RCT para iniciar un combate normal contra un `TrainerMob`, pero Zian-RCT no interceptará ni reemplazará ese método. Escuchar el evento público evita acoplarse a la implementación del arranque.
+`level.getServer().overworld().getDataStorage()`
 
-El evento de inicio se usará únicamente para observación/diagnóstico y, si finalmente hace falta, para validar overrides administrativos propios. No se reimplementarán las validaciones normales de RCT.
+Por tanto, **la memoria no es por dimensión**. El parámetro `ServerLevel` sirve como contexto para llegar al servidor, pero el `SavedData` se lee y escribe siempre en el almacenamiento del Overworld.
 
-### 4. ¿Cómo leer entrenadores derrotados por un jugador?
+Consecuencia: la reconciliación **no debe recorrer todas las dimensiones**. Basta con usar un `ServerLevel` válido del servidor, preferentemente `server.overworld()`, y consultar una vez cada `trainerId` configurado.
 
-Hay dos fuentes públicas útiles:
+Proceso de reconciliación:
 
-1. `TrainerPlayerData#getDefeatedTrainerIds()` para derrotas que forman el progreso de la serie del jugador.
-2. `TrainerManager#getBattleMemory(level, trainerId).getDefeatByCount(trainerId, player)` para saber si el jugador ha derrotado históricamente a un entrenador concreto.
+1. Iterar exclusivamente entrenadores de `chain`/`medals`.
+2. Consultar `getBattleMemory(server.overworld(), trainerId)`.
+3. Si `getDefeatByCount(trainerId, player) > 0` y falta la medalla, concederla con origen `RECONCILED`.
+4. No duplicar ítems, toast ni fecha si la medalla ya existe.
+5. Sincronizar el snapshot final al cliente.
 
-Para reconciliar medallas existentes se usará la segunda. El proceso será:
+RCT no conserva en este contador la fecha histórica exacta de la primera victoria. Para una medalla migrada se almacenará la fecha de reconciliación, nunca una fecha inventada.
 
-1. Iterar únicamente los entrenadores configurados en `chain`/`medals`, nunca los entrenadores por defecto de RCT.
-2. Consultar `getBattleMemory(...).getDefeatByCount(trainerId, player)`.
-3. Si el contador es mayor que cero y Zian-RCT aún no tiene la medalla, crear una concesión de reconciliación idempotente.
-4. Sincronizar el estado resultante al cliente.
+### 5. Instancia de RCTAPI usada por RCT
 
-La fecha exacta histórica de una victoria anterior a la instalación de Zian-RCT no existe en el contador de RCT. En ese caso se guardará la fecha de reconciliación y se marcará internamente el origen como `MIGRATED`/`RECONCILED`, en lugar de inventar una fecha de victoria.
+Zian-RCT no asumirá silenciosamente un id de instancia.
 
-### 5. No verificado / pendiente de prueba
+La API pública `RCTApi#getInstances()` devuelve todas las instancias registradas como pares `id -> RCTApi`, además de la instancia por defecto con id vacío.
 
-No se considera verificado todavía:
+En RCT 0.19.2-beta, `ModCommon` declara:
 
-- Una API pública de RCT que permita fijar un nivel máximo arbitrario por jugador sin modificar progreso. No se encontró.
-- Que un cambio de cap mediante una estructura cliente/sync de RCT sea persistente o soportado. No se usará esa vía sin documentación pública.
-- Que las capturas de Cobblemon estén limitadas por RCT. No se encontró evidencia de que RCT las limite; se probará explícitamente en Fase 7.
-- El orden exacto entre `Events.BATTLE_ENDED` y la escritura de `TrainerBattleMemory`. La concesión en tiempo real no depende de ese orden porque el propio `BattleState` expone ganadores/perdedores; la memoria solo se usa para reconciliación.
-- La firma final de registro del listener de `EventContext` contra el JAR exacto `rctapi 0.16.1-beta`. Se comprobará en compilación antes de Fase 4. Si no coincide, se usa el plan B de `winCommands`.
-- El mecanismo exacto de prioridad y refresco del pack virtual en un servidor dedicado con el conjunto final NeoForge/RCT. Se probará en Fase 3 con arranque, `/reload` y reinicio.
-- La semántica de fecha para medallas migradas, más allá de guardar de forma honesta la fecha de reconciliación.
+- `MOD_ID = "rctmod"`
+- `RCT = RCTApi.initInstance(MOD_ID)`
+
+Por tanto, actualmente la instancia esperada es `rctmod`. Sin embargo, para evitar acoplar la lógica a una suposición oculta, Zian-RCT hará lo siguiente al arrancar el servidor:
+
+1. Enumerar `RCTApi.getInstances()`.
+2. Registrar en log los ids disponibles a nivel DEBUG/INFO de diagnóstico.
+3. Buscar explícitamente el id `rctmod`.
+4. Verificar que la instancia encontrada no sea la instancia por defecto vacía.
+5. Registrar listeners de `BATTLE_STARTED`/`BATTLE_ENDED` solo sobre esa instancia.
+6. Si `rctmod` no existe, fallar de forma clara y no registrar listeners en una instancia incorrecta.
+
+No se llamará a `RCTApi.initInstance("rctmod")` desde Zian-RCT para “forzar” la instancia, porque esa instancia pertenece a RCT y debe ser creada por RCT.
+
+### 6. No verificado / pendiente de prueba
+
+- Capturas de Cobblemon respecto al cap: se probarán expresamente en Fase 7.
+- Orden exacto entre `BATTLE_ENDED` y escritura de `TrainerBattleMemory`: no afecta al otorgado en tiempo real; la memoria solo se usa para reconciliación.
+- Firma final del listener de `EventContext` contra el JAR exacto 0.16.1-beta: se congelará por compilación antes de Fase 4.
+- Prioridad y refresco del pack virtual tras `/reload`: Fase 3.
+- Comportamiento exacto de los comandos administrativos al manipular progreso: Fase 3.
 
 ## Arquitectura elegida
 
 ### 1. Configuración
 
-`zianrct.json` será la fuente de verdad de Zian-RCT y contendrá caps, serie, cadena, medallas, mensajes, perfil activo y opciones como `giveMedalItem`.
+`zianrct.json` será la fuente de verdad de caps, serie, cadena, medallas, mensajes, perfil activo y opciones como `giveMedalItem`.
 
-Los perfiles se resolverán a un snapshot inmutable de configuración. El servidor validará el snapshot antes de publicarlo como configuración activa. El cliente recibirá únicamente los datos necesarios para interfaz y presentación.
+Los perfiles producirán un snapshot inmutable y validado. El cliente solo recibirá datos de presentación necesarios para la UI.
 
 ### 2. Adaptación de RCT
 
-Zian-RCT no modificará objetos internos de RCT en memoria.
+Zian-RCT no mutará internals privados de RCT.
 
-Las propiedades de la serie y entrenadores que deban derivarse de `initialCap`, `step`, `maxCap` y `chain` se materializarán como un data pack virtual/de alta prioridad. RCT seguirá siendo responsable de calcular el cap normal, impedir experiencia por encima del tope y rechazar equipos fuera del rango.
-
-Tras un reload de Zian-RCT se regenerará el snapshot del pack y se realizará una recarga de recursos controlada. Si RCT requiere su llamada pública `TrainerManager#loadTrainers()` después de la recarga, se utilizará solamente cuando la prueba de Fase 3 confirme el orden correcto y que no duplica recargas.
+Las propiedades derivadas de `initialCap`, `step`, `maxCap` y `chain` se materializarán mediante data pack generado/de alta prioridad. RCT seguirá siendo responsable de su lógica normal de experiencia, validación de equipos y cálculo del cap.
 
 ### 3. Detección de victoria
 
 Camino primario:
 
-- Obtener la instancia RCTAPI asociada a RCT.
-- Registrar un listener para `Events.BATTLE_ENDED`.
-- Ignorar batallas forzadamente terminadas cuando no tengan un ganador válido.
-- Leer `BattleState#getWinners()` y `getLosers()`.
-- Identificar al `ServerPlayer` vencedor mediante `Trainer#getEntity()`.
-- Identificar el `TrainerMob` perdedor y su `trainerId` público.
-- Consultar el índice de `chain` para saber si ese entrenador concede una medalla.
-- Ejecutar `MedalService.grantIfAbsent(...)`.
+1. Resolver la instancia `rctmod` mediante `RCTApi.getInstances()`.
+2. Registrar listener para `Events.BATTLE_ENDED`.
+3. Leer `BattleState#getWinners()` y `getLosers()`.
+4. Identificar `ServerPlayer` vencedor mediante `Trainer#getEntity()`.
+5. Identificar el `TrainerMob` derrotado y su `trainerId` público.
+6. Consultar `chain`.
+7. Ejecutar `MedalService.grantIfAbsent(...)`.
 
-La operación será idempotente: si el jugador ya posee la medalla, no se modifica fecha, no se entrega un segundo ítem y no se repite toast/sonido.
+La concesión será idempotente.
 
-Plan B, sin reflexión:
-
-Si el evento público no resulta utilizable con los binarios exactos, los JSON generados para los entrenadores clave incluirán un `winCommands` original de Zian-RCT que ejecute:
+Plan B sin reflexión: si el evento público no resulta utilizable con los binarios exactos, los JSON generados usarán `winCommands` para ejecutar:
 
 `/zianrct medal grant @s <medalId>`
 
-Este comando será interno/administrativo, validará que el ID exista y usará exactamente el mismo `MedalService`. El plan B no requiere copiar código de RCT.
+El comando usará el mismo `MedalService`.
 
 ### 4. Persistencia de medallas
 
-La autoridad será siempre el servidor.
-
-Se utilizará almacenamiento persistente propio por UUID de jugador, preferiblemente data attachment de NeoForge si su ciclo de copia/guardado resulta adecuado para jugadores en 1.21.1; en caso contrario se utilizará `SavedData` propio. La elección concreta se cerrará en Fase 4 después de probar persistencia y reconexión.
-
-Cada concesión almacenará como mínimo:
+La autoridad es el servidor. Cada concesión almacenará al menos:
 
 - `medalId`
 - instante de concesión
 - origen (`BATTLE`, `COMMAND`, `RECONCILED`)
 
-No se guardará la textura en el jugador; la definición visual proviene de la configuración activa.
+La elección final entre data attachments y `SavedData` propio se cerrará en Fase 4 tras probar guardado y reconexión.
 
-### 5. Reconciliación
+### 5. Sincronización cliente
 
-En login, reload y bajo un comando administrativo de reparación se ejecutará reconciliación:
+- Login: snapshot de definiciones necesarias para UI + medallas obtenidas.
+- Cambio: delta o snapshot actualizado.
+- El cliente nunca concede medallas.
+- `/medals` y la tecla abren la UI usando el snapshot local.
+- El toast solo se dispara tras confirmación del servidor.
 
-- por cada medalla configurada, localizar su entrenador;
-- consultar el contador público de `TrainerBattleMemory`;
-- si `count > 0`, conceder si falta;
-- nunca revocar automáticamente una medalla existente porque RCT haya sido reconfigurado.
+El protocolo tendrá versión propia y Zian-RCT será requerido en cliente y servidor.
 
-Esto permite migrar el progreso existente de Liga Rassvet sin depender del medallero/advancements anteriores ni de sus rutas defectuosas.
+## Cap administrativo: vía preferida para Fase 3
 
-### 6. Sincronización cliente
+Los comandos `/zianrct get|set|add|remove` no reimplementarán el sistema de nivel de RCT.
 
-Flujo previsto:
+La **vía preferida** a evaluar en Fase 3 es representar el cap administrativo modificando únicamente el progreso de RCT mediante:
 
-1. Al login, el servidor envía las definiciones de medallas necesarias para UI y el conjunto de medallas obtenidas por ese jugador.
-2. Al conceder/revocar, envía un delta o snapshot actualizado.
-3. El cliente mantiene solo una copia de presentación; nunca puede concederse medallas a sí mismo.
-4. La pantalla `/medals` y la tecla usan ese snapshot.
-5. El toast se dispara únicamente tras un payload de concesión del servidor.
+- `TrainerPlayerData#addProgressDefeat(trainerId)`
+- `TrainerPlayerData#removeProgressDefeat(trainerId)`
+- `TrainerPlayerData#sync()`
 
-Los payloads usarán la API de networking de NeoForge 1.21.1. El protocolo incluirá una versión simple para poder rechazar clientes incompatibles de forma clara.
+La cadena de Zian-RCT permite mapear un cap objetivo al prefijo de entrenadores que RCT debe considerar derrotados. Ejemplo conceptual: para fijar cap 40, Zian-RCT ajustaría solo las derrotas de progreso necesarias para que la cadena quede exactamente en el punto que produce 40.
 
-### 7. Cliente requerido
+Reglas obligatorias:
 
-La intención de diseño es **mod requerido en ambos lados**. La interfaz, tecla, texturas/fallback y payloads forman parte del cliente; permitir clientes vanilla o sin Zian-RCT produciría una experiencia incompleta y complica el protocolo sin aportar valor al servidor objetivo.
+1. **No tocar medallas.** Un cambio administrativo de cap/progreso no concede ni revoca medallas automáticamente.
+2. No tocar `TrainerBattleMemory`, porque representa historial real de victorias y se usa para reconciliar medallas.
+3. Antes de modificar, calcular qué `trainerId` deben añadirse o retirarse según `chain`.
+4. Aplicar únicamente `addProgressDefeat`/`removeProgressDefeat` sobre esos entrenadores.
+5. Ejecutar `sync()` y releer `getLevelCap()`.
+6. Si el cap resultante no coincide con el solicitado, revertir o informar de la limitación en lugar de mostrar éxito falso.
+7. `add` y `remove` operarán en pasos válidos de la cadena; `set` normalizará/rechazará valores que no correspondan a un cap alcanzable.
 
-`neoforge.mods.toml` declarará las dependencias necesarias y la negociación de red se configurará para que un cliente sin Zian-RCT no pueda entrar al servidor cuando Zian-RCT está activo. El mensaje de incompatibilidad se documentará en README.
+Esta vía será aceptada definitivamente **solo después de la prueba de Fase 3**, porque hay que verificar cómo interactúan `requiredDefeats`, series completadas, entrenadores opcionales y cambios de progreso hacia atrás.
 
-## Diseño del cap administrativo: limitación y decisión provisional
+Solo si esta estrategia pública no permite un comportamiento correcto se evaluará un `adminCapOverride` propio, sin reflexión ni escritura en campos privados.
 
-La progresión normal no se reimplementará.
+## Liga Rassvet y medallero anterior
 
-Los comandos administrativos `get`, `set`, `add` y `remove` requieren una decisión técnica adicional porque RCT expone el cap calculado pero no un setter persistente público de cap. En Fase 3 se hará una prueba de integración para determinar una de estas dos estrategias, en este orden:
+El nuevo sistema de medallas no usará los advancements antiguos ni llamará a `rassvet:medallero`.
 
-1. **Preferida:** expresar el cambio mediante mecanismos públicos de progresión/configuración de RCT sin falsificar medallas ni derrotas.
-2. **Solo si lo anterior es imposible:** introducir un `adminCapOverride` propio y aplicar únicamente las restricciones adicionales indispensables alrededor de RCT. Nunca se escribirá directamente en campos privados ni se mantendrá un fork de RCT.
+La cadena de Zian-RCT será la única relación entre entrenador clave, cap desbloqueado y medalla. El data pack generado podrá corregir los mensajes de desbloqueo y añadir `winCommands` únicamente si hace falta el plan B.
 
-No se implementará un comando `/zianrct set` que muestre un valor que RCT no vaya a respetar.
+## Criterios de avance
 
-## Data pack de Liga Rassvet
-
-El nuevo sistema de medallas no leerá los advancements antiguos como fuente de verdad y no llamará a la función `rassvet:medallero`.
-
-La cadena configurada en Zian-RCT será la única relación entre entrenador clave, cap desbloqueado y medalla. El data pack generado podrá corregir mensajes de desbloqueo y `winCommands` si se necesita el plan B, sin depender de los aproximadamente 1500 entrenadores incluidos por defecto con RCT.
-
-## Criterios para pasar a Fase 1
-
-Fase 0 se considera cerrada cuando:
-
-- este documento está en `main` en un commit propio;
-- no se ha añadido código ejecutable;
-- las limitaciones no verificadas están registradas explícitamente.
-
-Fase 1 deberá crear el esqueleto Gradle/NeoForge, declarar dependencias y demostrar compilación/arranque antes de su commit. Ninguna decisión marcada como no verificada en este documento se tratará como hecho durante la implementación.
+Fase 1 debe crear el esqueleto Gradle/NeoForge, declarar las dependencias exactas, cargar una configuración inicial y demostrar compilación y arranque de servidor antes de integrar lógica de Fase 2 o posterior.
 
 ## Referencias públicas consultadas
 
-- RCT Mod 0.19.2-beta, API pública: `com.gitlab.srcmc.rctmod.api.*` y clases públicas relacionadas en el repositorio oficial `srcmc/rct/mod`.
-- RCTAPI 0.16.1-beta, tag oficial `v0.16.1-beta` y `com.gitlab.srcmc.rctapi.api.*` en `srcmc/rct/api`.
-- NeoForge 1.21.1: documentación oficial de eventos y sistema de packs, incluyendo `AddPackFindersEvent`.
+- RCT Mod 0.19.2-beta, API pública del repositorio oficial `srcmc/rct/mod`.
+- RCTAPI 0.16.1-beta, API pública del repositorio oficial `srcmc/rct/api`.
+- NeoForge 1.21.1, documentación oficial de ModDevGradle, eventos y packs.
 
-No se ha incorporado código fuente de ninguno de esos proyectos a Zian-RCT.
+No se ha incorporado código fuente de esos proyectos a Zian-RCT.
