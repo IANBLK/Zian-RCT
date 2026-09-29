@@ -1,12 +1,14 @@
 package com.ianblk.zianrct.config;
 
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.LinkedHashMap;
 import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
+import java.util.regex.Pattern;
 
 public record ZianRctConfig(
         int schemaVersion,
@@ -15,9 +17,12 @@ public record ZianRctConfig(
         Messages messages
 ) {
     public static final int CURRENT_SCHEMA_VERSION = 1;
+    private static final Pattern SAFE_ID = Pattern.compile("[a-z0-9_.-]+");
 
     public ZianRctConfig {
-        profiles = profiles == null ? Map.of() : Map.copyOf(profiles);
+        profiles = profiles == null
+                ? Collections.emptyMap()
+                : Collections.unmodifiableMap(new LinkedHashMap<>(profiles));
     }
 
     public static ZianRctConfig defaults() {
@@ -48,10 +53,12 @@ public record ZianRctConfig(
         );
 
         Profile rassvet = new Profile(10, 10, 100, "rassvet", chain, medals, false);
+        LinkedHashMap<String, Profile> profiles = new LinkedHashMap<>();
+        profiles.put("rassvet", rassvet);
         return new ZianRctConfig(
                 CURRENT_SCHEMA_VERSION,
                 "rassvet",
-                Map.of("rassvet", rassvet),
+                profiles,
                 Messages.defaults()
         );
     }
@@ -107,7 +114,7 @@ public record ZianRctConfig(
             messages.validate("messages", errors);
         }
 
-        return List.copyOf(errors);
+        return Collections.unmodifiableList(new ArrayList<>(errors));
     }
 
     public void validateOrThrow() {
@@ -148,6 +155,9 @@ public record ZianRctConfig(
                 errors.add(linkPath + ".trainer no puede estar vacío");
                 continue;
             }
+            if (!isSafeId(link.trainer)) {
+                errors.add(linkPath + ".trainer contiene caracteres inválidos: " + link.trainer);
+            }
             if (!trainers.add(link.trainer)) {
                 errors.add(linkPath + ".trainer está duplicado: " + link.trainer);
             }
@@ -174,12 +184,20 @@ public record ZianRctConfig(
             }
             if (isBlank(medal.id)) {
                 errors.add(medalPath + ".id no puede estar vacío");
-            } else if (!medalIds.add(medal.id)) {
-                errors.add(medalPath + ".id está duplicado: " + medal.id);
+            } else {
+                if (!isSafeId(medal.id)) {
+                    errors.add(medalPath + ".id contiene caracteres inválidos: " + medal.id);
+                }
+                if (!medalIds.add(medal.id)) {
+                    errors.add(medalPath + ".id está duplicado: " + medal.id);
+                }
             }
             if (isBlank(medal.trainer)) {
                 errors.add(medalPath + ".trainer no puede estar vacío");
             } else {
+                if (!isSafeId(medal.trainer)) {
+                    errors.add(medalPath + ".trainer contiene caracteres inválidos: " + medal.trainer);
+                }
                 if (!trainers.contains(medal.trainer)) {
                     errors.add(medalPath + ".trainer no pertenece a chain: " + medal.trainer);
                 }
@@ -204,6 +222,10 @@ public record ZianRctConfig(
         }
     }
 
+    private static boolean isSafeId(String value) {
+        return value != null && SAFE_ID.matcher(value).matches();
+    }
+
     private static boolean isBlank(String value) {
         return value == null || value.isBlank();
     }
@@ -218,12 +240,19 @@ public record ZianRctConfig(
             boolean giveMedalItem
     ) {
         public Profile {
-            chain = chain == null ? List.of() : List.copyOf(chain);
-            medals = medals == null ? List.of() : List.copyOf(medals);
+            chain = chain == null
+                    ? Collections.emptyList()
+                    : Collections.unmodifiableList(new ArrayList<>(chain));
+            medals = medals == null
+                    ? Collections.emptyList()
+                    : Collections.unmodifiableList(new ArrayList<>(medals));
         }
 
         public int unlockCap(int chainIndex) {
             ChainEntry entry = chain.get(chainIndex);
+            if (entry == null) {
+                throw new IllegalStateException("chain[" + chainIndex + "] es null");
+            }
             if (entry.unlockCap != null) {
                 return entry.unlockCap;
             }
@@ -232,14 +261,14 @@ public record ZianRctConfig(
         }
 
         public Map<String, Integer> trainerUnlockCaps() {
-            Map<String, Integer> result = new LinkedHashMap<>();
+            LinkedHashMap<String, Integer> result = new LinkedHashMap<>();
             for (int index = 0; index < chain.size(); index++) {
                 ChainEntry entry = chain.get(index);
                 if (entry != null && entry.trainer != null) {
                     result.put(entry.trainer, unlockCap(index));
                 }
             }
-            return Map.copyOf(result);
+            return Collections.unmodifiableMap(new LinkedHashMap<>(result));
         }
     }
 

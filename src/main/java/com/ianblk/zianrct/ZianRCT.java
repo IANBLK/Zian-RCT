@@ -13,6 +13,7 @@ import net.neoforged.fml.loading.FMLPaths;
 import org.slf4j.Logger;
 
 import java.io.IOException;
+import java.nio.file.Files;
 import java.nio.file.Path;
 
 @Mod(ZianRCT.MOD_ID)
@@ -27,16 +28,38 @@ public final class ZianRCT {
     }
 
     private static ZianRctConfig loadInitialSnapshot() {
-        if (FMLEnvironment.dist != Dist.DEDICATED_SERVER) {
-            LOGGER.info("Client bootstrap uses built-in defaults only; authoritative Zian RCT config will come from the server.");
+        Path configPath = FMLPaths.CONFIGDIR.get().resolve(ZianRctConfigLoader.FILE_NAME);
+
+        if (FMLEnvironment.dist == Dist.DEDICATED_SERVER) {
+            try {
+                return ZianRctConfigLoader.loadOrCreate(configPath);
+            } catch (IOException | RuntimeException exception) {
+                throw new IllegalStateException(
+                        "No se pudo cargar una configuración válida de Zian RCT desde " + configPath,
+                        exception
+                );
+            }
+        }
+
+        if (Files.notExists(configPath)) {
+            LOGGER.info(
+                    "No local {} found on client bootstrap; using built-in defaults. Remote server snapshots will use ClientConfigState.",
+                    ZianRctConfigLoader.FILE_NAME
+            );
             return ZianRctConfig.defaults();
         }
 
-        Path configPath = FMLPaths.CONFIGDIR.get().resolve(ZianRctConfigLoader.FILE_NAME);
         try {
-            return ZianRctConfigLoader.loadOrCreate(configPath);
+            ZianRctConfig local = ZianRctConfigLoader.readExisting(configPath);
+            LOGGER.info("Loaded local {} for integrated-server/LAN use.", ZianRctConfigLoader.FILE_NAME);
+            return local;
         } catch (IOException | RuntimeException exception) {
-            throw new IllegalStateException("No se pudo cargar una configuración válida de Zian RCT desde " + configPath, exception);
+            LOGGER.warn(
+                    "Could not read local {} on client bootstrap; using defaults. The file was not modified.",
+                    configPath,
+                    exception
+            );
+            return ZianRctConfig.defaults();
         }
     }
 }

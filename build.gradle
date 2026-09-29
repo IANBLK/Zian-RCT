@@ -55,7 +55,7 @@ dependencies {
     testImplementation platform('org.junit:junit-bom:5.13.4')
     testImplementation 'org.junit.jupiter:junit-jupiter'
     testRuntimeOnly 'org.junit.platform:junit-platform-launcher'
-    testRuntimeOnly 'com.google.code.gson:gson:2.11.0'
+    testRuntimeOnly 'com.google.code.gson:gson:2.10.1'
 }
 
 var generateModMetadata = tasks.register('generateModMetadata', ProcessResources) {
