@@ -3,6 +3,7 @@ package com.ianblk.zianrct;
 import com.ianblk.zianrct.config.ConfigState;
 import com.ianblk.zianrct.config.ZianRctConfig;
 import com.ianblk.zianrct.config.ZianRctConfigLoader;
+import com.ianblk.zianrct.rct.RctPackController;
 import com.mojang.logging.LogUtils;
 import net.neoforged.api.distmarker.Dist;
 import net.neoforged.bus.api.IEventBus;
@@ -21,9 +22,12 @@ public final class ZianRCT {
     public static final String MOD_ID = "zianrct";
     public static final Logger LOGGER = LogUtils.getLogger();
 
+    private final RctPackController rctPackController;
+
     public ZianRCT(IEventBus modEventBus, ModContainer container) {
         ZianRctConfig initialConfig = loadInitialSnapshot();
         ConfigState.replace(initialConfig);
+        this.rctPackController = new RctPackController(modEventBus);
         LOGGER.info("Zian RCT initialized with profile '{}'", initialConfig.activeProfile());
     }
 

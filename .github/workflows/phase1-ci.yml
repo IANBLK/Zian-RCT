@@ -1,4 +1,4 @@
-name: Phase 1 CI
+name: Zian RCT CI
 
 on:
   push:
@@ -8,7 +8,7 @@ on:
 jobs:
   build-and-server-smoke:
     runs-on: ubuntu-24.04
-    timeout-minutes: 20
+    timeout-minutes: 25
     steps:
       - uses: actions/checkout@v7
       - uses: actions/setup-java@v6
@@ -18,20 +18,167 @@ jobs:
       - uses: gradle/actions/setup-gradle@v6
         with:
           gradle-version: '9.8.0'
-      - name: Build
+      - name: Build and unit tests
         run: gradle --no-daemon clean build
-      - name: Prepare EULA
-        run: mkdir -p run && echo 'eula=true' > run/eula.txt
-      - name: Dedicated server smoke test
+      - name: Prepare dedicated server
         shell: bash
         run: |
-          set +e
-          timeout 180s gradle --no-daemon runServer > server-smoke.log 2>&1
-          status=$?
-          cat server-smoke.log
-          if grep -q "Done (" server-smoke.log; then
-            echo "Dedicated server reached ready state."
-            exit 0
+          mkdir -p run
+          echo 'eula=true' > run/eula.txt
+          cat > run/server.properties <<'EOF'
+          online-mode=false
+          enable-rcon=true
+          rcon.password=zianrct-ci
+          rcon.port=25575
+          max-players=4
+          view-distance=4
+          simulation-distance=4
+          EOF
+      - name: Dedicated server startup and reload smoke test
+        shell: bash
+        run: |
+          set -euo pipefail
+
+          cat > "$RUNNER_TEMP/rcon.py" <<'PY'
+          import socket
+          import struct
+          import sys
+          import time
+
+          HOST = "127.0.0.1"
+          PORT = 25575
+          PASSWORD = "zianrct-ci"
+
+          def recv_exact(sock, size):
+              data = b""
+              while len(data) < size:
+                  chunk = sock.recv(size - len(data))
+                  if not chunk:
+                      raise ConnectionError("RCON connection closed unexpectedly")
+                  data += chunk
+              return data
+
+          def recv_packet(sock):
+              size = struct.unpack("<i", recv_exact(sock, 4))[0]
+              data = recv_exact(sock, size)
+              request_id, packet_type = struct.unpack("<ii", data[:8])
+              body = data[8:-2].decode("utf-8", errors="replace")
+              return request_id, packet_type, body
+
+          def send_packet(sock, request_id, packet_type, body):
+              payload = struct.pack("<ii", request_id, packet_type) + body.encode("utf-8") + b"\x00\x00"
+              sock.sendall(struct.pack("<i", len(payload)) + payload)
+
+          command = sys.argv[1]
+          last_error = None
+          for _ in range(30):
+              try:
+                  sock = socket.create_connection((HOST, PORT), timeout=5)
+                  sock.settimeout(20)
+                  break
+              except OSError as exc:
+                  last_error = exc
+                  time.sleep(1)
+          else:
+              raise SystemExit(f"Could not connect to RCON: {last_error}")
+
+          with sock:
+              send_packet(sock, 1, 3, PASSWORD)
+              auth_id, _, auth_body = recv_packet(sock)
+              if auth_id == -1:
+                  raise SystemExit(f"RCON authentication failed: {auth_body}")
+
+              send_packet(sock, 2, 2, command)
+              if command == "stop":
+                  try:
+                      _, _, body = recv_packet(sock)
+                      print(body)
+                  except (ConnectionError, TimeoutError, socket.timeout):
+                      pass
+              else:
+                  response_id, _, body = recv_packet(sock)
+                  if response_id != 2:
+                      raise SystemExit(f"Unexpected RCON response id {response_id}")
+                  print(body)
+          PY
+
+          gradle --no-daemon runServer > server-smoke.log 2>&1 &
+          server_pid=$!
+
+          cleanup() {
+            if kill -0 "$server_pid" 2>/dev/null; then
+              python "$RUNNER_TEMP/rcon.py" stop >/dev/null 2>&1 || true
+              sleep 3
+              kill "$server_pid" 2>/dev/null || true
+            fi
+            cat server-smoke.log || true
+          }
+          trap cleanup EXIT
+
+          ready=0
+          for _ in $(seq 1 180); do
+            if grep -q "Done (" server-smoke.log 2>/dev/null; then
+              ready=1
+              break
+            fi
+            if ! kill -0 "$server_pid" 2>/dev/null; then
+              echo "Server exited before reaching ready state."
+              exit 1
+            fi
+            sleep 1
+          done
+          if [ "$ready" -ne 1 ]; then
+            echo "Server did not reach ready state."
+            exit 1
           fi
-          echo "Dedicated server did not reach ready state (timeout/status=$status)."
+          echo "Dedicated server reached ready state."
+
+          recipe_count_before=$(grep -cE "RecipeManager.*Loaded [0-9]+ recipes" server-smoke.log || true)
+          rct_pack_count_before=$(grep -c "Data pack initialized: zianrct/generated_rct" server-smoke.log || true)
+
+          reload_response=$(python "$RUNNER_TEMP/rcon.py" reload)
+          echo "RCON /reload response: $reload_response"
+
+          reloaded=0
+          for _ in $(seq 1 120); do
+            recipe_count_after=$(grep -cE "RecipeManager.*Loaded [0-9]+ recipes" server-smoke.log || true)
+            rct_pack_count_after=$(grep -c "Data pack initialized: zianrct/generated_rct" server-smoke.log || true)
+            if [ "$recipe_count_after" -gt "$recipe_count_before" ] && [ "$rct_pack_count_after" -gt "$rct_pack_count_before" ]; then
+              reloaded=1
+              break
+            fi
+            if ! kill -0 "$server_pid" 2>/dev/null; then
+              echo "Server exited while processing /reload."
+              exit 1
+            fi
+            sleep 1
+          done
+          if [ "$reloaded" -ne 1 ]; then
+            echo "A real /reload was sent, but resource reload completion was not observed."
+            exit 1
+          fi
+
+          list_response=$(python "$RUNNER_TEMP/rcon.py" list)
+          echo "RCON post-reload /list response: $list_response"
+          if [ -z "$list_response" ]; then
+            echo "Server did not answer RCON after /reload."
+            exit 1
+          fi
+          if grep -qE "Encountered an unexpected exception|Failed to start the minecraft server" server-smoke.log; then
+            echo "Fatal server error detected after /reload."
+            exit 1
+          fi
+          echo "Dedicated server completed /reload and remained responsive."
+
+          python "$RUNNER_TEMP/rcon.py" stop >/dev/null 2>&1 || true
+          for _ in $(seq 1 60); do
+            if ! kill -0 "$server_pid" 2>/dev/null; then
+              wait "$server_pid" || true
+              trap - EXIT
+              cat server-smoke.log
+              exit 0
+            fi
+            sleep 1
+          done
+          echo "Server did not stop cleanly."
           exit 1
