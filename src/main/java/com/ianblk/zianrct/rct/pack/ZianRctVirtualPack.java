@@ -16,6 +16,7 @@ import org.jetbrains.annotations.Nullable;
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.io.InputStream;
+import java.util.Arrays;
 import java.util.LinkedHashMap;
 import java.util.LinkedHashSet;
 import java.util.Map;
@@ -27,8 +28,7 @@ public final class ZianRctVirtualPack implements PackResources {
     public static final String PACK_ID = "zianrct/generated_rct";
     public static final String RCT_NAMESPACE = "rctmod";
 
-    private final AtomicReference<Map<ResourceLocation, byte[]>> resources =
-            new AtomicReference<>(Map.of());
+    private final AtomicReference<Map<ResourceLocation, byte[]>> resources = new AtomicReference<>(Map.of());
     private final PackMetadataSection metadata = new PackMetadataSection(
             Component.literal("Zian RCT generated progression"),
             SharedConstants.getCurrentVersion().getPackVersion(PackType.SERVER_DATA)
@@ -40,13 +40,27 @@ public final class ZianRctVirtualPack implements PackResources {
             Optional.empty()
     );
 
-    public void replaceResources(Map<String, byte[]> nextResources) {
+    public boolean replaceResourcesIfChanged(Map<String, byte[]> nextResources) {
         LinkedHashMap<ResourceLocation, byte[]> copy = new LinkedHashMap<>();
         nextResources.forEach((path, value) -> copy.put(
                 ResourceLocation.fromNamespaceAndPath(RCT_NAMESPACE, path),
                 value.clone()
         ));
-        resources.set(java.util.Collections.unmodifiableMap(copy));
+        Map<ResourceLocation, byte[]> next = java.util.Collections.unmodifiableMap(copy);
+        Map<ResourceLocation, byte[]> current = resources.get();
+        if (sameBytes(current, next)) {
+            return false;
+        }
+        resources.set(next);
+        return true;
+    }
+
+    public boolean clearIfChanged() {
+        if (resources.get().isEmpty()) {
+            return false;
+        }
+        resources.set(Map.of());
+        return true;
     }
 
     public void clear() {
@@ -57,24 +71,30 @@ public final class ZianRctVirtualPack implements PackResources {
         return resources.get().size();
     }
 
+    private static boolean sameBytes(Map<ResourceLocation, byte[]> left, Map<ResourceLocation, byte[]> right) {
+        if (!left.keySet().equals(right.keySet())) {
+            return false;
+        }
+        for (ResourceLocation key : left.keySet()) {
+            if (!Arrays.equals(left.get(key), right.get(key))) {
+                return false;
+            }
+        }
+        return true;
+    }
+
     @Override
     public @Nullable IoSupplier<InputStream> getRootResource(String @NotNull ... elements) {
         return null;
     }
 
     @Override
-    public @Nullable IoSupplier<InputStream> getResource(
-            @NotNull PackType packType,
-            @NotNull ResourceLocation location
-    ) {
+    public @Nullable IoSupplier<InputStream> getResource(@NotNull PackType packType, @NotNull ResourceLocation location) {
         if (packType != PackType.SERVER_DATA) {
             return null;
         }
         byte[] bytes = resources.get().get(location);
-        if (bytes == null) {
-            return null;
-        }
-        return () -> new ByteArrayInputStream(bytes);
+        return bytes == null ? null : () -> new ByteArrayInputStream(bytes);
     }
 
     @Override
@@ -108,8 +128,7 @@ public final class ZianRctVirtualPack implements PackResources {
 
     @Override
     @SuppressWarnings("unchecked")
-    public @Nullable <T> T getMetadataSection(@NotNull MetadataSectionSerializer<T> serializer)
-            throws IOException {
+    public @Nullable <T> T getMetadataSection(@NotNull MetadataSectionSerializer<T> serializer) throws IOException {
         return serializer == PackMetadataSection.TYPE ? (T) metadata : null;
     }
 
