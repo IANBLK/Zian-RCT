@@ -3,12 +3,12 @@ package com.ianblk.zianrct.medal;
 import com.gitlab.srcmc.rctapi.api.RCTApi;
 import com.gitlab.srcmc.rctapi.api.battle.BattleState;
 import com.gitlab.srcmc.rctapi.api.events.Event;
+import com.gitlab.srcmc.rctapi.api.events.EventListener;
 import com.gitlab.srcmc.rctapi.api.events.Events;
-import com.gitlab.srcmc.rctmod.api.RCTMod;
-import com.gitlab.srcmc.rctmod.api.data.pack.TrainerMobData;
 import com.gitlab.srcmc.rctmod.world.entities.TrainerMob;
 import com.ianblk.zianrct.ZianRCT;
 import com.ianblk.zianrct.config.ConfigState;
+import com.ianblk.zianrct.config.ZianRctConfig;
 import net.minecraft.server.MinecraftServer;
 import net.minecraft.server.level.ServerPlayer;
 
@@ -21,17 +21,14 @@ public final class RctBattleMedalListener {
     private static final String RCT_INSTANCE_ID = "rctmod";
 
     private final MedalService medalService;
-    private boolean registered;
+    private final EventListener<BattleState> battleEndedListener = this::onBattleEnded;
+    private RCTApi registeredApi;
 
     public RctBattleMedalListener(MedalService medalService) {
         this.medalService = medalService;
     }
 
     public void registerIfAvailable() {
-        if (registered) {
-            return;
-        }
-
         List<Map.Entry<String, RCTApi>> instances = RCTApi.getInstances().toList();
         ZianRCT.LOGGER.info(
                 "RCTApi instances available for Zian RCT: {}",
@@ -51,12 +48,26 @@ public final class RctBattleMedalListener {
             return;
         }
 
-        api.getEventContext().register(Events.BATTLE_ENDED, this::onBattleEnded);
-        registered = true;
+        if (registeredApi == api) {
+            return;
+        }
+        if (registeredApi != null) {
+            registeredApi.getEventContext().unregister(Events.BATTLE_ENDED, battleEndedListener);
+        }
+
+        api.getEventContext().register(Events.BATTLE_ENDED, battleEndedListener);
+        registeredApi = api;
         ZianRCT.LOGGER.info(
                 "Registered Zian RCT BATTLE_ENDED listener on RCTApi instance '{}'.",
                 RCT_INSTANCE_ID
         );
+    }
+
+    public void resetRegistration() {
+        if (registeredApi != null) {
+            registeredApi.getEventContext().unregister(Events.BATTLE_ENDED, battleEndedListener);
+            registeredApi = null;
+        }
     }
 
     private void onBattleEnded(Event<BattleState> event) {
@@ -76,9 +87,10 @@ public final class RctBattleMedalListener {
         }
 
         Set<String> defeatedTrainerIds = new LinkedHashSet<>();
+        List<ZianRctConfig.ChainEntry> chain = ConfigState.current().activeProfileConfig().chain();
         state.getLosers().forEach(trainer -> {
             if (trainer.getEntity() instanceof TrainerMob trainerMob) {
-                String trainerId = configuredTrainerId(trainerMob);
+                String trainerId = configuredTrainerId(trainerMob.getTrainerId(), chain);
                 if (trainerId != null) {
                     defeatedTrainerIds.add(trainerId);
                 }
@@ -103,20 +115,13 @@ public final class RctBattleMedalListener {
         }
     }
 
-    private static String configuredTrainerId(TrainerMob trainerMob) {
-        var trainerManager = RCTMod.getInstance().getTrainerManager();
-        TrainerMobData mobData = trainerManager.getData(trainerMob);
-        if (mobData == null) {
+    static String configuredTrainerId(String trainerId, List<ZianRctConfig.ChainEntry> chain) {
+        if (trainerId == null || trainerId.isBlank() || chain == null) {
             return null;
         }
-
-        for (var entry : ConfigState.current().activeProfileConfig().chain()) {
-            if (entry == null) {
-                continue;
-            }
-            TrainerMobData configured = trainerManager.getData(entry.trainer());
-            if (configured == mobData || (configured != null && configured.equals(mobData))) {
-                return entry.trainer();
+        for (ZianRctConfig.ChainEntry entry : chain) {
+            if (entry != null && trainerId.equals(entry.trainer())) {
+                return trainerId;
             }
         }
         return null;

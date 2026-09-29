@@ -13,12 +13,12 @@ import java.nio.file.Path;
 import java.nio.file.StandardCopyOption;
 import java.util.ArrayList;
 import java.util.LinkedHashMap;
+import java.util.LinkedHashSet;
 import java.util.List;
-import java.util.Map;
 import java.util.UUID;
 
 public final class MedalStore {
-    private static final int SCHEMA_VERSION = 1;
+    private static final int SCHEMA_VERSION = 2;
     private static final Gson GSON = new GsonBuilder()
             .setPrettyPrinting()
             .disableHtmlEscaping()
@@ -42,13 +42,13 @@ public final class MedalStore {
             if (model == null) {
                 throw new IOException("El archivo de medallas está vacío: " + file);
             }
-            if (model.schemaVersion() != SCHEMA_VERSION) {
+            if (model.schemaVersion() != 1 && model.schemaVersion() != SCHEMA_VERSION) {
                 throw new IOException(
                         "Versión de persistencia de medallas no soportada: " + model.schemaVersion()
                 );
             }
 
-            LinkedHashMap<UUID, List<MedalRecord>> snapshot = new LinkedHashMap<>();
+            LinkedHashMap<UUID, MedalLedger.PlayerSnapshot> snapshot = new LinkedHashMap<>();
             List<PlayerModel> players = model.players() == null ? List.of() : model.players();
             for (PlayerModel player : players) {
                 if (player == null || player.uuid() == null || player.uuid().isBlank()) {
@@ -66,7 +66,11 @@ public final class MedalStore {
                 List<MedalRecord> records = player.medals() == null
                         ? List.of()
                         : List.copyOf(player.medals());
-                snapshot.put(uuid, records);
+                LinkedHashSet<String> revoked = new LinkedHashSet<>();
+                if (model.schemaVersion() >= 2 && player.revoked() != null) {
+                    revoked.addAll(player.revoked());
+                }
+                snapshot.put(uuid, new MedalLedger.PlayerSnapshot(records, revoked));
             }
 
             return new MedalStore(file, MedalLedger.fromSnapshot(snapshot));
@@ -75,9 +79,10 @@ public final class MedalStore {
         }
     }
 
-    public synchronized boolean grantIfAbsent(UUID playerId, MedalRecord record) throws IOException {
+    public synchronized boolean grantIfAbsent(UUID playerId, MedalRecord record, boolean clearRevocation)
+            throws IOException {
         MedalLedger candidate = ledger.copy();
-        if (!candidate.grantIfAbsent(playerId, record)) {
+        if (!candidate.grantIfAbsent(playerId, record, clearRevocation)) {
             return false;
         }
         write(candidate);
@@ -103,6 +108,10 @@ public final class MedalStore {
         return ledger.find(playerId, medalId).isPresent();
     }
 
+    public synchronized boolean isRevoked(UUID playerId, String medalId) {
+        return ledger.isRevoked(playerId, medalId);
+    }
+
     private void write(MedalLedger candidate) throws IOException {
         Path parent = file.toAbsolutePath().getParent();
         if (parent != null) {
@@ -110,8 +119,8 @@ public final class MedalStore {
         }
 
         List<PlayerModel> players = new ArrayList<>();
-        candidate.snapshot().forEach((uuid, records) -> players.add(
-                new PlayerModel(uuid.toString(), records)
+        candidate.snapshot().forEach((uuid, snapshot) -> players.add(
+                new PlayerModel(uuid.toString(), snapshot.medals(), new ArrayList<>(snapshot.revoked()))
         ));
         FileModel model = new FileModel(SCHEMA_VERSION, players);
 
@@ -135,6 +144,6 @@ public final class MedalStore {
     private record FileModel(int schemaVersion, List<PlayerModel> players) {
     }
 
-    private record PlayerModel(String uuid, List<MedalRecord> medals) {
+    private record PlayerModel(String uuid, List<MedalRecord> medals, List<String> revoked) {
     }
 }

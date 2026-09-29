@@ -16,22 +16,33 @@ class MedalLedgerTest {
         MedalRecord first = new MedalRecord("novato", 1000L, MedalOrigin.BATTLE);
         MedalRecord duplicate = new MedalRecord("novato", 2000L, MedalOrigin.COMMAND);
 
-        assertTrue(ledger.grantIfAbsent(player, first));
-        assertFalse(ledger.grantIfAbsent(player, duplicate));
+        assertTrue(ledger.grantIfAbsent(player, first, true));
+        assertFalse(ledger.grantIfAbsent(player, duplicate, true));
         assertEquals(first, ledger.find(player, "novato").orElseThrow());
         assertEquals(1, ledger.medals(player).size());
     }
 
     @Test
-    void revokeRemovesOnlyRequestedMedal() {
+    void revokePersistsAsTombstoneAndFreshGrantClearsIt() {
         MedalLedger ledger = new MedalLedger();
         UUID player = UUID.randomUUID();
-        ledger.grantIfAbsent(player, new MedalRecord("novato", 1000L, MedalOrigin.BATTLE));
-        ledger.grantIfAbsent(player, new MedalRecord("ferrum", 2000L, MedalOrigin.BATTLE));
+        ledger.grantIfAbsent(player, new MedalRecord("novato", 1000L, MedalOrigin.BATTLE), true);
+        ledger.grantIfAbsent(player, new MedalRecord("ferrum", 2000L, MedalOrigin.BATTLE), true);
 
         assertTrue(ledger.revoke(player, "novato"));
         assertFalse(ledger.find(player, "novato").isPresent());
         assertTrue(ledger.find(player, "ferrum").isPresent());
-        assertFalse(ledger.revoke(player, "novato"));
+        assertTrue(ledger.isRevoked(player, "novato"));
+        assertFalse(ledger.grantIfAbsent(
+                player,
+                new MedalRecord("novato", 3000L, MedalOrigin.RECONCILED),
+                false
+        ));
+        assertTrue(ledger.grantIfAbsent(
+                player,
+                new MedalRecord("novato", 4000L, MedalOrigin.COMMAND),
+                true
+        ));
+        assertFalse(ledger.isRevoked(player, "novato"));
     }
 }

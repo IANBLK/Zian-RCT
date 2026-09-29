@@ -26,6 +26,7 @@ public final class MedalRuntime {
     }
 
     private void onServerStopped(ServerStoppedEvent event) {
+        battleListener.resetRegistration();
         medalService.stop();
     }
 
