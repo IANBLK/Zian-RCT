@@ -4,6 +4,7 @@ import com.gitlab.srcmc.rctmod.api.RCTMod;
 import com.ianblk.zianrct.ZianRCT;
 import com.ianblk.zianrct.config.ConfigState;
 import com.ianblk.zianrct.config.ZianRctConfig;
+import com.ianblk.zianrct.network.ZianRctNetwork;
 import net.minecraft.network.chat.Component;
 import net.minecraft.server.MinecraftServer;
 import net.minecraft.server.level.ServerLevel;
@@ -15,6 +16,7 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.StandardCopyOption;
 import java.time.Instant;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
@@ -46,6 +48,15 @@ public final class MedalService {
     }
 
     public GrantResult grantIfAbsent(ServerPlayer player, String medalId, MedalOrigin origin) {
+        return grantIfAbsent(player, medalId, origin, true);
+    }
+
+    private GrantResult grantIfAbsent(
+            ServerPlayer player,
+            String medalId,
+            MedalOrigin origin,
+            boolean syncClient
+    ) {
         Objects.requireNonNull(player, "player");
         Objects.requireNonNull(origin, "origin");
 
@@ -85,6 +96,12 @@ public final class MedalService {
                 String message = template.replace("{medal}", definition.get().name());
                 player.sendSystemMessage(Component.literal(message));
             }
+            if (syncClient) {
+                List<String> notifications = origin == MedalOrigin.BATTLE || origin == MedalOrigin.RECONCILED
+                        ? List.of(medalId)
+                        : List.of();
+                ZianRctNetwork.sendSnapshot(player, this, notifications);
+            }
             return GrantResult.GRANTED;
         } catch (IOException exception) {
             ZianRCT.LOGGER.error(
@@ -103,7 +120,11 @@ public final class MedalService {
             return false;
         }
         try {
-            return active.revoke(player.getUUID(), medalId);
+            boolean changed = active.revoke(player.getUUID(), medalId);
+            if (changed) {
+                ZianRctNetwork.sendSnapshot(player, this, List.of());
+            }
+            return changed;
         } catch (IOException exception) {
             ZianRCT.LOGGER.error(
                     "Could not persist medal revocation '{}' for {}.",
@@ -138,6 +159,7 @@ public final class MedalService {
             return;
         }
 
+        List<String> reconciled = new ArrayList<>();
         MinecraftServer server = player.serverLevel().getServer();
         var trainerManager = RCTMod.getInstance().getTrainerManager();
         for (ZianRctConfig.MedalDefinition medal : ConfigState.current().activeProfileConfig().medals()) {
@@ -168,9 +190,13 @@ public final class MedalService {
             }
 
             if (historicalWin) {
-                grantIfAbsent(player, medal.id(), MedalOrigin.RECONCILED);
+                GrantResult result = grantIfAbsent(player, medal.id(), MedalOrigin.RECONCILED, false);
+                if (result == GrantResult.GRANTED) {
+                    reconciled.add(medal.id());
+                }
             }
         }
+        ZianRctNetwork.sendSnapshot(player, this, reconciled);
     }
 
     private static void backupCorrupt(Path path) {

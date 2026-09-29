@@ -1,9 +1,11 @@
 package com.ianblk.zianrct;
 
+import com.ianblk.zianrct.client.ZianRctClient;
 import com.ianblk.zianrct.config.ConfigState;
 import com.ianblk.zianrct.config.ZianRctConfig;
 import com.ianblk.zianrct.config.ZianRctConfigLoader;
 import com.ianblk.zianrct.medal.MedalRuntime;
+import com.ianblk.zianrct.network.ZianRctNetwork;
 import com.ianblk.zianrct.rct.RctPackController;
 import com.mojang.logging.LogUtils;
 import net.neoforged.api.distmarker.Dist;
@@ -29,8 +31,12 @@ public final class ZianRCT {
     public ZianRCT(IEventBus modEventBus, ModContainer container) {
         ZianRctConfig initialConfig = loadInitialSnapshot();
         ConfigState.replace(initialConfig);
+        modEventBus.addListener(ZianRctNetwork::registerPayloads);
         this.rctPackController = new RctPackController(modEventBus);
         this.medalRuntime = new MedalRuntime();
+        if (FMLEnvironment.dist == Dist.CLIENT) {
+            ZianRctClient.init(modEventBus);
+        }
         LOGGER.info("Zian RCT initialized with profile '{}'", initialConfig.activeProfile());
     }
 
