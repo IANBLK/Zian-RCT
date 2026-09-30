@@ -13,13 +13,13 @@ public record MedalSyncPayload(int protocolVersion, String snapshotJson) impleme
     );
     public static final StreamCodec<ByteBuf, MedalSyncPayload> STREAM_CODEC = StreamCodec.composite(
             ByteBufCodecs.VAR_INT, MedalSyncPayload::protocolVersion,
-            ByteBufCodecs.stringUtf8(MedalProtocol.MAX_SNAPSHOT_JSON_LENGTH), MedalSyncPayload::snapshotJson,
+            ByteBufCodecs.stringUtf8(MedalProtocol.MAX_SNAPSHOT_UTF8_BYTES), MedalSyncPayload::snapshotJson,
             MedalSyncPayload::new
     );
 
     public MedalSyncPayload {
         MedalProtocol.validateVersion(protocolVersion);
-        if (snapshotJson == null || snapshotJson.length() > MedalProtocol.MAX_SNAPSHOT_JSON_LENGTH) {
+        if (snapshotJson == null || MedalProtocol.utf8Length(snapshotJson) > MedalProtocol.MAX_SNAPSHOT_UTF8_BYTES) {
             throw new IllegalStateException("Payload de sincronización de medallas inválido");
         }
     }

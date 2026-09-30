@@ -2,6 +2,7 @@ package com.ianblk.zianrct.network;
 
 import org.junit.jupiter.api.Test;
 
+import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -64,13 +65,13 @@ class MedalProtocolTest {
     }
 
     @Test
-    void largestFieldBoundSnapshotFitsEnvelope() {
+    void largestAsciiFieldBoundSnapshotFitsUtf8Envelope() {
         List<MedalClientSnapshot.MedalDefinitionView> definitions = new ArrayList<>();
         List<MedalClientSnapshot.OwnedMedalView> owned = new ArrayList<>();
         for (int i = 0; i < MedalProtocol.MAX_MEDALS; i++) {
             String suffix = Integer.toString(i);
-            String id = ("m".repeat(MedalProtocol.MAX_ID_LENGTH - suffix.length()) + suffix);
-            String trainer = ("t".repeat(MedalProtocol.MAX_ID_LENGTH - suffix.length()) + suffix);
+            String id = "m".repeat(MedalProtocol.MAX_ID_LENGTH - suffix.length()) + suffix;
+            String trainer = "t".repeat(MedalProtocol.MAX_ID_LENGTH - suffix.length()) + suffix;
             definitions.add(new MedalClientSnapshot.MedalDefinitionView(
                     id,
                     trainer,
@@ -94,8 +95,51 @@ class MedalProtocolTest {
                 owned
         ));
 
-        assertTrue(encoded.length() <= MedalProtocol.MAX_SNAPSHOT_JSON_LENGTH);
+        assertTrue(encoded.getBytes(StandardCharsets.UTF_8).length <= MedalProtocol.MAX_SNAPSHOT_UTF8_BYTES);
         assertEquals(MedalProtocol.MAX_MEDALS,
                 MedalProtocol.decode(MedalProtocol.CURRENT_VERSION, encoded).definitions().size());
+    }
+
+    @Test
+    void accentedTextIsMeasuredInUtf8BytesNotJavaCharacters() {
+        MedalClientSnapshot snapshot = new MedalClientSnapshot(
+                "rassvet",
+                List.of(new MedalClientSnapshot.MedalDefinitionView(
+                        "novato",
+                        "rassvet_leader_novato",
+                        "á".repeat(64),
+                        "á".repeat(512),
+                        "zianrct:textures/gui/medals/novato.png",
+                        "#D49A35",
+                        0,
+                        20
+                )),
+                List.of()
+        );
+
+        String encoded = MedalProtocol.encode(snapshot);
+        assertTrue(MedalProtocol.utf8Length(encoded) > encoded.length());
+        assertTrue(MedalProtocol.utf8Length(encoded) <= MedalProtocol.MAX_SNAPSHOT_UTF8_BYTES);
+    }
+
+    @Test
+    void multibyteSnapshotThatRespectsFieldLengthsCanStillExceedByteBudget() {
+        List<MedalClientSnapshot.MedalDefinitionView> definitions = new ArrayList<>();
+        for (int i = 0; i < MedalProtocol.MAX_MEDALS; i++) {
+            definitions.add(new MedalClientSnapshot.MedalDefinitionView(
+                    "m" + i,
+                    "t" + i,
+                    "界".repeat(MedalProtocol.MAX_NAME_LENGTH),
+                    "界".repeat(MedalProtocol.MAX_DESCRIPTION_LENGTH),
+                    "界".repeat(MedalProtocol.MAX_TEXTURE_LENGTH),
+                    "界".repeat(MedalProtocol.MAX_COLOR_LENGTH),
+                    i,
+                    100
+            ));
+        }
+
+        MedalClientSnapshot snapshot = new MedalClientSnapshot("rassvet", definitions, List.of());
+        IllegalStateException exception = assertThrows(IllegalStateException.class, () -> MedalProtocol.encode(snapshot));
+        assertTrue(exception.getMessage().contains("bytes UTF-8"));
     }
 }

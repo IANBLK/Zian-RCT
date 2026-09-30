@@ -3,6 +3,7 @@ package com.ianblk.zianrct.network;
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
 
+import java.nio.charset.StandardCharsets;
 import java.util.HashSet;
 import java.util.Set;
 
@@ -10,12 +11,12 @@ public final class MedalProtocol {
     public static final int CURRENT_VERSION = 1;
     public static final String NETWORK_VERSION = "1";
 
-    public static final int MAX_SNAPSHOT_JSON_LENGTH = 524_288;
+    public static final int MAX_SNAPSHOT_UTF8_BYTES = 256 * 1024;
     public static final int MAX_PROFILE_LENGTH = 64;
-    public static final int MAX_MEDALS = 128;
+    public static final int MAX_MEDALS = 64;
     public static final int MAX_ID_LENGTH = 128;
     public static final int MAX_NAME_LENGTH = 256;
-    public static final int MAX_DESCRIPTION_LENGTH = 2_048;
+    public static final int MAX_DESCRIPTION_LENGTH = 1_024;
     public static final int MAX_TEXTURE_LENGTH = 256;
     public static final int MAX_COLOR_LENGTH = 16;
     public static final int MAX_ORIGIN_LENGTH = 32;
@@ -28,20 +29,23 @@ public final class MedalProtocol {
     public static String encode(MedalClientSnapshot snapshot) {
         validateSnapshot(snapshot);
         String json = GSON.toJson(snapshot);
-        if (json.length() > MAX_SNAPSHOT_JSON_LENGTH) {
-            throw new IllegalStateException("El snapshot de medallas supera el tamaño máximo permitido");
-        }
+        validateUtf8Budget(json);
         return json;
     }
 
     public static MedalClientSnapshot decode(int protocolVersion, String snapshotJson) {
         validateVersion(protocolVersion);
-        if (snapshotJson == null || snapshotJson.length() > MAX_SNAPSHOT_JSON_LENGTH) {
-            throw new IllegalStateException("El payload de medallas está vacío o excede el tamaño máximo");
+        if (snapshotJson == null) {
+            throw new IllegalStateException("El payload de medallas está vacío");
         }
+        validateUtf8Budget(snapshotJson);
         MedalClientSnapshot snapshot = GSON.fromJson(snapshotJson, MedalClientSnapshot.class);
         validateSnapshot(snapshot);
         return snapshot;
+    }
+
+    public static int utf8Length(String value) {
+        return value == null ? 0 : value.getBytes(StandardCharsets.UTF_8).length;
     }
 
     public static void validateVersion(int protocolVersion) {
@@ -101,6 +105,16 @@ public final class MedalProtocol {
             if (owned.grantedAtEpochMilli() < 0) {
                 throw new IllegalStateException("Fecha de medalla inválida para " + owned.medalId());
             }
+        }
+    }
+
+    private static void validateUtf8Budget(String json) {
+        int bytes = utf8Length(json);
+        if (bytes > MAX_SNAPSHOT_UTF8_BYTES) {
+            throw new IllegalStateException(
+                    "El snapshot de medallas supera el máximo de " + MAX_SNAPSHOT_UTF8_BYTES
+                            + " bytes UTF-8 (actual: " + bytes + ")"
+            );
         }
     }
 

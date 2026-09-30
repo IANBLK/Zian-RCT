@@ -3,18 +3,11 @@ package com.ianblk.zianrct.network;
 import com.ianblk.zianrct.ZianRCT;
 import com.ianblk.zianrct.client.ClientMedalState;
 import com.ianblk.zianrct.config.ConfigState;
-import com.ianblk.zianrct.config.ZianRctConfig;
-import com.ianblk.zianrct.medal.MedalRecord;
 import com.ianblk.zianrct.medal.MedalService;
 import net.minecraft.server.level.ServerPlayer;
 import net.neoforged.neoforge.network.PacketDistributor;
 import net.neoforged.neoforge.network.event.RegisterPayloadHandlersEvent;
 import net.neoforged.neoforge.network.registration.PayloadRegistrar;
-
-import java.util.ArrayList;
-import java.util.Comparator;
-import java.util.List;
-import java.util.Map;
 
 public final class ZianRctNetwork {
     private ZianRctNetwork() {
@@ -64,29 +57,9 @@ public final class ZianRctNetwork {
 
     public static boolean sendSnapshot(ServerPlayer player, MedalService medalService) {
         try {
-            ZianRctConfig config = ConfigState.current();
-            ZianRctConfig.Profile profile = config.activeProfileConfig();
-            Map<String, Integer> unlockCaps = profile.trainerUnlockCaps();
-
-            List<MedalClientSnapshot.MedalDefinitionView> definitions = profile.medals().stream()
-                    .filter(medal -> medal != null)
-                    .sorted(Comparator.comparingInt(ZianRctConfig.MedalDefinition::order))
-                    .map(medal -> new MedalClientSnapshot.MedalDefinitionView(
-                            medal.id(), medal.trainer(), medal.name(), medal.description(),
-                            medal.texture(), medal.color(), medal.order(),
-                            unlockCaps.getOrDefault(medal.trainer(), profile.maxCap())
-                    ))
-                    .toList();
-
-            List<MedalClientSnapshot.OwnedMedalView> owned = new ArrayList<>();
-            for (MedalRecord record : medalService.medals(player)) {
-                owned.add(new MedalClientSnapshot.OwnedMedalView(
-                        record.medalId(), record.grantedAtEpochMilli(), record.origin().name()
-                ));
-            }
-
-            MedalClientSnapshot snapshot = new MedalClientSnapshot(
-                    config.activeProfile(), definitions, owned
+            MedalClientSnapshot snapshot = MedalSnapshotFactory.build(
+                    ConfigState.current(),
+                    medalService.medals(player)
             );
             PacketDistributor.sendToPlayer(player, MedalSyncPayload.fromSnapshot(snapshot));
             return true;

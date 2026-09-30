@@ -160,6 +160,50 @@ jobs:
           wait_for_log "rassvet_leader_novato=0" 120
           echo "Rassvet fixture active: 11 generated resources verified with default relative caps."
 
+          medals_console_response=$(python "$RUNNER_TEMP/rcon.py" medals)
+          echo "RCON /medals from console response: $medals_console_response"
+          if [[ "$medals_console_response" != *"solo puede ejecutarlo un jugador"* ]]; then
+            echo "/medals did not return the expected console-safe message."
+            exit 1
+          fi
+          echo "Console-safe /medals behavior verified."
+
+          config_file="run/config/zianrct.json"
+          cp "$config_file" "$RUNNER_TEMP/zianrct-valid.json"
+          python - <<'PY'
+          import json
+          from pathlib import Path
+          path = Path('run/config/zianrct.json')
+          data = json.loads(path.read_text(encoding='utf-8'))
+          data['activeProfile'] = 'missing_profile_for_ci'
+          path.write_text(json.dumps(data, ensure_ascii=False, indent=2) + '\n', encoding='utf-8')
+          PY
+
+          invalid_reload_response=$(python "$RUNNER_TEMP/rcon.py" "zianrct reload")
+          echo "RCON invalid /zianrct reload response: $invalid_reload_response"
+          if [[ "$invalid_reload_response" != *"No se recargó Zian RCT"* ]]; then
+            echo "Invalid config reload was not rejected clearly."
+            exit 1
+          fi
+
+          verify_before_invalid_followup=$(grep -c "generated progression verified for 10 trainers" server-smoke.log || true)
+          echo "RCON /reload while zianrct.json is invalid: $(python "$RUNNER_TEMP/rcon.py" reload)"
+          preserved=0
+          for _ in $(seq 1 120); do
+            verify_after_invalid_followup=$(grep -c "generated progression verified for 10 trainers" server-smoke.log || true)
+            if [ "$verify_after_invalid_followup" -gt "$verify_before_invalid_followup" ]; then
+              preserved=1
+              break
+            fi
+            sleep 1
+          done
+          if [ "$preserved" -ne 1 ]; then
+            echo "Previous valid ConfigState was not preserved after invalid /zianrct reload."
+            exit 1
+          fi
+          echo "Invalid /zianrct reload preserved the previous active configuration."
+          cp "$RUNNER_TEMP/zianrct-valid.json" "$config_file"
+
           command_verify_before=$(grep -c "generated progression verified for 10 trainers" server-smoke.log || true)
           command_reload_response=$(python "$RUNNER_TEMP/rcon.py" "zianrct reload")
           echo "RCON /zianrct reload response: $command_reload_response"
