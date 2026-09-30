@@ -1,0 +1,47 @@
+{
+  "on_battle_start": [
+    {"literal": "Bienvenido a la Liga Rassvet. Demuestra de qué está hecho tu equipo."}
+  ],
+  "on_battle_won": [
+    {"literal": "Aún te queda camino por recorrer. Regresa cuando estés preparado."}
+  ],
+  "on_battle_lost": [
+    {"literal": "Buen combate. Has superado este desafío de la Liga Rassvet."}
+  ],
+  "trainer_won": [
+    {"literal": "Este combate termina aquí. Entrena y vuelve más fuerte."}
+  ],
+  "trainer_lost": [
+    {"literal": "Ya has demostrado tu victoria ante este entrenador."}
+  ],
+  "low_level_cap": [
+    {"literal": "Todavía no estás preparado para este desafío de la Liga Rassvet."}
+  ],
+  "missing_pokemon": [
+    {"literal": "Necesitas Pokémon capaces de combatir antes de aceptar este desafío."}
+  ],
+  "missing_required_trainer": [
+    {"literal": "Antes debes superar el desafío anterior de la Liga Rassvet."}
+  ],
+  "missing_required_trainer_rassvet_gym": [
+    {"literal": "Antes debes superar al líder anterior de la Liga Rassvet."}
+  ],
+  "wrong_series": [
+    {"literal": "Este desafío pertenece a la Liga Rassvet."}
+  ],
+  "on_cooldown": [
+    {"literal": "Dale un momento a nuestros equipos antes de volver a combatir."}
+  ],
+  "over_level_cap": [
+    {"literal": "Tu equipo supera el límite permitido para este desafío."}
+  ],
+  "player_busy": [
+    {"literal": "Termina lo que estás haciendo antes de retarme."}
+  ],
+  "trainer_busy": [
+    {"literal": "Estoy ocupado en otro combate. Espera un momento."}
+  ],
+  "unknown_reason": [
+    {"literal": "No podemos iniciar el combate en este momento."}
+  ]
+}
