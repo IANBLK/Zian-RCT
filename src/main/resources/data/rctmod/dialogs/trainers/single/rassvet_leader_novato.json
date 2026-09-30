@@ -1,1 +1,33 @@
-{"on_battle_start":[{"literal":"¡Bienvenido a tu primer combate en Rassvet!"},{"literal":"No te preocupes, empezamos suave."},{"literal":"¿Listo para tu primera batalla oficial?"}],"on_battle_won":[{"literal":"Todos empezamos por algún lado."},{"literal":"Sigue entrenando, ya llegarás lejos."},{"literal":"Vuelve cuando tu equipo esté más fuerte."}],"trainer_won":[{"literal":"Todos empezamos por algún lado."},{"literal":"Sigue entrenando, ya llegarás lejos."}],"on_battle_lost":[{"literal":"¡Ya superaste el primer paso!"},{"literal":"Bien hecho. Has dado el primer paso."},{"literal":"Ese es un gran comienzo."}],"trainer_lost":[{"literal":"¡Ya superaste el primer paso!"},{"literal":"Bien hecho. Has dado el primer paso."}],"low_level_cap":[{"literal":"Tus Pokémon todavía no alcanzan el nivel necesario para retarme."}],"missing_pokemon":[{"literal":"No tienes suficientes Pokémon en tu equipo para este combate."}],"missing_required_trainer":[],"missing_required_trainer_rassvet_gym":[],"missing_required_trainer_champ":[],"missing_required_trainer_e4":[],"missing_required_trainer_leader":[],"missing_required_trainer_light_of_ruin":[],"missing_required_trainer_rival":[],"missing_required_trainer_team_galactic":[],"missing_required_trainer_team_rocket":[],"missing_required_trainer_team_shadow":[],"wrong_series":[{"literal":"Esta no es tu liga. Vuelve cuando estés en la Liga Rassvet."}],"on_cooldown":[{"literal":"Necesitas descansar antes de retarme de nuevo."}],"over_level_cap":[{"literal":"Tus Pokémon superan el límite de nivel permitido para este combate."}],"player_busy":[{"literal":"Termina lo que estás haciendo antes de retarme."}],"trainer_busy":[{"literal":"Estoy ocupado en este momento, vuelve más tarde."}],"unknown_reason":[{"literal":"No podemos combatir en este momento."}]}
+{
+  "battle_start": [
+    "¡Bienvenido a tu primer combate en Rassvet!",
+    "No te preocupes, empezamos suave.",
+    "¿Listo para tu primera batalla oficial?"
+  ],
+  "on_battle_start": [
+    "¡Bienvenido a tu primer combate en Rassvet!",
+    "No te preocupes, empezamos suave.",
+    "¿Listo para tu primera batalla oficial?"
+  ],
+  "battle_won": ["Todos empezamos por algún lado.", "Sigue entrenando, ya llegarás lejos."],
+  "on_battle_won": ["Todos empezamos por algún lado.", "Sigue entrenando, ya llegarás lejos."],
+  "trainer_won": ["Todos empezamos por algún lado.", "Sigue entrenando, ya llegarás lejos."],
+  "battle_lost": ["¡Ya superaste el primer paso!", "Bien hecho. Has dado el primer paso."],
+  "on_battle_lost": ["¡Ya superaste el primer paso!", "Bien hecho. Has dado el primer paso."],
+  "trainer_lost": ["¡Ya superaste el primer paso!", "Bien hecho. Has dado el primer paso."],
+  "low_level_cap": ["Tus Pokémon todavía no alcanzan el nivel necesario para este combate."],
+  "missing_pokemon": ["No tienes Pokémon disponibles para este combate."],
+  "wrong_series": ["Este desafío pertenece a la Liga Rassvet."],
+  "on_cooldown": ["Necesitamos un momento antes de volver a combatir."],
+  "over_level_cap": ["Tu equipo supera el límite de nivel permitido para este combate."],
+  "player_busy": ["Termina tu combate actual antes de retarme."],
+  "trainer_busy": ["Estoy ocupado en otro combate. Espera un momento."],
+  "is_busy": ["Estoy ocupado en otro combate. Espera un momento."],
+  "unknown_reason": ["No podemos iniciar el combate en este momento."],
+  "done_generic": ["No podemos combatir en este momento."],
+  "done_looser": ["Ya me has derrotado en este encuentro."],
+  "done_winner": ["Ya hemos terminado este encuentro."],
+  "missing_required_trainer": ["Antes debes superar el desafío anterior de la Liga Rassvet."],
+  "missing_required_trainer_rassvet_gym": ["Antes debes superar al líder anterior de la Liga Rassvet."],
+  "missing_beaten_trainer": ["Antes debes superar al líder anterior de la Liga Rassvet."]
+}

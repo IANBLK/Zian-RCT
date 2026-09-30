@@ -52,12 +52,18 @@ class RassvetEmbeddedResourcesTest {
             }
 
             assertFalse(team.getAsJsonArray("team").isEmpty(), id);
+            assertTrue(dialog.has("battle_start"), id);
             assertTrue(dialog.has("on_battle_start"), id);
             assertTrue(dialog.has("on_battle_lost"), id);
             assertTrue(dialog.has("trainer_lost"), id);
+            assertTrue(dialog.has("missing_beaten_trainer"), id);
+            assertDialogIsStringArrays(dialog, id);
             assertFalse(containsNumericUnlockText(dialog.getAsJsonArray("on_battle_lost")), id);
             assertFalse(containsNumericUnlockText(dialog.getAsJsonArray("trainer_lost")), id);
         }
+
+        JsonObject groupDialog = parse(ROOT.resolve("dialogs/trainers/groups/rassvet.json"));
+        assertDialogIsStringArrays(groupDialog, "rassvet group");
     }
 
     private static JsonObject parse(Path path) throws IOException {
@@ -65,10 +71,20 @@ class RassvetEmbeddedResourcesTest {
         return JsonParser.parseString(Files.readString(path)).getAsJsonObject();
     }
 
+    private static void assertDialogIsStringArrays(JsonObject dialog, String id) {
+        dialog.entrySet().forEach(entry -> {
+            assertTrue(entry.getValue().isJsonArray(), id + ": " + entry.getKey());
+            entry.getValue().getAsJsonArray().forEach(line ->
+                    assertTrue(line.isJsonPrimitive() && line.getAsJsonPrimitive().isString(),
+                            id + ": " + entry.getKey() + " must contain plain strings for RCT")
+            );
+        });
+    }
+
     private static boolean containsNumericUnlockText(JsonArray lines) {
         return lines.asList().stream()
-                .filter(element -> element.isJsonObject() && element.getAsJsonObject().has("literal"))
-                .map(element -> element.getAsJsonObject().get("literal").getAsString())
+                .filter(element -> element.isJsonPrimitive() && element.getAsJsonPrimitive().isString())
+                .map(element -> element.getAsString())
                 .anyMatch(text -> text.matches(".*(?i:nivel)\\s+\\d+.*"));
     }
 }
