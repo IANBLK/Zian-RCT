@@ -27,8 +27,32 @@ public final class MedalCaseScreen extends Screen {
     }
 
     @Override
+    public void renderBackground(GuiGraphics graphics, int mouseX, int mouseY, float partialTick) {
+        graphics.fill(0, 0, width, height, 0x90000000);
+
+        int panelWidth = Math.max(0, Math.min(410, width - 24));
+        int panelHeight = Math.max(0, height - 16);
+        int panelX = (width - panelWidth) / 2;
+        int panelY = 8;
+
+        if (panelWidth > 0 && panelHeight > 0) {
+            int panelRight = panelX + panelWidth;
+            int panelBottom = panelY + panelHeight;
+            graphics.fill(panelX, panelY, panelRight, panelBottom, 0xE0181818);
+            graphics.fill(panelX, panelY, panelRight, panelY + 1, 0xFF555555);
+            graphics.fill(panelX, panelBottom - 1, panelRight, panelBottom, 0xFF333333);
+            graphics.fill(panelX, panelY, panelX + 1, panelBottom, 0xFF555555);
+            graphics.fill(panelRight - 1, panelY, panelRight, panelBottom, 0xFF333333);
+        }
+    }
+
+    @Override
     public void render(GuiGraphics graphics, int mouseX, int mouseY, float partialTick) {
-        renderBackground(graphics, mouseX, mouseY, partialTick);
+        // Screen#render invokes renderBackground. Our override above intentionally
+        // replaces vanilla's blurred background, so render the base screen first
+        // and then place all medal content above it.
+        super.render(graphics, mouseX, mouseY, partialTick);
+
         graphics.drawCenteredString(font, title, width / 2, 18, 0xFFFFFF);
 
         Optional<MedalClientSnapshot> optionalSnapshot = ClientMedalState.current();
@@ -40,7 +64,6 @@ public final class MedalCaseScreen extends Screen {
                     height / 2,
                     0xA0A0A0
             );
-            super.render(graphics, mouseX, mouseY, partialTick);
             return;
         }
 
@@ -86,8 +109,6 @@ public final class MedalCaseScreen extends Screen {
         if (hovered != null) {
             graphics.renderTooltip(font, tooltipFor(hovered, hoveredOwned), Optional.empty(), mouseX, mouseY);
         }
-
-        super.render(graphics, mouseX, mouseY, partialTick);
     }
 
     private void drawCard(
