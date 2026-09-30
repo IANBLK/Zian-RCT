@@ -50,44 +50,56 @@ public final class ZianRctNetwork {
         );
     }
 
-    public static void sendSnapshot(ServerPlayer player, MedalService medalService) {
-        ZianRctConfig config = ConfigState.current();
-        ZianRctConfig.Profile profile = config.activeProfileConfig();
-        Map<String, Integer> unlockCaps = profile.trainerUnlockCaps();
+    public static boolean sendSnapshot(ServerPlayer player, MedalService medalService) {
+        try {
+            ZianRctConfig config = ConfigState.current();
+            ZianRctConfig.Profile profile = config.activeProfileConfig();
+            Map<String, Integer> unlockCaps = profile.trainerUnlockCaps();
 
-        List<MedalClientSnapshot.MedalDefinitionView> definitions = profile.medals().stream()
-                .filter(medal -> medal != null)
-                .sorted(Comparator.comparingInt(ZianRctConfig.MedalDefinition::order))
-                .map(medal -> new MedalClientSnapshot.MedalDefinitionView(
-                        medal.id(),
-                        medal.trainer(),
-                        medal.name(),
-                        medal.description(),
-                        medal.texture(),
-                        medal.color(),
-                        medal.order(),
-                        unlockCaps.getOrDefault(medal.trainer(), profile.maxCap())
-                ))
-                .toList();
+            List<MedalClientSnapshot.MedalDefinitionView> definitions = profile.medals().stream()
+                    .filter(medal -> medal != null)
+                    .sorted(Comparator.comparingInt(ZianRctConfig.MedalDefinition::order))
+                    .map(medal -> new MedalClientSnapshot.MedalDefinitionView(
+                            medal.id(), medal.trainer(), medal.name(), medal.description(),
+                            medal.texture(), medal.color(), medal.order(),
+                            unlockCaps.getOrDefault(medal.trainer(), profile.maxCap())
+                    ))
+                    .toList();
 
-        List<MedalClientSnapshot.OwnedMedalView> owned = new ArrayList<>();
-        for (MedalRecord record : medalService.medals(player)) {
-            owned.add(new MedalClientSnapshot.OwnedMedalView(
-                    record.medalId(),
-                    record.grantedAtEpochMilli(),
-                    record.origin().name()
-            ));
+            List<MedalClientSnapshot.OwnedMedalView> owned = new ArrayList<>();
+            for (MedalRecord record : medalService.medals(player)) {
+                owned.add(new MedalClientSnapshot.OwnedMedalView(
+                        record.medalId(), record.grantedAtEpochMilli(), record.origin().name()
+                ));
+            }
+
+            MedalClientSnapshot snapshot = new MedalClientSnapshot(
+                    config.activeProfile(), definitions, owned
+            );
+            PacketDistributor.sendToPlayer(player, MedalSyncPayload.fromSnapshot(snapshot));
+            return true;
+        } catch (RuntimeException exception) {
+            ZianRCT.LOGGER.error(
+                    "Could not send Zian RCT medal snapshot to {}. The player session remains active.",
+                    player.getGameProfile().getName(),
+                    exception
+            );
+            return false;
         }
-
-        MedalClientSnapshot snapshot = new MedalClientSnapshot(
-                config.activeProfile(),
-                definitions,
-                owned
-        );
-        PacketDistributor.sendToPlayer(player, MedalSyncPayload.fromSnapshot(snapshot));
     }
 
-    public static void sendAward(ServerPlayer player, String medalId) {
-        PacketDistributor.sendToPlayer(player, MedalAwardPayload.of(medalId));
+    public static boolean sendAward(ServerPlayer player, String medalId) {
+        try {
+            PacketDistributor.sendToPlayer(player, MedalAwardPayload.of(medalId));
+            return true;
+        } catch (RuntimeException exception) {
+            ZianRCT.LOGGER.error(
+                    "Could not send Zian RCT medal award '{}' to {}. The battle result remains committed.",
+                    medalId,
+                    player.getGameProfile().getName(),
+                    exception
+            );
+            return false;
+        }
     }
 }

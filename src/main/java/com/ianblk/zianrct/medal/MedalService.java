@@ -157,6 +157,11 @@ public final class MedalService {
     public void reconcile(ServerPlayer player) {
         MedalStore active = store;
         if (active == null) {
+            ZianRCT.LOGGER.warn(
+                    "Skipping medal reconciliation for {} because the medal store is unavailable; sending an empty authoritative ownership snapshot.",
+                    player.getGameProfile().getName()
+            );
+            ZianRctNetwork.sendSnapshot(player, this);
             return;
         }
 
@@ -194,8 +199,6 @@ public final class MedalService {
             }
         }
 
-        // Login reconciliation is intentionally silent. The authoritative snapshot is sent once,
-        // after all historical grants have been considered, and never carries toast semantics.
         ZianRctNetwork.sendSnapshot(player, this);
     }
 

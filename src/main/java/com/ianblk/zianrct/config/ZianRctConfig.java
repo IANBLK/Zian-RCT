@@ -1,7 +1,11 @@
 package com.ianblk.zianrct.config;
 
+import com.ianblk.zianrct.network.MedalClientSnapshot;
+import com.ianblk.zianrct.network.MedalProtocol;
+
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.Comparator;
 import java.util.LinkedHashMap;
 import java.util.LinkedHashSet;
 import java.util.List;
@@ -77,6 +81,8 @@ public record ZianRctConfig(
         }
         if (isBlank(activeProfile)) {
             errors.add("activeProfile no puede estar vacío");
+        } else if (activeProfile.length() > MedalProtocol.MAX_PROFILE_LENGTH) {
+            errors.add("activeProfile supera el máximo de " + MedalProtocol.MAX_PROFILE_LENGTH + " caracteres");
         }
         if (profiles.isEmpty()) {
             errors.add("profiles debe contener al menos un perfil");
@@ -89,6 +95,8 @@ public record ZianRctConfig(
             Profile profile = entry.getValue();
             if (isBlank(profileName)) {
                 errors.add("profiles contiene un nombre de perfil vacío");
+            } else if (profileName.length() > MedalProtocol.MAX_PROFILE_LENGTH) {
+                errors.add("profiles." + profileName + " supera el máximo de " + MedalProtocol.MAX_PROFILE_LENGTH + " caracteres");
             } else if (profile == null) {
                 errors.add("profiles." + profileName + " no puede ser null");
             } else {
@@ -101,6 +109,10 @@ public record ZianRctConfig(
         } else {
             messages.validate("messages", errors);
         }
+
+        if (errors.isEmpty()) {
+            validateSnapshotBudget(errors);
+        }
         return Collections.unmodifiableList(new ArrayList<>(errors));
     }
 
@@ -111,22 +123,36 @@ public record ZianRctConfig(
         }
     }
 
+    private void validateSnapshotBudget(List<String> errors) {
+        Profile profile = activeProfileConfig();
+        if (profile == null) {
+            return;
+        }
+        Map<String, Integer> unlockCaps = profile.trainerUnlockCaps();
+        List<MedalClientSnapshot.MedalDefinitionView> definitions = profile.medals().stream()
+                .sorted(Comparator.comparingInt(MedalDefinition::order))
+                .map(medal -> new MedalClientSnapshot.MedalDefinitionView(
+                        medal.id(), medal.trainer(), medal.name(), medal.description(),
+                        medal.texture(), medal.color(), medal.order(),
+                        unlockCaps.getOrDefault(medal.trainer(), profile.maxCap())
+                ))
+                .toList();
+        try {
+            MedalProtocol.encode(new MedalClientSnapshot(activeProfile, definitions, List.of()));
+        } catch (RuntimeException exception) {
+            errors.add("El snapshot de red del perfil activo es inválido: " + exception.getMessage());
+        }
+    }
+
     private static void validateProfile(String name, Profile profile, List<String> errors) {
         String prefix = "profiles." + name;
-        if (profile.initialCap <= 0 || profile.initialCap > 100) {
-            errors.add(prefix + ".initialCap debe estar entre 1 y 100");
-        }
-        if (profile.step <= 0) {
-            errors.add(prefix + ".step debe ser mayor que 0");
-        }
-        if (profile.maxCap < profile.initialCap || profile.maxCap > 100) {
-            errors.add(prefix + ".maxCap debe estar entre initialCap y 100");
-        }
-        if (isBlank(profile.series)) {
-            errors.add(prefix + ".series no puede estar vacío");
-        }
-        if (profile.chain.isEmpty()) {
-            errors.add(prefix + ".chain debe contener al menos un entrenador");
+        if (profile.initialCap <= 0 || profile.initialCap > 100) errors.add(prefix + ".initialCap debe estar entre 1 y 100");
+        if (profile.step <= 0) errors.add(prefix + ".step debe ser mayor que 0");
+        if (profile.maxCap < profile.initialCap || profile.maxCap > 100) errors.add(prefix + ".maxCap debe estar entre initialCap y 100");
+        if (isBlank(profile.series)) errors.add(prefix + ".series no puede estar vacío");
+        if (profile.chain.isEmpty()) errors.add(prefix + ".chain debe contener al menos un entrenador");
+        if (profile.medals.size() > MedalProtocol.MAX_MEDALS) {
+            errors.add(prefix + ".medals supera el máximo de " + MedalProtocol.MAX_MEDALS + " elementos");
         }
 
         Set<String> trainers = new LinkedHashSet<>();
@@ -134,27 +160,15 @@ public record ZianRctConfig(
         for (int index = 0; index < profile.chain.size(); index++) {
             ChainEntry link = profile.chain.get(index);
             String path = prefix + ".chain[" + index + "]";
-            if (link == null) {
-                errors.add(path + " no puede ser null");
-                continue;
-            }
-            if (isBlank(link.trainer)) {
-                errors.add(path + ".trainer no puede estar vacío");
-                continue;
-            }
-            if (!isSafeId(link.trainer)) {
-                errors.add(path + ".trainer contiene caracteres inválidos: " + link.trainer);
-            }
-            if (!trainers.add(link.trainer)) {
-                errors.add(path + ".trainer está duplicado: " + link.trainer);
-            }
+            if (link == null) { errors.add(path + " no puede ser null"); continue; }
+            if (isBlank(link.trainer)) { errors.add(path + ".trainer no puede estar vacío"); continue; }
+            if (!isSafeId(link.trainer)) errors.add(path + ".trainer contiene caracteres inválidos: " + link.trainer);
+            if (link.trainer.length() > MedalProtocol.MAX_ID_LENGTH) errors.add(path + ".trainer supera el máximo de " + MedalProtocol.MAX_ID_LENGTH + " caracteres");
+            if (!trainers.add(link.trainer)) errors.add(path + ".trainer está duplicado: " + link.trainer);
             int unlockCap = profile.unlockCap(index);
-            if (unlockCap < profile.initialCap || unlockCap > profile.maxCap) {
-                errors.add(path + ".unlockCap efectivo debe estar entre initialCap y maxCap");
-            }
-            if (unlockCap < previousCap) {
-                errors.add(path + ".unlockCap efectivo no puede disminuir respecto al paso anterior");
-            }
+            if (unlockCap < profile.initialCap || unlockCap > profile.maxCap) errors.add(path + ".unlockCap efectivo debe estar entre initialCap y maxCap");
+            if (unlockCap > 10_000) errors.add(path + ".unlockCap efectivo supera 10000");
+            if (unlockCap < previousCap) errors.add(path + ".unlockCap efectivo no puede disminuir respecto al paso anterior");
             previousCap = unlockCap;
         }
 
@@ -164,69 +178,52 @@ public record ZianRctConfig(
         for (int index = 0; index < profile.medals.size(); index++) {
             MedalDefinition medal = profile.medals.get(index);
             String path = prefix + ".medals[" + index + "]";
-            if (medal == null) {
-                errors.add(path + " no puede ser null");
-                continue;
-            }
-            if (isBlank(medal.id)) {
-                errors.add(path + ".id no puede estar vacío");
-            } else {
+            if (medal == null) { errors.add(path + " no puede ser null"); continue; }
+            validateBounded(path + ".id", medal.id, MedalProtocol.MAX_ID_LENGTH, false, errors);
+            if (!isBlank(medal.id)) {
                 if (!isSafeId(medal.id)) errors.add(path + ".id contiene caracteres inválidos: " + medal.id);
                 if (!medalIds.add(medal.id)) errors.add(path + ".id está duplicado: " + medal.id);
             }
-            if (isBlank(medal.trainer)) {
-                errors.add(path + ".trainer no puede estar vacío");
-            } else {
+            validateBounded(path + ".trainer", medal.trainer, MedalProtocol.MAX_ID_LENGTH, false, errors);
+            if (!isBlank(medal.trainer)) {
                 if (!isSafeId(medal.trainer)) errors.add(path + ".trainer contiene caracteres inválidos: " + medal.trainer);
                 if (!trainers.contains(medal.trainer)) errors.add(path + ".trainer no pertenece a chain: " + medal.trainer);
                 if (!medalTrainers.add(medal.trainer)) errors.add(path + ".trainer ya tiene otra medalla: " + medal.trainer);
             }
-            if (isBlank(medal.name)) errors.add(path + ".name no puede estar vacío");
-            if (isBlank(medal.description)) errors.add(path + ".description no puede estar vacío");
+            validateBounded(path + ".name", medal.name, MedalProtocol.MAX_NAME_LENGTH, false, errors);
+            validateBounded(path + ".description", medal.description, MedalProtocol.MAX_DESCRIPTION_LENGTH, false, errors);
+            validateBounded(path + ".texture", medal.texture, MedalProtocol.MAX_TEXTURE_LENGTH, true, errors);
+            validateBounded(path + ".color", medal.color, MedalProtocol.MAX_COLOR_LENGTH, true, errors);
             if (medal.order < 0) errors.add(path + ".order no puede ser negativo");
             else if (!medalOrders.add(medal.order)) errors.add(path + ".order está duplicado: " + medal.order);
-            if (medal.color != null && medal.color.isBlank()) {
-                errors.add(path + ".color debe omitirse/null o contener un valor");
-            }
         }
+    }
+
+    private static void validateBounded(String path, String value, int maxLength, boolean allowNullOrEmpty, List<String> errors) {
+        if (value == null || value.isBlank()) {
+            if (!allowNullOrEmpty) errors.add(path + " no puede estar vacío");
+            return;
+        }
+        if (value.length() > maxLength) errors.add(path + " supera el máximo de " + maxLength + " caracteres");
     }
 
     private static void validatePlaceholders(String path, String text, Set<String> allowed, List<String> errors) {
-        if (isBlank(text)) {
-            errors.add(path + " no puede estar vacío");
-            return;
-        }
+        if (isBlank(text)) { errors.add(path + " no puede estar vacío"); return; }
         Matcher matcher = PLACEHOLDER.matcher(text);
         while (matcher.find()) {
             String placeholder = matcher.group(1);
-            if (!allowed.contains(placeholder)) {
-                errors.add(path + " usa un marcador no permitido: {" + placeholder + "}");
-            }
+            if (!allowed.contains(placeholder)) errors.add(path + " usa un marcador no permitido: {" + placeholder + "}");
         }
     }
 
-    private static boolean isSafeId(String value) {
-        return value != null && SAFE_ID.matcher(value).matches();
-    }
+    private static boolean isSafeId(String value) { return value != null && SAFE_ID.matcher(value).matches(); }
+    private static boolean isBlank(String value) { return value == null || value.isBlank(); }
 
-    private static boolean isBlank(String value) {
-        return value == null || value.isBlank();
-    }
-
-    public record Profile(
-            int initialCap,
-            int step,
-            int maxCap,
-            String series,
-            List<ChainEntry> chain,
-            List<MedalDefinition> medals,
-            boolean giveMedalItem
-    ) {
+    public record Profile(int initialCap, int step, int maxCap, String series, List<ChainEntry> chain, List<MedalDefinition> medals, boolean giveMedalItem) {
         public Profile {
             chain = chain == null ? Collections.emptyList() : Collections.unmodifiableList(new ArrayList<>(chain));
             medals = medals == null ? Collections.emptyList() : Collections.unmodifiableList(new ArrayList<>(medals));
         }
-
         public int unlockCap(int chainIndex) {
             ChainEntry entry = chain.get(chainIndex);
             if (entry == null) throw new IllegalStateException("chain[" + chainIndex + "] es null");
@@ -234,7 +231,6 @@ public record ZianRctConfig(
             long computed = (long) initialCap + (long) step * (chainIndex + 1);
             return (int) Math.min(maxCap, computed);
         }
-
         public Map<String, Integer> trainerUnlockCaps() {
             LinkedHashMap<String, Integer> result = new LinkedHashMap<>();
             for (int index = 0; index < chain.size(); index++) {
@@ -245,26 +241,10 @@ public record ZianRctConfig(
         }
     }
 
-    public record ChainEntry(String trainer, Integer unlockCap) {
-    }
+    public record ChainEntry(String trainer, Integer unlockCap) {}
+    public record MedalDefinition(String id, String trainer, String name, String description, String texture, String color, int order) {}
 
-    public record MedalDefinition(
-            String id,
-            String trainer,
-            String name,
-            String description,
-            String texture,
-            String color,
-            int order
-    ) {
-    }
-
-    public record Messages(
-            String capUnlocked,
-            String medalObtained,
-            String reloadSuccess,
-            String currentCap
-    ) {
+    public record Messages(String capUnlocked, String medalObtained, String reloadSuccess, String currentCap) {
         public static Messages defaults() {
             return new Messages(
                     "Has desbloqueado el nivel {cap}.",
@@ -273,7 +253,6 @@ public record ZianRctConfig(
                     "Tu tope de nivel actual es {cap}."
             );
         }
-
         private void validate(String prefix, List<String> errors) {
             Objects.requireNonNull(errors, "errors");
             validatePlaceholders(prefix + ".capUnlocked", capUnlocked, Set.of("cap"), errors);

@@ -10,7 +10,7 @@ public final class MedalProtocol {
     public static final int CURRENT_VERSION = 1;
     public static final String NETWORK_VERSION = "1";
 
-    public static final int MAX_SNAPSHOT_JSON_LENGTH = 131_072;
+    public static final int MAX_SNAPSHOT_JSON_LENGTH = 524_288;
     public static final int MAX_PROFILE_LENGTH = 64;
     public static final int MAX_MEDALS = 128;
     public static final int MAX_ID_LENGTH = 128;
@@ -105,7 +105,13 @@ public final class MedalProtocol {
     }
 
     private static void requireString(String field, String value, int maxLength, boolean allowEmpty) {
-        if (value == null || (!allowEmpty && value.isBlank())) {
+        if (value == null) {
+            if (allowEmpty) {
+                return;
+            }
+            throw new IllegalStateException(field + " no puede estar vacío");
+        }
+        if (!allowEmpty && value.isBlank()) {
             throw new IllegalStateException(field + " no puede estar vacío");
         }
         if (value.length() > maxLength) {

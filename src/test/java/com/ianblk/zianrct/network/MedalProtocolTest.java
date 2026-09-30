@@ -7,6 +7,7 @@ import java.util.List;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 class MedalProtocolTest {
     @Test
@@ -60,5 +61,41 @@ class MedalProtocolTest {
         }
         MedalClientSnapshot badList = new MedalClientSnapshot("rassvet", tooMany, List.of());
         assertThrows(IllegalStateException.class, () -> MedalProtocol.encode(badList));
+    }
+
+    @Test
+    void largestFieldBoundSnapshotFitsEnvelope() {
+        List<MedalClientSnapshot.MedalDefinitionView> definitions = new ArrayList<>();
+        List<MedalClientSnapshot.OwnedMedalView> owned = new ArrayList<>();
+        for (int i = 0; i < MedalProtocol.MAX_MEDALS; i++) {
+            String suffix = Integer.toString(i);
+            String id = ("m".repeat(MedalProtocol.MAX_ID_LENGTH - suffix.length()) + suffix);
+            String trainer = ("t".repeat(MedalProtocol.MAX_ID_LENGTH - suffix.length()) + suffix);
+            definitions.add(new MedalClientSnapshot.MedalDefinitionView(
+                    id,
+                    trainer,
+                    "n".repeat(MedalProtocol.MAX_NAME_LENGTH),
+                    "d".repeat(MedalProtocol.MAX_DESCRIPTION_LENGTH),
+                    "x".repeat(MedalProtocol.MAX_TEXTURE_LENGTH),
+                    "#" + "a".repeat(MedalProtocol.MAX_COLOR_LENGTH - 1),
+                    i,
+                    10_000
+            ));
+            owned.add(new MedalClientSnapshot.OwnedMedalView(
+                    id,
+                    1L + i,
+                    "o".repeat(MedalProtocol.MAX_ORIGIN_LENGTH)
+            ));
+        }
+
+        String encoded = MedalProtocol.encode(new MedalClientSnapshot(
+                "p".repeat(MedalProtocol.MAX_PROFILE_LENGTH),
+                definitions,
+                owned
+        ));
+
+        assertTrue(encoded.length() <= MedalProtocol.MAX_SNAPSHOT_JSON_LENGTH);
+        assertEquals(MedalProtocol.MAX_MEDALS,
+                MedalProtocol.decode(MedalProtocol.CURRENT_VERSION, encoded).definitions().size());
     }
 }
