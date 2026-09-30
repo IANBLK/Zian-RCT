@@ -35,20 +35,27 @@ public final class ZianRctClient {
         Minecraft minecraft = Minecraft.getInstance();
 
         while (OPEN_MEDALS_KEY.consumeClick()) {
-            if (ClientMedalState.current().isPresent()) {
-                minecraft.setScreen(new MedalCaseScreen());
-            } else {
-                SystemToast.add(
-                        minecraft.getToasts(),
-                        SystemToast.SystemToastId.PERIODIC_NOTIFICATION,
-                        Component.literal("Zian RCT"),
-                        Component.literal("Aún no se han sincronizado las medallas del servidor.")
-                );
-            }
+            openMedalCase(minecraft);
+        }
+        if (ClientMedalState.consumeOpenRequest()) {
+            openMedalCase(minecraft);
         }
 
         for (String medalId : ClientMedalState.drainAwards()) {
             ClientMedalState.current().ifPresent(snapshot -> showMedalNotification(minecraft, snapshot, medalId));
+        }
+    }
+
+    private static void openMedalCase(Minecraft minecraft) {
+        if (ClientMedalState.current().isPresent()) {
+            minecraft.setScreen(new MedalCaseScreen());
+        } else {
+            SystemToast.add(
+                    minecraft.getToasts(),
+                    SystemToast.SystemToastId.PERIODIC_NOTIFICATION,
+                    Component.literal("Zian RCT"),
+                    Component.literal("Aún no se han sincronizado las medallas del servidor.")
+            );
         }
     }
 

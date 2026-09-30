@@ -44,6 +44,18 @@ public final class ZianRctNetwork {
                     }
                 })
         );
+        registrar.playToClient(
+                MedalOpenPayload.TYPE,
+                MedalOpenPayload.STREAM_CODEC,
+                (payload, context) -> context.enqueueWork(() -> {
+                    try {
+                        MedalProtocol.validateVersion(payload.protocolVersion());
+                        ClientMedalState.requestOpen();
+                    } catch (RuntimeException exception) {
+                        ZianRCT.LOGGER.error("Rejected invalid Zian RCT medal open payload.", exception);
+                    }
+                })
+        );
         ZianRCT.LOGGER.info(
                 "Registered required Zian RCT medal payload protocol v{}.",
                 MedalProtocol.CURRENT_VERSION
@@ -96,6 +108,20 @@ public final class ZianRctNetwork {
             ZianRCT.LOGGER.error(
                     "Could not send Zian RCT medal award '{}' to {}. The battle result remains committed.",
                     medalId,
+                    player.getGameProfile().getName(),
+                    exception
+            );
+            return false;
+        }
+    }
+
+    public static boolean sendOpen(ServerPlayer player) {
+        try {
+            PacketDistributor.sendToPlayer(player, MedalOpenPayload.current());
+            return true;
+        } catch (RuntimeException exception) {
+            ZianRCT.LOGGER.error(
+                    "Could not open Zian RCT medal case for {}.",
                     player.getGameProfile().getName(),
                     exception
             );

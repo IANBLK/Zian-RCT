@@ -22,6 +22,13 @@ jobs:
       - name: Build and unit tests
         run: gradle --no-daemon clean build
 
+      - name: Upload mod jar
+        uses: actions/upload-artifact@v5
+        with:
+          name: zianrct-${{ github.sha }}
+          path: build/libs/zianrct-*.jar
+          if-no-files-found: error
+
       - name: Prepare dedicated server with Rassvet fixture
         shell: bash
         run: |
@@ -143,6 +150,8 @@ jobs:
 
           wait_for_log "Done (" 180
           echo "Dedicated server reached ready state."
+          wait_for_log "Registered required Zian RCT medal payload protocol v1." 120
+          echo "Phase 5 required payload protocol registered."
           wait_for_log "Zian RCT medal store ready" 120
           wait_for_log "Registered Zian RCT BATTLE_ENDED listener on RCTApi instance 'rctmod'" 120
           echo "Phase 4 medal runtime initialized with persistent store and RCT BATTLE_ENDED hook."
@@ -150,6 +159,28 @@ jobs:
           wait_for_log "generated progression verified for 10 trainers" 120
           wait_for_log "rassvet_leader_novato=0" 120
           echo "Rassvet fixture active: 11 generated resources verified with default relative caps."
+
+          command_verify_before=$(grep -c "generated progression verified for 10 trainers" server-smoke.log || true)
+          command_reload_response=$(python "$RUNNER_TEMP/rcon.py" "zianrct reload")
+          echo "RCON /zianrct reload response: $command_reload_response"
+          if [ -z "$command_reload_response" ] || [[ "$command_reload_response" == *"Unknown or incomplete command"* ]]; then
+            echo "Zian RCT reload command was not registered or returned no response."
+            exit 1
+          fi
+          command_verified=0
+          for _ in $(seq 1 120); do
+            command_verify_after=$(grep -c "generated progression verified for 10 trainers" server-smoke.log || true)
+            if [ "$command_verify_after" -gt "$command_verify_before" ]; then
+              command_verified=1
+              break
+            fi
+            sleep 1
+          done
+          if [ "$command_verified" -ne 1 ]; then
+            echo "/zianrct reload did not trigger progression verification."
+            exit 1
+          fi
+          echo "Phase 6 /zianrct reload command completed and re-verified progression."
 
           recipe_before=$(grep -cE "RecipeManager.*Loaded [0-9]+ recipes" server-smoke.log || true)
           verify_before=$(grep -c "generated progression verified for 10 trainers" server-smoke.log || true)

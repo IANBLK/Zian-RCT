@@ -1,6 +1,7 @@
 package com.ianblk.zianrct.medal;
 
 import com.ianblk.zianrct.command.ZianRctCommands;
+import com.ianblk.zianrct.rct.RctPackController;
 import net.minecraft.server.level.ServerPlayer;
 import net.neoforged.neoforge.common.NeoForge;
 import net.neoforged.neoforge.event.RegisterCommandsEvent;
@@ -11,8 +12,10 @@ import net.neoforged.neoforge.event.server.ServerStoppedEvent;
 public final class MedalRuntime {
     private final MedalService medalService = new MedalService();
     private final RctBattleMedalListener battleListener = new RctBattleMedalListener(medalService);
+    private final RctPackController packController;
 
-    public MedalRuntime() {
+    public MedalRuntime(RctPackController packController) {
+        this.packController = packController;
         NeoForge.EVENT_BUS.addListener(this::onServerStarted);
         NeoForge.EVENT_BUS.addListener(this::onServerStopped);
         NeoForge.EVENT_BUS.addListener(this::onPlayerLoggedIn);
@@ -40,6 +43,6 @@ public final class MedalRuntime {
     }
 
     private void onRegisterCommands(RegisterCommandsEvent event) {
-        ZianRctCommands.register(event.getDispatcher(), medalService);
+        ZianRctCommands.register(event.getDispatcher(), medalService, packController);
     }
 }

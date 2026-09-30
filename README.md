@@ -4,7 +4,7 @@ Tope de nivel, progresión administrativa y sistema de medallas sobre Radical Co
 
 ## Estado
 
-Proyecto en desarrollo por fases. Las fases actuales ya incluyen configuración validada, integración de progresión RCT, persistencia de medallas y sincronización/GUI de cliente.
+Proyecto en desarrollo por fases. Las fases actuales ya incluyen configuración validada, integración de progresión RCT, persistencia de medallas, sincronización/GUI de cliente y comandos administrativos.
 
 ## Dependencias objetivo
 
@@ -15,6 +15,26 @@ Proyecto en desarrollo por fases. Las fases actuales ya incluyen configuración 
 - Radical Cobblemon Trainers API 0.16.1-beta (`rctapi`)
 - Architectury 13.0.11
 - Kotlin for Forge 5.12.0
+
+## Comandos
+
+El comando público `/medals` sincroniza el snapshot autoritativo del servidor y abre el medallero en el cliente.
+
+Los comandos `/zianrct` requieren nivel de permiso de operador 2:
+
+- `/zianrct medal give <jugador> <medalla>`
+- `/zianrct medal revoke <jugador> <medalla>`
+- `/zianrct medal list <jugador>`
+- `/zianrct cap get <jugador>`
+- `/zianrct cap set <jugador> <cap>`
+- `/zianrct cap add <jugador>`
+- `/zianrct cap remove <jugador>`
+- `/zianrct progress <jugador>`
+- `/zianrct reload`
+
+`cap set` solo acepta topes alcanzables por la cadena configurada. Cuando varios entrenadores producen el mismo tope, se usa el primer prefijo que alcanza ese valor. En el perfil Rassvet por defecto, el tope 100 se alcanza al derrotar a Glacius, por lo que `cap set ... 100` marca la cadena hasta Glacius y no fuerza la derrota de Aurelia. Aurelia sigue siendo una victoria final/medalla separada con el tope ya en 100.
+
+`/zianrct reload` vuelve a leer `config/zianrct.json`, rechaza la recarga si la configuración es inválida, regenera el pack virtual de progresión y vuelve a enviar el snapshot de medallas a todos los jugadores conectados.
 
 ## Medallas y texturas personalizadas
 

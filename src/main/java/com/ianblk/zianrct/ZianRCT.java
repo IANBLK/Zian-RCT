@@ -33,7 +33,7 @@ public final class ZianRCT {
         ConfigState.replace(initialConfig);
         modEventBus.addListener(ZianRctNetwork::registerPayloads);
         this.rctPackController = new RctPackController(modEventBus);
-        this.medalRuntime = new MedalRuntime();
+        this.medalRuntime = new MedalRuntime(rctPackController);
         if (FMLEnvironment.dist == Dist.CLIENT) {
             ZianRctClient.init(modEventBus);
         }
