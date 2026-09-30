@@ -1,7 +1,9 @@
 package com.ianblk.zianrct.medal;
 
+import com.ianblk.zianrct.command.ZianRctCommands;
 import net.minecraft.server.level.ServerPlayer;
 import net.neoforged.neoforge.common.NeoForge;
+import net.neoforged.neoforge.event.RegisterCommandsEvent;
 import net.neoforged.neoforge.event.entity.player.PlayerEvent;
 import net.neoforged.neoforge.event.server.ServerStartedEvent;
 import net.neoforged.neoforge.event.server.ServerStoppedEvent;
@@ -14,6 +16,7 @@ public final class MedalRuntime {
         NeoForge.EVENT_BUS.addListener(this::onServerStarted);
         NeoForge.EVENT_BUS.addListener(this::onServerStopped);
         NeoForge.EVENT_BUS.addListener(this::onPlayerLoggedIn);
+        NeoForge.EVENT_BUS.addListener(this::onRegisterCommands);
     }
 
     public MedalService service() {
@@ -34,5 +37,9 @@ public final class MedalRuntime {
         if (event.getEntity() instanceof ServerPlayer player) {
             medalService.reconcile(player);
         }
+    }
+
+    private void onRegisterCommands(RegisterCommandsEvent event) {
+        ZianRctCommands.register(event.getDispatcher(), medalService);
     }
 }
