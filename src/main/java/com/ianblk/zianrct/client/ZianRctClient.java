@@ -47,7 +47,7 @@ public final class ZianRctClient {
             }
         }
 
-        for (String medalId : ClientMedalState.drainNotifications()) {
+        for (String medalId : ClientMedalState.drainAwards()) {
             ClientMedalState.current().ifPresent(snapshot -> showMedalNotification(minecraft, snapshot, medalId));
         }
     }

@@ -16,7 +16,6 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.StandardCopyOption;
 import java.time.Instant;
-import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
@@ -91,16 +90,18 @@ public final class MedalService {
                     player.getGameProfile().getName(),
                     origin
             );
-            if (origin == MedalOrigin.BATTLE || origin == MedalOrigin.RECONCILED) {
+
+            if (origin == MedalOrigin.BATTLE || origin == MedalOrigin.COMMAND) {
                 String template = ConfigState.current().messages().medalObtained();
                 String message = template.replace("{medal}", definition.get().name());
                 player.sendSystemMessage(Component.literal(message));
             }
+
             if (syncClient) {
-                List<String> notifications = origin == MedalOrigin.BATTLE || origin == MedalOrigin.RECONCILED
-                        ? List.of(medalId)
-                        : List.of();
-                ZianRctNetwork.sendSnapshot(player, this, notifications);
+                ZianRctNetwork.sendSnapshot(player, this);
+                if (origin == MedalOrigin.BATTLE || origin == MedalOrigin.COMMAND) {
+                    ZianRctNetwork.sendAward(player, medalId);
+                }
             }
             return GrantResult.GRANTED;
         } catch (IOException exception) {
@@ -122,7 +123,7 @@ public final class MedalService {
         try {
             boolean changed = active.revoke(player.getUUID(), medalId);
             if (changed) {
-                ZianRctNetwork.sendSnapshot(player, this, List.of());
+                ZianRctNetwork.sendSnapshot(player, this);
             }
             return changed;
         } catch (IOException exception) {
@@ -159,7 +160,6 @@ public final class MedalService {
             return;
         }
 
-        List<String> reconciled = new ArrayList<>();
         MinecraftServer server = player.serverLevel().getServer();
         var trainerManager = RCTMod.getInstance().getTrainerManager();
         for (ZianRctConfig.MedalDefinition medal : ConfigState.current().activeProfileConfig().medals()) {
@@ -190,13 +190,13 @@ public final class MedalService {
             }
 
             if (historicalWin) {
-                GrantResult result = grantIfAbsent(player, medal.id(), MedalOrigin.RECONCILED, false);
-                if (result == GrantResult.GRANTED) {
-                    reconciled.add(medal.id());
-                }
+                grantIfAbsent(player, medal.id(), MedalOrigin.RECONCILED, false);
             }
         }
-        ZianRctNetwork.sendSnapshot(player, this, reconciled);
+
+        // Login reconciliation is intentionally silent. The authoritative snapshot is sent once,
+        // after all historical grants have been considered, and never carries toast semantics.
+        ZianRctNetwork.sendSnapshot(player, this);
     }
 
     private static void backupCorrupt(Path path) {

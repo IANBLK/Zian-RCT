@@ -16,18 +16,25 @@ class ClientMedalStateTest {
     }
 
     @Test
-    void applyStoresSnapshotAndNotificationsDrainOnce() {
+    void snapshotNeverCreatesAwardNotification() {
         MedalClientSnapshot snapshot = new MedalClientSnapshot(
                 "rassvet",
                 List.of(),
-                List.of(),
-                List.of("novato", "ferrum")
+                List.of()
         );
 
         ClientMedalState.apply(snapshot);
 
         assertEquals("rassvet", ClientMedalState.current().orElseThrow().activeProfile());
-        assertEquals(List.of("novato", "ferrum"), ClientMedalState.drainNotifications());
-        assertTrue(ClientMedalState.drainNotifications().isEmpty());
+        assertTrue(ClientMedalState.drainAwards().isEmpty());
+    }
+
+    @Test
+    void awardPayloadQueueIsSeparateAndDrainsOnce() {
+        ClientMedalState.notifyAward("novato");
+        ClientMedalState.notifyAward("ferrum");
+
+        assertEquals(List.of("novato", "ferrum"), ClientMedalState.drainAwards());
+        assertTrue(ClientMedalState.drainAwards().isEmpty());
     }
 }

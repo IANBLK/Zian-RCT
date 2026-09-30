@@ -4,7 +4,7 @@ Tope de nivel, progresión administrativa y sistema de medallas sobre Radical Co
 
 ## Estado
 
-Proyecto en desarrollo por fases. La Fase 1 establece el esqueleto Java 21 + NeoForge y sus dependencias externas.
+Proyecto en desarrollo por fases. Las fases actuales ya incluyen configuración validada, integración de progresión RCT, persistencia de medallas y sincronización/GUI de cliente.
 
 ## Dependencias objetivo
 
@@ -15,6 +15,12 @@ Proyecto en desarrollo por fases. La Fase 1 establece el esqueleto Java 21 + Neo
 - Radical Cobblemon Trainers API 0.16.1-beta (`rctapi`)
 - Architectury 13.0.11
 - Kotlin for Forge 5.12.0
+
+## Medallas y texturas personalizadas
+
+Las definiciones de medallas pueden referenciar una textura mediante `ResourceLocation`, pero el servidor **no envía archivos PNG dentro del payload de red**. La textura debe existir ya en los recursos del cliente.
+
+Para servidores públicos, las medallas con arte propio deben distribuirse mediante un resource pack. La opción recomendada es configurar el resource pack del servidor en `server.properties` (`resource-pack`, `resource-pack-sha1` y, si se desea exigirlo, `require-resource-pack=true`). Si una textura configurada no existe en el cliente, Zian-RCT usa su representación visual de respaldo.
 
 ## Licencia e integración con RCT
 

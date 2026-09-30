@@ -2,6 +2,7 @@ package com.ianblk.zianrct.network;
 
 import org.junit.jupiter.api.Test;
 
+import java.util.ArrayList;
 import java.util.List;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
@@ -22,8 +23,7 @@ class MedalProtocolTest {
                         0,
                         20
                 )),
-                List.of(new MedalClientSnapshot.OwnedMedalView("novato", 1234L, "BATTLE")),
-                List.of("novato")
+                List.of(new MedalClientSnapshot.OwnedMedalView("novato", 1234L, "BATTLE"))
         );
 
         String encoded = MedalProtocol.encode(snapshot);
@@ -33,11 +33,32 @@ class MedalProtocolTest {
         assertEquals(1, decoded.definitions().size());
         assertEquals(20, decoded.definitions().getFirst().unlockCap());
         assertEquals("novato", decoded.owned().getFirst().medalId());
-        assertEquals(List.of("novato"), decoded.notifications());
     }
 
     @Test
     void incompatibleProtocolVersionIsRejected() {
         assertThrows(IllegalStateException.class, () -> MedalProtocol.decode(999, "{}"));
+    }
+
+    @Test
+    void oversizedStringsAndListsAreRejected() {
+        String oversizedId = "x".repeat(MedalProtocol.MAX_ID_LENGTH + 1);
+        MedalClientSnapshot badId = new MedalClientSnapshot(
+                "rassvet",
+                List.of(new MedalClientSnapshot.MedalDefinitionView(
+                        oversizedId, "trainer", "name", "", "", "#FFFFFF", 0, 20
+                )),
+                List.of()
+        );
+        assertThrows(IllegalStateException.class, () -> MedalProtocol.encode(badId));
+
+        List<MedalClientSnapshot.MedalDefinitionView> tooMany = new ArrayList<>();
+        for (int i = 0; i <= MedalProtocol.MAX_MEDALS; i++) {
+            tooMany.add(new MedalClientSnapshot.MedalDefinitionView(
+                    "m" + i, "t" + i, "Medal " + i, "", "", "#FFFFFF", i, 20
+            ));
+        }
+        MedalClientSnapshot badList = new MedalClientSnapshot("rassvet", tooMany, List.of());
+        assertThrows(IllegalStateException.class, () -> MedalProtocol.encode(badList));
     }
 }

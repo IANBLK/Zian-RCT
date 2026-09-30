@@ -9,8 +9,7 @@ import java.util.Map;
 public record MedalClientSnapshot(
         String activeProfile,
         List<MedalDefinitionView> definitions,
-        List<OwnedMedalView> owned,
-        List<String> notifications
+        List<OwnedMedalView> owned
 ) {
     public MedalClientSnapshot {
         activeProfile = activeProfile == null ? "" : activeProfile;
@@ -20,9 +19,6 @@ public record MedalClientSnapshot(
         owned = owned == null
                 ? List.of()
                 : Collections.unmodifiableList(new ArrayList<>(owned));
-        notifications = notifications == null
-                ? List.of()
-                : Collections.unmodifiableList(new ArrayList<>(notifications));
     }
 
     public Map<String, OwnedMedalView> ownedById() {

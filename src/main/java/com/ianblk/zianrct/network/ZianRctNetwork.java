@@ -29,21 +29,28 @@ public final class ZianRctNetwork {
                     try {
                         ClientMedalState.apply(payload.decodeSnapshot());
                     } catch (RuntimeException exception) {
-                        ZianRCT.LOGGER.error("Rejected invalid Zian RCT medal payload.", exception);
+                        ZianRCT.LOGGER.error("Rejected invalid Zian RCT medal sync payload.", exception);
+                    }
+                })
+        );
+        registrar.playToClient(
+                MedalAwardPayload.TYPE,
+                MedalAwardPayload.STREAM_CODEC,
+                (payload, context) -> context.enqueueWork(() -> {
+                    try {
+                        ClientMedalState.notifyAward(payload.medalId());
+                    } catch (RuntimeException exception) {
+                        ZianRCT.LOGGER.error("Rejected invalid Zian RCT medal award payload.", exception);
                     }
                 })
         );
         ZianRCT.LOGGER.info(
-                "Registered Zian RCT medal payload protocol v{}.",
+                "Registered required Zian RCT medal payload protocol v{}.",
                 MedalProtocol.CURRENT_VERSION
         );
     }
 
-    public static void sendSnapshot(
-            ServerPlayer player,
-            MedalService medalService,
-            List<String> notificationMedalIds
-    ) {
+    public static void sendSnapshot(ServerPlayer player, MedalService medalService) {
         ZianRctConfig config = ConfigState.current();
         ZianRctConfig.Profile profile = config.activeProfileConfig();
         Map<String, Integer> unlockCaps = profile.trainerUnlockCaps();
@@ -75,9 +82,12 @@ public final class ZianRctNetwork {
         MedalClientSnapshot snapshot = new MedalClientSnapshot(
                 config.activeProfile(),
                 definitions,
-                owned,
-                notificationMedalIds == null ? List.of() : notificationMedalIds
+                owned
         );
         PacketDistributor.sendToPlayer(player, MedalSyncPayload.fromSnapshot(snapshot));
+    }
+
+    public static void sendAward(ServerPlayer player, String medalId) {
+        PacketDistributor.sendToPlayer(player, MedalAwardPayload.of(medalId));
     }
 }
