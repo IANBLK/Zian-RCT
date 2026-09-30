@@ -1,6 +1,7 @@
 package com.ianblk.zianrct.rct;
 
 import com.google.gson.JsonArray;
+import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
 import com.google.gson.JsonParser;
 import com.ianblk.zianrct.config.ZianRctConfig;
@@ -17,11 +18,14 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 
 class RassvetEmbeddedResourcesTest {
     private static final Path ROOT = Path.of("src/main/resources/data/rctmod");
+    private static final Path LANG_ROOT = Path.of("src/main/resources/assets/zianrct/lang");
 
     @Test
     void embeddedRassvetResourcesMatchDefaultProfile() throws IOException {
         ZianRctConfig.Profile profile = ZianRctConfig.defaults().activeProfileConfig();
         List<String> ids = profile.chain().stream().map(ZianRctConfig.ChainEntry::trainer).toList();
+        JsonObject enUs = parse(LANG_ROOT.resolve("en_us.json"));
+        JsonObject esEs = parse(LANG_ROOT.resolve("es_es.json"));
 
         assertTrue(Files.isRegularFile(ROOT.resolve("series/rassvet.json")));
         assertTrue(Files.isRegularFile(ROOT.resolve("trainer_types/rassvet_gym.json")));
@@ -57,7 +61,13 @@ class RassvetEmbeddedResourcesTest {
             assertTrue(dialog.has("on_battle_lost"), id);
             assertTrue(dialog.has("trainer_lost"), id);
             assertTrue(dialog.has("missing_beaten_trainer"), id);
-            assertDialogIsStringArrays(dialog, id);
+
+            if ("rassvet_leader_novato".equals(id)) {
+                assertLocalizedDialog(dialog, enUs, esEs, id);
+            } else {
+                assertDialogIsStringArrays(dialog, id);
+            }
+
             assertFalse(containsNumericUnlockText(dialog.getAsJsonArray("on_battle_lost")), id);
             assertFalse(containsNumericUnlockText(dialog.getAsJsonArray("trainer_lost")), id);
         }
@@ -69,6 +79,21 @@ class RassvetEmbeddedResourcesTest {
     private static JsonObject parse(Path path) throws IOException {
         assertTrue(Files.isRegularFile(path), path.toString());
         return JsonParser.parseString(Files.readString(path)).getAsJsonObject();
+    }
+
+    private static void assertLocalizedDialog(JsonObject dialog, JsonObject enUs, JsonObject esEs, String id) {
+        dialog.entrySet().forEach(entry -> {
+            assertTrue(entry.getValue().isJsonArray(), id + ": " + entry.getKey());
+            entry.getValue().getAsJsonArray().forEach(line -> {
+                assertTrue(line.isJsonObject(), id + ": " + entry.getKey() + " must use RCT Text objects");
+                JsonObject text = line.getAsJsonObject();
+                assertTrue(text.has("literal") && !text.get("literal").getAsString().isBlank(), id + ": missing literal");
+                assertTrue(text.has("translatable") && !text.get("translatable").getAsString().isBlank(), id + ": missing translatable");
+                String key = text.get("translatable").getAsString();
+                assertTrue(enUs.has(key), id + ": missing en_us key " + key);
+                assertTrue(esEs.has(key), id + ": missing es_es key " + key);
+            });
+        });
     }
 
     private static void assertDialogIsStringArrays(JsonObject dialog, String id) {
@@ -83,8 +108,18 @@ class RassvetEmbeddedResourcesTest {
 
     private static boolean containsNumericUnlockText(JsonArray lines) {
         return lines.asList().stream()
-                .filter(element -> element.isJsonPrimitive() && element.getAsJsonPrimitive().isString())
-                .map(element -> element.getAsString())
+                .map(RassvetEmbeddedResourcesTest::literalText)
+                .filter(text -> text != null)
                 .anyMatch(text -> text.matches(".*(?i:nivel)\\s+\\d+.*"));
+    }
+
+    private static String literalText(JsonElement element) {
+        if (element.isJsonPrimitive() && element.getAsJsonPrimitive().isString()) {
+            return element.getAsString();
+        }
+        if (element.isJsonObject() && element.getAsJsonObject().has("literal")) {
+            return element.getAsJsonObject().get("literal").getAsString();
+        }
+        return null;
     }
 }
