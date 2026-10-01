@@ -1,5 +1,6 @@
 package com.ianblk.zianrct;
 
+import com.ianblk.zianrct.battle.LeagueBattlePromptService;
 import com.ianblk.zianrct.client.ZianRctClient;
 import com.ianblk.zianrct.config.ConfigState;
 import com.ianblk.zianrct.config.ZianRctConfig;
@@ -27,6 +28,7 @@ public final class ZianRCT {
 
     private final RctPackController rctPackController;
     private final MedalRuntime medalRuntime;
+    private final LeagueBattlePromptService battlePromptService;
 
     public ZianRCT(IEventBus modEventBus, ModContainer container) {
         ZianRctConfig initialConfig = loadInitialSnapshot();
@@ -34,6 +36,7 @@ public final class ZianRCT {
         modEventBus.addListener(ZianRctNetwork::registerPayloads);
         this.rctPackController = new RctPackController(modEventBus);
         this.medalRuntime = new MedalRuntime(rctPackController);
+        this.battlePromptService = new LeagueBattlePromptService();
         if (FMLEnvironment.dist == Dist.CLIENT) {
             ZianRctClient.init(modEventBus);
         }
@@ -46,6 +49,10 @@ public final class ZianRCT {
 
     public MedalRuntime medalRuntime() {
         return medalRuntime;
+    }
+
+    public LeagueBattlePromptService battlePromptService() {
+        return battlePromptService;
     }
 
     private static ZianRctConfig loadInitialSnapshot() {
