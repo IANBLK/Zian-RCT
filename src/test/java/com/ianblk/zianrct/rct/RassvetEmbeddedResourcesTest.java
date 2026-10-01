@@ -61,19 +61,14 @@ class RassvetEmbeddedResourcesTest {
             assertTrue(dialog.has("on_battle_lost"), id);
             assertTrue(dialog.has("trainer_lost"), id);
             assertTrue(dialog.has("missing_beaten_trainer"), id);
-
-            if ("rassvet_leader_novato".equals(id)) {
-                assertLocalizedDialog(dialog, enUs, esEs, id);
-            } else {
-                assertDialogIsStringArrays(dialog, id);
-            }
+            assertLocalizedDialog(dialog, enUs, esEs, id);
 
             assertFalse(containsNumericUnlockText(dialog.getAsJsonArray("on_battle_lost")), id);
             assertFalse(containsNumericUnlockText(dialog.getAsJsonArray("trainer_lost")), id);
         }
 
         JsonObject groupDialog = parse(ROOT.resolve("dialogs/trainers/groups/rassvet.json"));
-        assertDialogIsStringArrays(groupDialog, "rassvet group");
+        assertLocalizedDialog(groupDialog, enUs, esEs, "rassvet group");
     }
 
     private static JsonObject parse(Path path) throws IOException {
@@ -93,16 +88,6 @@ class RassvetEmbeddedResourcesTest {
                 assertTrue(enUs.has(key), id + ": missing en_us key " + key);
                 assertTrue(esEs.has(key), id + ": missing es_es key " + key);
             });
-        });
-    }
-
-    private static void assertDialogIsStringArrays(JsonObject dialog, String id) {
-        dialog.entrySet().forEach(entry -> {
-            assertTrue(entry.getValue().isJsonArray(), id + ": " + entry.getKey());
-            entry.getValue().getAsJsonArray().forEach(line ->
-                    assertTrue(line.isJsonPrimitive() && line.getAsJsonPrimitive().isString(),
-                            id + ": " + entry.getKey() + " must contain plain strings for RCT")
-            );
         });
     }
 
