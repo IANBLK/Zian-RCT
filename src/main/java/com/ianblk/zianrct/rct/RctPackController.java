@@ -33,6 +33,7 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.concurrent.CompletableFuture;
 
 public final class RctPackController {
     private static final int VERIFICATION_MAX_TICKS = 100;
@@ -41,6 +42,7 @@ public final class RctPackController {
     private MinecraftServer activeServer;
     private boolean generatedReloadInFlight;
     private PendingVerification pendingVerification;
+    private ConfigTransaction configTransaction;
 
     public RctPackController(IEventBus modEventBus) {
         modEventBus.addListener(this::onAddPackFinders);
@@ -66,6 +68,10 @@ public final class RctPackController {
         activeServer = null;
         generatedReloadInFlight = false;
         pendingVerification = null;
+        if (configTransaction != null) {
+            configTransaction.future().complete(new ConfigReloadResult(false, "El servidor se detuvo durante la recarga."));
+            configTransaction = null;
+        }
         pack.clear();
     }
 
@@ -75,12 +81,12 @@ public final class RctPackController {
         }
 
         MinecraftServer server = activeServer;
-        if (server == null || generatedReloadInFlight) {
+        if (server == null || isBusy()) {
             return;
         }
 
         server.execute(() -> {
-            if (server == activeServer && !generatedReloadInFlight) {
+            if (server == activeServer && !isBusy()) {
                 regenerate(server, "server data reload");
             }
         });
@@ -99,6 +105,21 @@ public final class RctPackController {
                     pending.snapshots()
             );
             pendingVerification = null;
+
+            if (pending.transactional()) {
+                ConfigTransaction transaction = configTransaction;
+                if (transaction == null) {
+                    ZianRCT.LOGGER.error("Transactional RCT verification completed without an active transaction.");
+                    return;
+                }
+                ConfigState.replace(transaction.nextConfig());
+                configTransaction = null;
+                transaction.future().complete(new ConfigReloadResult(
+                        true,
+                        transaction.nextConfig().messages().reloadSuccess()
+                ));
+            }
+
             ZianRCT.LOGGER.info(
                     "Zian RCT generated progression verified after {}.",
                     pending.reason()
@@ -111,68 +132,117 @@ public final class RctPackController {
             }
 
             pendingVerification = null;
+            if (pending.transactional()) {
+                rollbackConfigTransaction(
+                        event.getServer(),
+                        "La verificación de la progresión de RCT no coincidió tras " + VERIFICATION_MAX_TICKS + " ticks.",
+                        exception
+                );
+                return;
+            }
+
             ZianRCT.LOGGER.error(
                     "Zian RCT generated progression could not be verified within {} server ticks after {}. "
-                            + "The server remains online and generated data will be retried on the next data reload.",
+                            + "Generated overrides will be disabled to avoid serving unverified progression.",
                     VERIFICATION_MAX_TICKS,
                     pending.reason(),
                     exception
             );
+            deactivate(event.getServer(), "verification failed after " + pending.reason());
         }
     }
 
+    public CompletableFuture<ConfigReloadResult> reloadConfig(
+            MinecraftServer server,
+            ZianRctConfig nextConfig,
+            String reason
+    ) {
+        CompletableFuture<ConfigReloadResult> future = new CompletableFuture<>();
+        if (server != activeServer) {
+            future.complete(new ConfigReloadResult(false, "Zian RCT no tiene un servidor activo para recargar."));
+            return future;
+        }
+        if (isBusy()) {
+            future.complete(new ConfigReloadResult(false, "Ya hay una recarga o verificación de Zian RCT en curso."));
+            return future;
+        }
+
+        final GeneratedCandidate candidate;
+        try {
+            nextConfig.validateOrThrow();
+            candidate = buildCandidate(server, nextConfig);
+        } catch (RuntimeException exception) {
+            future.complete(new ConfigReloadResult(false, "No se puede aplicar la configuración: " + rootMessage(exception)));
+            return future;
+        }
+
+        Map<ResourceLocation, byte[]> previousResources = pack.snapshotResources();
+        configTransaction = new ConfigTransaction(nextConfig, previousResources, future);
+
+        if (!pack.replaceResourcesIfChanged(candidate.generated())) {
+            try {
+                verifyLoadedProgression(
+                        candidate.profile(),
+                        RCTMod.getInstance().getTrainerManager(),
+                        candidate.snapshots()
+                );
+                ConfigState.replace(nextConfig);
+                configTransaction = null;
+                future.complete(new ConfigReloadResult(true, nextConfig.messages().reloadSuccess()));
+            } catch (RuntimeException exception) {
+                rollbackConfigTransaction(
+                        server,
+                        "La configuración genera los mismos recursos, pero RCT no refleja la progresión esperada.",
+                        exception
+                );
+            }
+            return future;
+        }
+
+        generatedReloadInFlight = true;
+        try {
+            server.reloadResources(server.getPackRepository().getSelectedIds())
+                    .whenComplete((ignored, error) -> server.execute(() -> {
+                        generatedReloadInFlight = false;
+                        if (error != null) {
+                            rollbackConfigTransaction(
+                                    server,
+                                    "Falló la recarga de recursos generados de RCT.",
+                                    error
+                            );
+                            return;
+                        }
+                        scheduleVerification(
+                                candidate.profile(),
+                                candidate.snapshots(),
+                                reason + " (transactional reload)",
+                                true
+                        );
+                    }));
+        } catch (RuntimeException exception) {
+            generatedReloadInFlight = false;
+            rollbackConfigTransaction(server, "No se pudo iniciar la recarga de recursos de RCT.", exception);
+        }
+        return future;
+    }
+
     public void regenerate(MinecraftServer server, String reason) {
+        if (configTransaction != null || generatedReloadInFlight || pendingVerification != null) {
+            ZianRCT.LOGGER.warn("Skipped Zian RCT regeneration after {} because another reload is still in progress.", reason);
+            return;
+        }
+
         try {
             ZianRctConfig config = ConfigState.current();
-            ZianRctConfig.Profile profile = config.activeProfileConfig();
+            GeneratedCandidate candidate = buildCandidate(server, config);
 
-            ResourceLocation seriesLocation = ResourceLocation.fromNamespaceAndPath(
-                    ZianRctVirtualPack.RCT_NAMESPACE,
-                    "series/" + profile.series() + ".json"
-            );
-            Optional<String> seriesJson = readOriginalJsonIfPresent(server, seriesLocation);
-            if (seriesJson.isEmpty()) {
-                deactivate(server, "configured RCT series resource is not loaded: " + seriesLocation);
-                return;
-            }
-
-            SeriesPackSnapshot series = new SeriesPackSnapshot(seriesJson.get());
-            LinkedHashMap<String, TrainerPackSnapshot> snapshots = new LinkedHashMap<>();
-
-            for (ZianRctConfig.ChainEntry entry : profile.chain()) {
-                String id = entry.trainer();
-                ResourceLocation mobLocation = ResourceLocation.fromNamespaceAndPath(
-                        ZianRctVirtualPack.RCT_NAMESPACE,
-                        "mobs/trainers/single/" + id + ".json"
+            if (!pack.replaceResourcesIfChanged(candidate.generated())) {
+                scheduleVerification(
+                        candidate.profile(),
+                        candidate.snapshots(),
+                        reason + " (generated bytes unchanged)",
+                        false
                 );
-                ResourceLocation teamLocation = ResourceLocation.fromNamespaceAndPath(
-                        ZianRctVirtualPack.RCT_NAMESPACE,
-                        "trainers/" + id + ".json"
-                );
-
-                Optional<String> mobJson = readOriginalJsonIfPresent(server, mobLocation);
-                Optional<String> teamJson = readOriginalJsonIfPresent(server, teamLocation);
-                if (mobJson.isEmpty() || teamJson.isEmpty()) {
-                    String missing = mobJson.isEmpty() ? mobLocation.toString() : teamLocation.toString();
-                    deactivate(server, "configured RCT trainer resource is not loaded: " + missing);
-                    return;
-                }
-
-                int maxTeamLevel = maxTeamLevel(teamJson.get(), id);
-                if (maxTeamLevel <= 0) {
-                    deactivate(server, "trainer '" + id + "' has no usable team level");
-                    return;
-                }
-
-                snapshots.put(id, new TrainerPackSnapshot(id, mobJson.get(), maxTeamLevel));
-            }
-
-            Map<String, TrainerPackSnapshot> stableSnapshots =
-                    Collections.unmodifiableMap(new LinkedHashMap<>(snapshots));
-            Map<String, byte[]> generated = RctPackJsonBuilder.build(profile, series, stableSnapshots);
-
-            if (!pack.replaceResourcesIfChanged(generated)) {
-                scheduleVerification(profile, stableSnapshots, reason + " (generated bytes unchanged)");
                 ZianRCT.LOGGER.info(
                         "Zian RCT progression unchanged after {}; generated pack already matches original RCT data.",
                         reason
@@ -187,7 +257,7 @@ public final class RctPackController {
                     config.activeProfile(),
                     reason
             );
-            requestGeneratedReload(server, profile, stableSnapshots, reason);
+            requestGeneratedReload(server, candidate, reason);
         } catch (RuntimeException exception) {
             pendingVerification = null;
             generatedReloadInFlight = false;
@@ -207,6 +277,97 @@ public final class RctPackController {
                         deactivateException
                 );
             }
+        }
+    }
+
+    private GeneratedCandidate buildCandidate(MinecraftServer server, ZianRctConfig config) {
+        ZianRctConfig.Profile profile = config.activeProfileConfig();
+        if (profile == null) {
+            throw new IllegalStateException("El perfil activo no existe: " + config.activeProfile());
+        }
+
+        ResourceLocation seriesLocation = ResourceLocation.fromNamespaceAndPath(
+                ZianRctVirtualPack.RCT_NAMESPACE,
+                "series/" + profile.series() + ".json"
+        );
+        Optional<String> seriesJson = readOriginalJsonIfPresent(server, seriesLocation);
+        if (seriesJson.isEmpty()) {
+            throw new IllegalStateException("configured RCT series resource is not loaded: " + seriesLocation);
+        }
+
+        SeriesPackSnapshot series = new SeriesPackSnapshot(seriesJson.get());
+        LinkedHashMap<String, TrainerPackSnapshot> snapshots = new LinkedHashMap<>();
+
+        for (ZianRctConfig.ChainEntry entry : profile.chain()) {
+            String id = entry.trainer();
+            ResourceLocation mobLocation = ResourceLocation.fromNamespaceAndPath(
+                    ZianRctVirtualPack.RCT_NAMESPACE,
+                    "mobs/trainers/single/" + id + ".json"
+            );
+            ResourceLocation teamLocation = ResourceLocation.fromNamespaceAndPath(
+                    ZianRctVirtualPack.RCT_NAMESPACE,
+                    "trainers/" + id + ".json"
+            );
+
+            Optional<String> mobJson = readOriginalJsonIfPresent(server, mobLocation);
+            Optional<String> teamJson = readOriginalJsonIfPresent(server, teamLocation);
+            if (mobJson.isEmpty() || teamJson.isEmpty()) {
+                String missing = mobJson.isEmpty() ? mobLocation.toString() : teamLocation.toString();
+                throw new IllegalStateException("configured RCT trainer resource is not loaded: " + missing);
+            }
+
+            int maxTeamLevel = maxTeamLevel(teamJson.get(), id);
+            snapshots.put(id, new TrainerPackSnapshot(id, mobJson.get(), maxTeamLevel));
+        }
+
+        Map<String, TrainerPackSnapshot> stableSnapshots =
+                Collections.unmodifiableMap(new LinkedHashMap<>(snapshots));
+        Map<String, byte[]> generated = RctPackJsonBuilder.build(profile, series, stableSnapshots);
+        return new GeneratedCandidate(profile, generated, stableSnapshots);
+    }
+
+    private void rollbackConfigTransaction(MinecraftServer server, String reason, Throwable cause) {
+        ConfigTransaction transaction = configTransaction;
+        if (transaction == null) {
+            ZianRCT.LOGGER.error("Could not roll back Zian RCT config transaction because no transaction is active.", cause);
+            return;
+        }
+
+        pendingVerification = null;
+        boolean resourcesChanged = pack.restoreResources(transaction.previousResources());
+        String failureMessage = reason + " Se conservó la configuración anterior.";
+        ZianRCT.LOGGER.error("{} Rolling back generated RCT resources.", failureMessage, cause);
+
+        if (!resourcesChanged) {
+            configTransaction = null;
+            transaction.future().complete(new ConfigReloadResult(false, failureMessage));
+            return;
+        }
+
+        generatedReloadInFlight = true;
+        try {
+            server.reloadResources(server.getPackRepository().getSelectedIds())
+                    .whenComplete((ignored, rollbackError) -> server.execute(() -> {
+                        generatedReloadInFlight = false;
+                        configTransaction = null;
+                        if (rollbackError != null) {
+                            ZianRCT.LOGGER.error("Failed to reload the previous RCT resources during rollback.", rollbackError);
+                            transaction.future().complete(new ConfigReloadResult(
+                                    false,
+                                    failureMessage + " Además falló la recarga de los recursos anteriores; revisa el log antes de continuar."
+                            ));
+                            return;
+                        }
+                        transaction.future().complete(new ConfigReloadResult(false, failureMessage));
+                    }));
+        } catch (RuntimeException rollbackStartError) {
+            generatedReloadInFlight = false;
+            configTransaction = null;
+            ZianRCT.LOGGER.error("Could not start RCT resource rollback reload.", rollbackStartError);
+            transaction.future().complete(new ConfigReloadResult(
+                    false,
+                    failureMessage + " Además no se pudo iniciar la recarga de rollback; revisa el log antes de continuar."
+            ));
         }
     }
 
@@ -240,8 +401,7 @@ public final class RctPackController {
 
     private void requestGeneratedReload(
             MinecraftServer server,
-            ZianRctConfig.Profile profile,
-            Map<String, TrainerPackSnapshot> snapshots,
+            GeneratedCandidate candidate,
             String reason
     ) {
         generatedReloadInFlight = true;
@@ -252,13 +412,19 @@ public final class RctPackController {
                         if (error != null) {
                             pendingVerification = null;
                             ZianRCT.LOGGER.error(
-                                    "Failed to reload generated Zian RCT progression pack. The server remains online.",
+                                    "Failed to reload generated Zian RCT progression pack. Generated overrides will be disabled.",
                                     error
                             );
+                            deactivate(server, "generated resource reload failed after " + reason);
                             return;
                         }
 
-                        scheduleVerification(profile, snapshots, reason + " (generated reload)");
+                        scheduleVerification(
+                                candidate.profile(),
+                                candidate.snapshots(),
+                                reason + " (generated reload)",
+                                false
+                        );
                     }));
         } catch (RuntimeException exception) {
             generatedReloadInFlight = false;
@@ -269,14 +435,20 @@ public final class RctPackController {
     private void scheduleVerification(
             ZianRctConfig.Profile profile,
             Map<String, TrainerPackSnapshot> snapshots,
-            String reason
+            String reason,
+            boolean transactional
     ) {
         pendingVerification = new PendingVerification(
                 profile,
                 Collections.unmodifiableMap(new LinkedHashMap<>(snapshots)),
                 VERIFICATION_MAX_TICKS,
-                reason
+                reason,
+                transactional
         );
+    }
+
+    private boolean isBusy() {
+        return generatedReloadInFlight || pendingVerification != null || configTransaction != null;
     }
 
     private static Optional<String> readOriginalJsonIfPresent(
@@ -305,17 +477,29 @@ public final class RctPackController {
         }
         JsonArray team = parsed.getAsJsonObject().getAsJsonArray("team");
         if (team == null || team.isEmpty()) {
-            return 0;
+            throw new IllegalStateException("RCT trainer has no usable team: " + trainerId);
         }
         int max = 0;
+        int index = 0;
         for (var element : team) {
             if (!element.isJsonObject()) {
-                continue;
+                throw new IllegalStateException("RCT trainer team entry " + index + " is not an object: " + trainerId);
             }
             JsonObject pokemon = element.getAsJsonObject();
-            if (pokemon.has("level") && pokemon.get("level").isJsonPrimitive()) {
-                max = Math.max(max, pokemon.get("level").getAsInt());
+            if (!pokemon.has("level") || !pokemon.get("level").isJsonPrimitive()
+                    || !pokemon.getAsJsonPrimitive("level").isNumber()) {
+                throw new IllegalStateException(
+                        "RCT trainer team entry " + index + " has no numeric level: " + trainerId
+                );
             }
+            int level = pokemon.get("level").getAsInt();
+            if (level <= 0) {
+                throw new IllegalStateException(
+                        "RCT trainer team entry " + index + " has invalid level " + level + ": " + trainerId
+                );
+            }
+            max = Math.max(max, level);
+            index++;
         }
         return max;
     }
@@ -370,14 +554,41 @@ public final class RctPackController {
         );
     }
 
+    private static String rootMessage(Throwable throwable) {
+        Throwable current = throwable;
+        while (current.getCause() != null) {
+            current = current.getCause();
+        }
+        String message = current.getMessage();
+        return message == null || message.isBlank() ? current.getClass().getSimpleName() : message;
+    }
+
+    public record ConfigReloadResult(boolean success, String message) {
+    }
+
+    private record GeneratedCandidate(
+            ZianRctConfig.Profile profile,
+            Map<String, byte[]> generated,
+            Map<String, TrainerPackSnapshot> snapshots
+    ) {
+    }
+
+    private record ConfigTransaction(
+            ZianRctConfig nextConfig,
+            Map<ResourceLocation, byte[]> previousResources,
+            CompletableFuture<ConfigReloadResult> future
+    ) {
+    }
+
     private record PendingVerification(
             ZianRctConfig.Profile profile,
             Map<String, TrainerPackSnapshot> snapshots,
             int remainingTicks,
-            String reason
+            String reason,
+            boolean transactional
     ) {
         private PendingVerification withRemainingTicks(int nextRemainingTicks) {
-            return new PendingVerification(profile, snapshots, nextRemainingTicks, reason);
+            return new PendingVerification(profile, snapshots, nextRemainingTicks, reason, transactional);
         }
     }
 }
