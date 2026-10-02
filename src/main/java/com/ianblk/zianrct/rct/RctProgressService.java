@@ -25,39 +25,31 @@ public final class RctProgressService {
         List<String> desiredPrefix = RctProgressPlanner.desiredDefeatedPrefix(profile, targetCap);
         TrainerPlayerData playerData = playerData(player);
         Set<String> before = new LinkedHashSet<>(playerData.getDefeatedTrainerIds());
+        int beforeCap = playerData.getLevelCap();
         Set<String> chainIds = profile.chain().stream()
                 .map(ZianRctConfig.ChainEntry::trainer)
                 .collect(java.util.stream.Collectors.toCollection(LinkedHashSet::new));
         Set<String> desired = new LinkedHashSet<>(desiredPrefix);
 
-        for (String id : chainIds) {
-            boolean has = before.contains(id);
-            boolean shouldHave = desired.contains(id);
-            if (shouldHave && !has) {
-                playerData.addProgressDefeat(id);
-            } else if (!shouldHave && has) {
-                playerData.removeProgressDefeat(id);
-            }
-        }
-        playerData.sync();
+        try {
+            applyChainState(playerData, chainIds, desired);
+            playerData.sync();
 
-        int actual = playerData.getLevelCap();
-        if (actual == targetCap) {
-            return new SetCapResult(true, targetCap, actual, List.copyOf(desiredPrefix));
-        }
-
-        Set<String> after = new LinkedHashSet<>(playerData.getDefeatedTrainerIds());
-        for (String id : chainIds) {
-            boolean originallyHad = before.contains(id);
-            boolean currentlyHas = after.contains(id);
-            if (originallyHad && !currentlyHas) {
-                playerData.addProgressDefeat(id);
-            } else if (!originallyHad && currentlyHas) {
-                playerData.removeProgressDefeat(id);
+            int actual = playerData.getLevelCap();
+            if (actual == targetCap) {
+                return new SetCapResult(true, targetCap, actual, List.copyOf(desiredPrefix));
             }
+
+            restoreAndVerify(playerData, chainIds, before, beforeCap);
+            return new SetCapResult(false, targetCap, actual, List.copyOf(desiredPrefix));
+        } catch (RuntimeException exception) {
+            try {
+                restoreAndVerify(playerData, chainIds, before, beforeCap);
+            } catch (RuntimeException rollbackException) {
+                exception.addSuppressed(rollbackException);
+            }
+            throw exception;
         }
-        playerData.sync();
-        return new SetCapResult(false, targetCap, actual, List.copyOf(desiredPrefix));
     }
 
     public static SetCapResult addStep(ServerPlayer player, ZianRctConfig.Profile profile) {
@@ -87,6 +79,48 @@ public final class RctProgressService {
                 nextTrainer,
                 RctProgressPlanner.reachableCaps(profile)
         );
+    }
+
+    private static void applyChainState(
+            TrainerPlayerData playerData,
+            Set<String> chainIds,
+            Set<String> desired
+    ) {
+        Set<String> current = new LinkedHashSet<>(playerData.getDefeatedTrainerIds());
+        for (String id : chainIds) {
+            boolean has = current.contains(id);
+            boolean shouldHave = desired.contains(id);
+            if (shouldHave && !has) {
+                playerData.addProgressDefeat(id);
+            } else if (!shouldHave && has) {
+                playerData.removeProgressDefeat(id);
+            }
+        }
+    }
+
+    private static void restoreAndVerify(
+            TrainerPlayerData playerData,
+            Set<String> chainIds,
+            Set<String> before,
+            int beforeCap
+    ) {
+        applyChainState(playerData, chainIds, before);
+        playerData.sync();
+
+        Set<String> restored = new LinkedHashSet<>(playerData.getDefeatedTrainerIds());
+        for (String id : chainIds) {
+            if (restored.contains(id) != before.contains(id)) {
+                throw new IllegalStateException("RCT no pudo restaurar el progreso anterior para el entrenador: " + id);
+            }
+        }
+
+        int restoredCap = playerData.getLevelCap();
+        if (restoredCap != beforeCap) {
+            throw new IllegalStateException(
+                    "RCT restauró los ids de progreso, pero el tope quedó en " + restoredCap
+                            + " en vez de " + beforeCap
+            );
+        }
     }
 
     private static TrainerPlayerData playerData(ServerPlayer player) {
