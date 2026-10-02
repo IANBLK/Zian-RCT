@@ -23,6 +23,7 @@ public final class MedalSnapshotFactory {
                 .map(medal -> new MedalClientSnapshot.MedalDefinitionView(
                         medal.id(),
                         medal.trainer(),
+                        medal.resolvedTrainerName(),
                         medal.name(),
                         medal.description(),
                         medal.texture(),
