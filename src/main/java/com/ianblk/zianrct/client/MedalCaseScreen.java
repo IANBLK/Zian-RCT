@@ -1,18 +1,21 @@
 package com.ianblk.zianrct.client;
 
 import com.ianblk.zianrct.network.MedalClientSnapshot;
+import com.mojang.blaze3d.platform.NativeImage;
 import net.minecraft.ChatFormatting;
 import net.minecraft.client.gui.GuiGraphics;
 import net.minecraft.client.gui.screens.Screen;
 import net.minecraft.network.chat.Component;
 import net.minecraft.resources.ResourceLocation;
 
+import java.io.InputStream;
 import java.time.Instant;
 import java.time.ZoneId;
 import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
+import java.util.Locale;
 import java.util.Map;
 import java.util.Optional;
 
@@ -32,7 +35,7 @@ public final class MedalCaseScreen extends Screen {
     private final Map<ResourceLocation, Boolean> textureAvailability = new HashMap<>();
 
     public MedalCaseScreen() {
-        super(Component.literal("Medallero"));
+        super(Component.translatableWithFallback("screen.zianrct.medals.title", "Medallero"));
     }
 
     @Override
@@ -63,17 +66,14 @@ public final class MedalCaseScreen extends Screen {
 
     @Override
     public void render(GuiGraphics graphics, int mouseX, int mouseY, float partialTick) {
-        // Screen#render invokes renderBackground. Our override intentionally keeps
-        // the medallero blur-free and uses a controlled translucent backdrop.
         super.render(graphics, mouseX, mouseY, partialTick);
-
         graphics.drawCenteredString(font, title, width / 2, 18, 0xFFFFFF);
 
         Optional<MedalClientSnapshot> optionalSnapshot = ClientMedalState.current();
         if (optionalSnapshot.isEmpty()) {
             graphics.drawCenteredString(
                     font,
-                    Component.literal("Esperando datos del servidor..."),
+                    Component.translatableWithFallback("screen.zianrct.medals.waiting", "Esperando datos del servidor..."),
                     width / 2,
                     height / 2,
                     0xA0A0A0
@@ -93,9 +93,7 @@ public final class MedalCaseScreen extends Screen {
 
         for (int index = 0; index < snapshot.definitions().size(); index++) {
             MedalClientSnapshot.MedalDefinitionView definition = snapshot.definitions().get(index);
-            if (definition == null) {
-                continue;
-            }
+            if (definition == null) continue;
             int column = index % columns;
             int row = index / columns;
             int x = startX + column * (CARD_WIDTH + GAP);
@@ -111,10 +109,13 @@ public final class MedalCaseScreen extends Screen {
             }
         }
 
-        int obtainedCount = owned.size();
         graphics.drawCenteredString(
                 font,
-                Component.literal("Perfil: " + snapshot.activeProfile() + "  •  " + obtainedCount + "/" + snapshot.definitions().size()),
+                Component.translatableWithFallback(
+                        "screen.zianrct.medals.profile",
+                        "Perfil: %s  •  %s/%s",
+                        snapshot.activeProfile(), owned.size(), snapshot.definitions().size()
+                ),
                 width / 2,
                 height - 18,
                 0xB8B8B8
@@ -125,14 +126,7 @@ public final class MedalCaseScreen extends Screen {
         }
     }
 
-    private void drawCard(
-            GuiGraphics graphics,
-            MedalClientSnapshot.MedalDefinitionView definition,
-            boolean obtained,
-            boolean hovered,
-            int x,
-            int y
-    ) {
+    private void drawCard(GuiGraphics graphics, MedalClientSnapshot.MedalDefinitionView definition, boolean obtained, boolean hovered, int x, int y) {
         ResourceLocation slotTexture = obtained ? SLOT_OBTAINED : SLOT_LOCKED;
         if (hasTexture(slotTexture)) {
             graphics.blit(slotTexture, x, y, 0.0F, 0.0F, CARD_WIDTH, CARD_HEIGHT, CARD_WIDTH, CARD_HEIGHT);
@@ -142,13 +136,10 @@ public final class MedalCaseScreen extends Screen {
 
         int badgeX = x + (CARD_WIDTH - BADGE_SIZE) / 2;
         int badgeY = y + 7;
-        if (obtained) {
-            drawObtainedBadge(graphics, definition, badgeX, badgeY);
-        } else {
-            drawLockedBadge(graphics, definition, badgeX, badgeY);
-        }
+        if (obtained) drawObtainedBadge(graphics, definition, badgeX, badgeY);
+        else drawLockedBadge(graphics, definition, badgeX, badgeY);
 
-        String label = font.plainSubstrByWidth(definition.name(), CARD_WIDTH - 8);
+        String label = font.plainSubstrByWidth(definition.trainerName(), CARD_WIDTH - 8);
         int labelX = x + (CARD_WIDTH - font.width(label)) / 2;
         graphics.drawString(font, label, labelX, y + 54, obtained ? 0xFFFFFF : 0x999999, false);
 
@@ -167,59 +158,31 @@ public final class MedalCaseScreen extends Screen {
         graphics.fill(x + CARD_WIDTH - 1, y, x + CARD_WIDTH, y + CARD_HEIGHT, border);
     }
 
-    private void drawObtainedBadge(
-            GuiGraphics graphics,
-            MedalClientSnapshot.MedalDefinitionView definition,
-            int x,
-            int y
-    ) {
+    private void drawObtainedBadge(GuiGraphics graphics, MedalClientSnapshot.MedalDefinitionView definition, int x, int y) {
         ResourceLocation texture = medalTexture(definition);
         if (texture != null && hasTexture(texture)) {
             graphics.blit(texture, x, y, 0.0F, 0.0F, BADGE_SIZE, BADGE_SIZE, BADGE_SIZE, BADGE_SIZE);
             return;
         }
-
         drawFallbackBadge(graphics, definition, x, y, false);
     }
 
-    private void drawLockedBadge(
-            GuiGraphics graphics,
-            MedalClientSnapshot.MedalDefinitionView definition,
-            int x,
-            int y
-    ) {
+    private void drawLockedBadge(GuiGraphics graphics, MedalClientSnapshot.MedalDefinitionView definition, int x, int y) {
         ResourceLocation texture = medalTexture(definition);
         if (texture != null && hasTexture(texture)) {
             graphics.setColor(0.18F, 0.18F, 0.20F, 1.0F);
             graphics.blit(texture, x, y, 0.0F, 0.0F, BADGE_SIZE, BADGE_SIZE, BADGE_SIZE, BADGE_SIZE);
             graphics.setColor(1.0F, 1.0F, 1.0F, 1.0F);
             if (hasTexture(LOCK_TEXTURE)) {
-                graphics.blit(
-                        LOCK_TEXTURE,
-                        x + BADGE_SIZE - LOCK_WIDTH,
-                        y,
-                        0.0F,
-                        0.0F,
-                        LOCK_WIDTH,
-                        LOCK_HEIGHT,
-                        LOCK_WIDTH,
-                        LOCK_HEIGHT
-                );
+                graphics.blit(LOCK_TEXTURE, x + BADGE_SIZE - LOCK_WIDTH, y, 0.0F, 0.0F, LOCK_WIDTH, LOCK_HEIGHT, LOCK_WIDTH, LOCK_HEIGHT);
             }
             return;
         }
-
         graphics.setColor(1.0F, 1.0F, 1.0F, 1.0F);
         drawFallbackBadge(graphics, definition, x, y, true);
     }
 
-    private void drawFallbackBadge(
-            GuiGraphics graphics,
-            MedalClientSnapshot.MedalDefinitionView definition,
-            int x,
-            int y,
-            boolean locked
-    ) {
+    private void drawFallbackBadge(GuiGraphics graphics, MedalClientSnapshot.MedalDefinitionView definition, int x, int y, boolean locked) {
         int color = locked ? 0xFF4A4A4A : parseColor(definition.color(), definition.id());
         graphics.fill(x + 4, y, x + BADGE_SIZE - 4, y + 8, color);
         graphics.fill(x, y + 8, x + BADGE_SIZE, y + 24, color);
@@ -233,34 +196,45 @@ public final class MedalCaseScreen extends Screen {
     }
 
     private boolean hasTexture(ResourceLocation texture) {
-        if (texture == null || minecraft == null) {
-            return false;
-        }
-        return textureAvailability.computeIfAbsent(
-                texture,
-                key -> minecraft.getResourceManager().getResource(key).isPresent()
-        );
+        if (texture == null || minecraft == null) return false;
+        return textureAvailability.computeIfAbsent(texture, this::canDecodeTexture);
     }
 
-    private List<Component> tooltipFor(
-            MedalClientSnapshot.MedalDefinitionView definition,
-            MedalClientSnapshot.OwnedMedalView owned
-    ) {
+    private boolean canDecodeTexture(ResourceLocation texture) {
+        if (minecraft == null) return false;
+        var resource = minecraft.getResourceManager().getResource(texture);
+        if (resource.isEmpty()) return false;
+        try (InputStream stream = resource.get().open(); NativeImage image = NativeImage.read(stream)) {
+            return image.getWidth() > 0 && image.getHeight() > 0;
+        } catch (Exception ignored) {
+            return false;
+        }
+    }
+
+    private List<Component> tooltipFor(MedalClientSnapshot.MedalDefinitionView definition, MedalClientSnapshot.OwnedMedalView owned) {
         List<Component> tooltip = new ArrayList<>();
         tooltip.add(Component.literal(definition.name()).withStyle(ChatFormatting.GOLD));
-        tooltip.add(Component.literal("Entrenador: " + definition.trainer()).withStyle(ChatFormatting.GRAY));
-        tooltip.add(Component.literal("Tope desbloqueado: " + definition.unlockCap()).withStyle(ChatFormatting.AQUA));
+        tooltip.add(Component.translatableWithFallback("screen.zianrct.medals.trainer", "Entrenador: %s", definition.trainerName()).withStyle(ChatFormatting.GRAY));
+        tooltip.add(Component.translatableWithFallback("screen.zianrct.medals.cap", "Tope desbloqueado: %s", definition.unlockCap()).withStyle(ChatFormatting.AQUA));
         if (owned == null) {
-            tooltip.add(Component.literal("Estado: bloqueada").withStyle(ChatFormatting.DARK_GRAY));
+            tooltip.add(Component.translatableWithFallback("screen.zianrct.medals.locked", "Estado: bloqueada").withStyle(ChatFormatting.DARK_GRAY));
         } else {
-            String date = DATE_FORMAT.format(
-                    Instant.ofEpochMilli(owned.grantedAtEpochMilli()).atZone(ZoneId.systemDefault())
-            );
-            tooltip.add(Component.literal("Obtenida: " + date).withStyle(ChatFormatting.GREEN));
-            tooltip.add(Component.literal("Origen: " + owned.origin()).withStyle(ChatFormatting.DARK_GRAY));
+            String date = DATE_FORMAT.format(Instant.ofEpochMilli(owned.grantedAtEpochMilli()).atZone(ZoneId.systemDefault()));
+            tooltip.add(Component.translatableWithFallback("screen.zianrct.medals.obtained", "Obtenida: %s", date).withStyle(ChatFormatting.GREEN));
+            tooltip.add(Component.translatableWithFallback("screen.zianrct.medals.origin", "Origen: %s", originLabel(owned.origin())).withStyle(ChatFormatting.DARK_GRAY));
         }
         tooltip.add(Component.literal(definition.description()).withStyle(ChatFormatting.WHITE));
         return tooltip;
+    }
+
+    private Component originLabel(String origin) {
+        String normalized = origin == null ? "" : origin.toUpperCase(Locale.ROOT);
+        return switch (normalized) {
+            case "BATTLE" -> Component.translatableWithFallback("screen.zianrct.medals.origin.battle", "Combate");
+            case "COMMAND" -> Component.translatableWithFallback("screen.zianrct.medals.origin.command", "Comando");
+            case "RECONCILED" -> Component.translatableWithFallback("screen.zianrct.medals.origin.reconciled", "Historial");
+            default -> Component.literal(origin == null || origin.isBlank() ? "-" : origin);
+        };
     }
 
     private static int parseColor(String configured, String seed) {
