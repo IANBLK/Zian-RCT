@@ -34,6 +34,7 @@ public record MedalClientSnapshot(
     public record MedalDefinitionView(
             String id,
             String trainer,
+            String trainerName,
             String name,
             String description,
             String texture,
