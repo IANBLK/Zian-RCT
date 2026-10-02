@@ -46,13 +46,15 @@ public final class ZianRctVirtualPack implements PackResources {
                 ResourceLocation.fromNamespaceAndPath(RCT_NAMESPACE, path),
                 value.clone()
         ));
-        Map<ResourceLocation, byte[]> next = java.util.Collections.unmodifiableMap(copy);
-        Map<ResourceLocation, byte[]> current = resources.get();
-        if (sameBytes(current, next)) {
-            return false;
-        }
-        resources.set(next);
-        return true;
+        return replaceSnapshot(copy);
+    }
+
+    public Map<ResourceLocation, byte[]> snapshotResources() {
+        return deepCopy(resources.get());
+    }
+
+    public boolean restoreResources(Map<ResourceLocation, byte[]> snapshot) {
+        return replaceSnapshot(snapshot);
     }
 
     public boolean clearIfChanged() {
@@ -69,6 +71,22 @@ public final class ZianRctVirtualPack implements PackResources {
 
     public int resourceCount() {
         return resources.get().size();
+    }
+
+    private boolean replaceSnapshot(Map<ResourceLocation, byte[]> source) {
+        Map<ResourceLocation, byte[]> next = deepCopy(source);
+        Map<ResourceLocation, byte[]> current = resources.get();
+        if (sameBytes(current, next)) {
+            return false;
+        }
+        resources.set(next);
+        return true;
+    }
+
+    private static Map<ResourceLocation, byte[]> deepCopy(Map<ResourceLocation, byte[]> source) {
+        LinkedHashMap<ResourceLocation, byte[]> copy = new LinkedHashMap<>();
+        source.forEach((location, bytes) -> copy.put(location, bytes.clone()));
+        return java.util.Collections.unmodifiableMap(copy);
     }
 
     private static boolean sameBytes(Map<ResourceLocation, byte[]> left, Map<ResourceLocation, byte[]> right) {
