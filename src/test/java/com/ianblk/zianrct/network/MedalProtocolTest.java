@@ -18,6 +18,7 @@ class MedalProtocolTest {
                 List.of(new MedalClientSnapshot.MedalDefinitionView(
                         "novato",
                         "rassvet_leader_novato",
+                        "Novato",
                         "Medalla Novato",
                         "Primera medalla",
                         "zianrct:textures/gui/medals/novato.png",
@@ -31,8 +32,10 @@ class MedalProtocolTest {
         String encoded = MedalProtocol.encode(snapshot);
         MedalClientSnapshot decoded = MedalProtocol.decode(MedalProtocol.CURRENT_VERSION, encoded);
 
+        assertEquals(2, MedalProtocol.CURRENT_VERSION);
+        assertEquals("2", MedalProtocol.NETWORK_VERSION);
         assertEquals("rassvet", decoded.activeProfile());
-        assertEquals(1, decoded.definitions().size());
+        assertEquals("Novato", decoded.definitions().getFirst().trainerName());
         assertEquals(20, decoded.definitions().getFirst().unlockCap());
         assertEquals("novato", decoded.owned().getFirst().medalId());
     }
@@ -48,16 +51,25 @@ class MedalProtocolTest {
         MedalClientSnapshot badId = new MedalClientSnapshot(
                 "rassvet",
                 List.of(new MedalClientSnapshot.MedalDefinitionView(
-                        oversizedId, "trainer", "name", "", "", "#FFFFFF", 0, 20
+                        oversizedId, "trainer", "Trainer", "name", "", "", "#FFFFFF", 0, 20
                 )),
                 List.of()
         );
         assertThrows(IllegalStateException.class, () -> MedalProtocol.encode(badId));
 
+        MedalClientSnapshot badTrainerName = new MedalClientSnapshot(
+                "rassvet",
+                List.of(new MedalClientSnapshot.MedalDefinitionView(
+                        "medal", "trainer", "x".repeat(MedalProtocol.MAX_TRAINER_NAME_LENGTH + 1), "name", "", "", "#FFFFFF", 0, 20
+                )),
+                List.of()
+        );
+        assertThrows(IllegalStateException.class, () -> MedalProtocol.encode(badTrainerName));
+
         List<MedalClientSnapshot.MedalDefinitionView> tooMany = new ArrayList<>();
         for (int i = 0; i <= MedalProtocol.MAX_MEDALS; i++) {
             tooMany.add(new MedalClientSnapshot.MedalDefinitionView(
-                    "m" + i, "t" + i, "Medal " + i, "", "", "#FFFFFF", i, 20
+                    "m" + i, "t" + i, "Trainer " + i, "Medal " + i, "", "", "#FFFFFF", i, 20
             ));
         }
         MedalClientSnapshot badList = new MedalClientSnapshot("rassvet", tooMany, List.of());
@@ -75,6 +87,7 @@ class MedalProtocolTest {
             definitions.add(new MedalClientSnapshot.MedalDefinitionView(
                     id,
                     trainer,
+                    "r".repeat(MedalProtocol.MAX_TRAINER_NAME_LENGTH),
                     "n".repeat(MedalProtocol.MAX_NAME_LENGTH),
                     "d".repeat(MedalProtocol.MAX_DESCRIPTION_LENGTH),
                     "x".repeat(MedalProtocol.MAX_TEXTURE_LENGTH),
@@ -107,6 +120,7 @@ class MedalProtocolTest {
                 List.of(new MedalClientSnapshot.MedalDefinitionView(
                         "novato",
                         "rassvet_leader_novato",
+                        "Novato",
                         "á".repeat(64),
                         "á".repeat(512),
                         "zianrct:textures/gui/medals/novato.png",
@@ -129,6 +143,7 @@ class MedalProtocolTest {
             definitions.add(new MedalClientSnapshot.MedalDefinitionView(
                     "m" + i,
                     "t" + i,
+                    "界".repeat(MedalProtocol.MAX_TRAINER_NAME_LENGTH),
                     "界".repeat(MedalProtocol.MAX_NAME_LENGTH),
                     "界".repeat(MedalProtocol.MAX_DESCRIPTION_LENGTH),
                     "界".repeat(MedalProtocol.MAX_TEXTURE_LENGTH),
