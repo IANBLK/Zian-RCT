@@ -19,6 +19,7 @@ class ZianRctConfigNetworkLimitsTest {
         medals.set(0, new ZianRctConfig.MedalDefinition(
                 "x".repeat(MedalProtocol.MAX_ID_LENGTH + 1),
                 first.trainer(),
+                "r".repeat(MedalProtocol.MAX_TRAINER_NAME_LENGTH + 1),
                 "n".repeat(MedalProtocol.MAX_NAME_LENGTH + 1),
                 "d".repeat(MedalProtocol.MAX_DESCRIPTION_LENGTH + 1),
                 "t".repeat(MedalProtocol.MAX_TEXTURE_LENGTH + 1),
@@ -33,6 +34,7 @@ class ZianRctConfigNetworkLimitsTest {
 
         List<String> errors = invalid.validate();
         assertTrue(errors.stream().anyMatch(message -> message.contains("id supera")));
+        assertTrue(errors.stream().anyMatch(message -> message.contains("trainerName supera")));
         assertTrue(errors.stream().anyMatch(message -> message.contains("name supera")));
         assertTrue(errors.stream().anyMatch(message -> message.contains("description supera")));
         assertTrue(errors.stream().anyMatch(message -> message.contains("texture supera")));
@@ -48,6 +50,7 @@ class ZianRctConfigNetworkLimitsTest {
             medals.add(new ZianRctConfig.MedalDefinition(
                     "m" + i,
                     original.chain().get(i % original.chain().size()).trainer(),
+                    null,
                     "Medalla " + i,
                     "Desc",
                     "",
