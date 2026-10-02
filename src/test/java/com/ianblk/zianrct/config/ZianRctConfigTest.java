@@ -9,7 +9,6 @@ import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.LinkedHashMap;
 import java.util.List;
-import java.util.Map;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
@@ -30,12 +29,12 @@ class ZianRctConfigTest {
         assertEquals(100, config.activeProfileConfig().maxCap());
         assertEquals(10, config.activeProfileConfig().chain().size());
         assertEquals(10, config.activeProfileConfig().medals().size());
+        assertEquals("Novato", config.activeProfileConfig().medals().getFirst().resolvedTrainerName());
     }
 
     @Test
     void implicitUnlockCapsUseStepAndClampAtMaxCap() {
         ZianRctConfig.Profile profile = ZianRctConfig.defaults().activeProfileConfig();
-
         assertEquals(20, profile.unlockCap(0));
         assertEquals(90, profile.unlockCap(7));
         assertEquals(100, profile.unlockCap(8));
@@ -45,7 +44,6 @@ class ZianRctConfigTest {
     @Test
     void stableTrainerOrderIsPreserved() {
         ZianRctConfig.Profile profile = ZianRctConfig.defaults().activeProfileConfig();
-
         assertEquals(
                 profile.chain().stream().map(ZianRctConfig.ChainEntry::trainer).toList(),
                 new ArrayList<>(profile.trainerUnlockCaps().keySet())
@@ -101,7 +99,7 @@ class ZianRctConfigTest {
         chain.set(0, new ZianRctConfig.ChainEntry("Líder Malo", null));
         List<ZianRctConfig.MedalDefinition> medals = new ArrayList<>(original.medals());
         medals.set(0, new ZianRctConfig.MedalDefinition(
-                "Medalla Mala", "Líder Malo", "Mala", "Desc", null, null, 0
+                "Medalla Mala", "Líder Malo", null, "Mala", "Desc", null, null, 0
         ));
 
         ZianRctConfig invalid = withProfile(defaults, new ZianRctConfig.Profile(
@@ -159,8 +157,8 @@ class ZianRctConfigTest {
         ZianRctConfig defaults = ZianRctConfig.defaults();
         ZianRctConfig.Profile original = defaults.activeProfileConfig();
         List<ZianRctConfig.MedalDefinition> medals = List.of(
-                new ZianRctConfig.MedalDefinition("same", "rassvet_leader_novato", "Uno", "Desc", null, null, 0),
-                new ZianRctConfig.MedalDefinition("same", "rassvet_leader_ferrum", "Dos", "Desc", null, null, 1)
+                new ZianRctConfig.MedalDefinition("same", "rassvet_leader_novato", null, "Uno", "Desc", null, null, 0),
+                new ZianRctConfig.MedalDefinition("same", "rassvet_leader_ferrum", null, "Dos", "Desc", null, null, 1)
         );
         ZianRctConfig.Profile changed = new ZianRctConfig.Profile(
                 original.initialCap(), original.step(), original.maxCap(), original.series(),
@@ -173,9 +171,25 @@ class ZianRctConfigTest {
     }
 
     @Test
+    void oversizedTrainerNameIsRejected() {
+        ZianRctConfig defaults = ZianRctConfig.defaults();
+        ZianRctConfig.Profile original = defaults.activeProfileConfig();
+        List<ZianRctConfig.MedalDefinition> medals = new ArrayList<>(original.medals());
+        ZianRctConfig.MedalDefinition first = medals.getFirst();
+        medals.set(0, new ZianRctConfig.MedalDefinition(
+                first.id(), first.trainer(), "x".repeat(65), first.name(), first.description(),
+                first.texture(), first.color(), first.order()
+        ));
+        ZianRctConfig invalid = withProfile(defaults, new ZianRctConfig.Profile(
+                original.initialCap(), original.step(), original.maxCap(), original.series(),
+                original.chain(), medals, original.giveMedalItem()
+        ));
+        assertTrue(invalid.validate().stream().anyMatch(message -> message.contains("trainerName supera")));
+    }
+
+    @Test
     void loaderCreatesAndReadsConfigWithoutMinecraftRuntime() throws IOException {
         Path configPath = tempDir.resolve("config").resolve(ZianRctConfigLoader.FILE_NAME);
-
         ZianRctConfig created = ZianRctConfigLoader.loadOrCreate(configPath);
         ZianRctConfig loaded = ZianRctConfigLoader.loadOrCreate(configPath);
 
@@ -188,7 +202,6 @@ class ZianRctConfigTest {
     void malformedJsonIsRejectedInsteadOfSilentlyUsingDefaults() throws IOException {
         Path configPath = tempDir.resolve(ZianRctConfigLoader.FILE_NAME);
         Files.writeString(configPath, "{ not-valid-json }");
-
         assertThrows(ConfigValidationException.class, () -> ZianRctConfigLoader.readExisting(configPath));
     }
 
@@ -226,10 +239,7 @@ class ZianRctConfigTest {
         assertFalse(json.contains("\\u0026"));
     }
 
-    private static ZianRctConfig withProfile(
-            ZianRctConfig defaults,
-            ZianRctConfig.Profile profile
-    ) {
+    private static ZianRctConfig withProfile(ZianRctConfig defaults, ZianRctConfig.Profile profile) {
         LinkedHashMap<String, ZianRctConfig.Profile> profiles = new LinkedHashMap<>();
         profiles.put("rassvet", profile);
         return new ZianRctConfig(
