@@ -162,7 +162,7 @@ jobs:
           echo "Dedicated server reached ready state."
           wait_for_log "Data pack initialized: mod/zianrct" 120
           echo "Embedded Rassvet baseline was discovered from mod/zianrct without an external Rassvet datapack."
-          wait_for_log "Registered required Zian RCT medal payload protocol v1." 120
+          wait_for_log "Registered required Zian RCT medal payload protocol v2." 120
           echo "Phase 5 required payload protocol registered."
           wait_for_log "Zian RCT medal store ready" 120
           wait_for_log "Registered Zian RCT BATTLE_ENDED listener on RCTApi instance 'rctmod'" 120
