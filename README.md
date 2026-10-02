@@ -40,7 +40,11 @@ Los comandos `/zianrct` requieren nivel de permiso de operador 2:
 
 Zian-RCT incluye arte original para las diez medallas del perfil Rassvet en `assets/zianrct/textures/gui/medals/`, junto con fondos de tarjeta para estados obtenida/bloqueada, overlay de hover y candado. La configuración por defecto ya apunta a `zianrct:textures/gui/medals/<id>.png`, por lo que no requiere un resource pack adicional para usar el arte incluido.
 
-Las definiciones de medallas siguen pudiendo referenciar otras texturas mediante `ResourceLocation`. El servidor **no envía archivos PNG dentro del payload de red**: cualquier textura personalizada externa debe existir ya en los recursos del cliente, por ejemplo mediante un resource pack. Si una textura configurada no existe, el medallero conserva su representación visual de respaldo.
+Cada definición de medalla admite el campo opcional `trainerName` para mostrar un nombre legible en el medallero. Si se omite, Zian-RCT lo deduce del id del entrenador, eliminando los prefijos `rassvet_leader_` o `rassvet_master_` cuando correspondan.
+
+Las definiciones de medallas siguen pudiendo referenciar otras texturas mediante `ResourceLocation`. El servidor **no envía archivos PNG dentro del payload de red**: cualquier textura personalizada externa debe existir ya en los recursos del cliente, por ejemplo mediante un resource pack. Si una textura configurada no existe o no puede decodificarse como imagen, el medallero usa su representación visual de respaldo en lugar de mostrar la textura de error de Minecraft.
+
+Los cambios del payload del medallero requieren que cliente y servidor ejecuten la misma versión de Zian-RCT. El protocolo actual del snapshot de medallas es la versión 2.
 
 ## Licencia e integración con RCT
 
