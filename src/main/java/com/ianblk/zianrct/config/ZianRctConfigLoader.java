@@ -30,7 +30,7 @@ public final class ZianRctConfigLoader {
     );
     private static final Set<String> CHAIN_KEYS = Set.of("trainer", "unlockCap");
     private static final Set<String> MEDAL_KEYS = Set.of(
-            "id", "trainer", "name", "description", "texture", "color", "order"
+            "id", "trainer", "trainerName", "name", "description", "texture", "color", "order"
     );
     private static final Set<String> MESSAGE_KEYS = Set.of(
             "capUnlocked", "medalObtained", "reloadSuccess", "currentCap"
@@ -157,12 +157,7 @@ public final class ZianRctConfigLoader {
         return List.copyOf(errors);
     }
 
-    private static void checkKeys(
-            JsonObject object,
-            Set<String> allowed,
-            String path,
-            List<String> errors
-    ) {
+    private static void checkKeys(JsonObject object, Set<String> allowed, String path, List<String> errors) {
         for (String key : object.keySet()) {
             if (!allowed.contains(key)) {
                 errors.add("Clave desconocida en " + path + ": " + key);
