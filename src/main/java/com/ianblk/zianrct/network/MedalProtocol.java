@@ -8,13 +8,14 @@ import java.util.HashSet;
 import java.util.Set;
 
 public final class MedalProtocol {
-    public static final int CURRENT_VERSION = 1;
-    public static final String NETWORK_VERSION = "1";
+    public static final int CURRENT_VERSION = 2;
+    public static final String NETWORK_VERSION = "2";
 
     public static final int MAX_SNAPSHOT_UTF8_BYTES = 256 * 1024;
     public static final int MAX_PROFILE_LENGTH = 64;
     public static final int MAX_MEDALS = 64;
     public static final int MAX_ID_LENGTH = 128;
+    public static final int MAX_TRAINER_NAME_LENGTH = 64;
     public static final int MAX_NAME_LENGTH = 256;
     public static final int MAX_DESCRIPTION_LENGTH = 1_024;
     public static final int MAX_TEXTURE_LENGTH = 256;
@@ -77,6 +78,7 @@ public final class MedalProtocol {
             }
             requireString("definition.id", definition.id(), MAX_ID_LENGTH, false);
             requireString("definition.trainer", definition.trainer(), MAX_ID_LENGTH, false);
+            requireString("definition.trainerName", definition.trainerName(), MAX_TRAINER_NAME_LENGTH, false);
             requireString("definition.name", definition.name(), MAX_NAME_LENGTH, false);
             requireString("definition.description", definition.description(), MAX_DESCRIPTION_LENGTH, true);
             requireString("definition.texture", definition.texture(), MAX_TEXTURE_LENGTH, true);
