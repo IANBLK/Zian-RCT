@@ -15,10 +15,11 @@ import net.neoforged.fml.ModContainer;
 import net.neoforged.fml.common.Mod;
 import net.neoforged.fml.loading.FMLEnvironment;
 import net.neoforged.fml.loading.FMLPaths;
+import net.neoforged.neoforge.common.NeoForge;
+import net.neoforged.neoforge.event.server.ServerAboutToStartEvent;
 import org.slf4j.Logger;
 
 import java.io.IOException;
-import java.nio.file.Files;
 import java.nio.file.Path;
 
 @Mod(ZianRCT.MOD_ID)
@@ -31,16 +32,17 @@ public final class ZianRCT {
     private final LeagueBattlePromptService battlePromptService;
 
     public ZianRCT(IEventBus modEventBus, ModContainer container) {
-        ZianRctConfig initialConfig = loadInitialSnapshot();
-        ConfigState.replace(initialConfig);
+        ZianRctConfig bootstrapDefaults = ZianRctConfig.defaults();
+        ConfigState.replace(bootstrapDefaults);
         modEventBus.addListener(ZianRctNetwork::registerPayloads);
         this.rctPackController = new RctPackController(modEventBus);
         this.medalRuntime = new MedalRuntime(rctPackController);
         this.battlePromptService = new LeagueBattlePromptService();
+        NeoForge.EVENT_BUS.addListener(this::onServerAboutToStart);
         if (FMLEnvironment.dist == Dist.CLIENT) {
             ZianRctClient.init(modEventBus);
         }
-        LOGGER.info("Zian RCT initialized with profile '{}'", initialConfig.activeProfile());
+        LOGGER.info("Zian RCT initialized with profile '{}'", bootstrapDefaults.activeProfile());
     }
 
     public RctPackController rctPackController() {
@@ -55,39 +57,32 @@ public final class ZianRCT {
         return battlePromptService;
     }
 
-    private static ZianRctConfig loadInitialSnapshot() {
+    private void onServerAboutToStart(ServerAboutToStartEvent event) {
         Path configPath = FMLPaths.CONFIGDIR.get().resolve(ZianRctConfigLoader.FILE_NAME);
-
-        if (FMLEnvironment.dist == Dist.DEDICATED_SERVER) {
-            try {
-                return ZianRctConfigLoader.loadOrCreate(configPath);
-            } catch (IOException | RuntimeException exception) {
+        try {
+            ZianRctConfig loaded = ZianRctConfigLoader.loadOrCreate(configPath);
+            ConfigState.replace(loaded);
+            LOGGER.info(
+                    "Loaded Zian RCT server configuration from {} with profile '{}'.",
+                    configPath,
+                    loaded.activeProfile()
+            );
+        } catch (IOException | RuntimeException exception) {
+            if (FMLEnvironment.dist == Dist.DEDICATED_SERVER) {
                 throw new IllegalStateException(
                         "No se pudo cargar una configuración válida de Zian RCT desde " + configPath,
                         exception
                 );
             }
-        }
 
-        if (Files.notExists(configPath)) {
-            LOGGER.info(
-                    "No local {} found on client bootstrap; using built-in defaults. Remote server snapshots will use ClientConfigState.",
-                    ZianRctConfigLoader.FILE_NAME
-            );
-            return ZianRctConfig.defaults();
-        }
-
-        try {
-            ZianRctConfig local = ZianRctConfigLoader.readExisting(configPath);
-            LOGGER.info("Loaded local {} for integrated-server/LAN use.", ZianRctConfigLoader.FILE_NAME);
-            return local;
-        } catch (IOException | RuntimeException exception) {
-            LOGGER.warn(
-                    "Could not read local {} on client bootstrap; using defaults. The file was not modified.",
+            ZianRctConfig fallback = ZianRctConfig.defaults();
+            ConfigState.replace(fallback);
+            LOGGER.error(
+                    "Could not load or create {} for the integrated server. Using built-in defaults for this world; "
+                            + "the invalid file was left untouched.",
                     configPath,
                     exception
             );
-            return ZianRctConfig.defaults();
         }
     }
 }
