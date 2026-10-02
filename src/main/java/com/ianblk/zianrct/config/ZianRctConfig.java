@@ -45,26 +45,25 @@ public record ZianRctConfig(
                 new ChainEntry("rassvet_master_aurelia", null)
         );
         List<MedalDefinition> medals = List.of(
-                medal("novato", "rassvet_leader_novato", "Medalla Novato", 0),
-                medal("ferrum", "rassvet_leader_ferrum", "Medalla Ferrum", 1),
-                medal("aquila", "rassvet_leader_aquila", "Medalla Aquila", 2),
-                medal("voltar", "rassvet_leader_voltar", "Medalla Voltar", 3),
-                medal("engranaje", "rassvet_leader_engranaje", "Medalla Engranaje", 4),
-                medal("bruma", "rassvet_leader_bruma", "Medalla Bruma", 5),
-                medal("cognitus", "rassvet_leader_cognitus", "Medalla Cognitus", 6),
-                medal("forjax", "rassvet_leader_forjax", "Medalla Forjax", 7),
-                medal("glacius", "rassvet_leader_glacius", "Medalla Glacius", 8),
-                medal("aurelia", "rassvet_master_aurelia", "Medalla Aurelia", 9)
+                medal("novato", "rassvet_leader_novato", "Novato", "Medalla Novato", "Derrota a Novato, líder del primer gimnasio de la Liga Rassvet.", 0),
+                medal("ferrum", "rassvet_leader_ferrum", "Ferrum", "Medalla Ferrum", "Derrota a Ferrum, líder del segundo gimnasio de la Liga Rassvet.", 1),
+                medal("aquila", "rassvet_leader_aquila", "Aquila", "Medalla Aquila", "Derrota a Aquila, líder del tercer gimnasio de la Liga Rassvet.", 2),
+                medal("voltar", "rassvet_leader_voltar", "Voltar", "Medalla Voltar", "Derrota a Voltar, líder del cuarto gimnasio de la Liga Rassvet.", 3),
+                medal("engranaje", "rassvet_leader_engranaje", "Engranaje", "Medalla Engranaje", "Derrota a Engranaje, líder del quinto gimnasio de la Liga Rassvet.", 4),
+                medal("bruma", "rassvet_leader_bruma", "Bruma", "Medalla Bruma", "Derrota a Bruma, líder del sexto gimnasio de la Liga Rassvet.", 5),
+                medal("cognitus", "rassvet_leader_cognitus", "Cognitus", "Medalla Cognitus", "Derrota a Cognitus, líder del séptimo gimnasio de la Liga Rassvet.", 6),
+                medal("forjax", "rassvet_leader_forjax", "Forjax", "Medalla Forjax", "Derrota a Forjax, líder del octavo gimnasio de la Liga Rassvet.", 7),
+                medal("glacius", "rassvet_leader_glacius", "Glacius", "Medalla Glacius", "Derrota a Glacius, líder del noveno gimnasio de la Liga Rassvet.", 8),
+                medal("aurelia", "rassvet_master_aurelia", "Aurelia", "Medalla Aurelia", "Derrota a Aurelia, Maestra de la Liga Rassvet, para obtener la medalla final.", 9)
         );
         LinkedHashMap<String, Profile> profiles = new LinkedHashMap<>();
         profiles.put("rassvet", new Profile(10, 10, 100, "rassvet", chain, medals, false));
         return new ZianRctConfig(CURRENT_SCHEMA_VERSION, "rassvet", profiles, Messages.defaults());
     }
 
-    private static MedalDefinition medal(String id, String trainer, String name, int order) {
+    private static MedalDefinition medal(String id, String trainer, String trainerName, String name, String description, int order) {
         return new MedalDefinition(
-                id, trainer, name,
-                "Derrota a " + trainer + " para obtener esta medalla.",
+                id, trainer, trainerName, name, description,
                 "zianrct:textures/gui/medals/" + id + ".png",
                 null, order
         );
@@ -76,63 +75,40 @@ public record ZianRctConfig(
 
     public List<String> validate() {
         List<String> errors = new ArrayList<>();
-        if (schemaVersion != CURRENT_SCHEMA_VERSION) {
-            errors.add("schemaVersion debe ser " + CURRENT_SCHEMA_VERSION + " pero es " + schemaVersion);
-        }
-        if (isBlank(activeProfile)) {
-            errors.add("activeProfile no puede estar vacío");
-        } else if (activeProfile.length() > MedalProtocol.MAX_PROFILE_LENGTH) {
-            errors.add("activeProfile supera el máximo de " + MedalProtocol.MAX_PROFILE_LENGTH + " caracteres");
-        }
-        if (profiles.isEmpty()) {
-            errors.add("profiles debe contener al menos un perfil");
-        } else if (!isBlank(activeProfile) && !profiles.containsKey(activeProfile)) {
-            errors.add("activeProfile '" + activeProfile + "' no existe en profiles");
-        }
+        if (schemaVersion != CURRENT_SCHEMA_VERSION) errors.add("schemaVersion debe ser " + CURRENT_SCHEMA_VERSION + " pero es " + schemaVersion);
+        if (isBlank(activeProfile)) errors.add("activeProfile no puede estar vacío");
+        else if (activeProfile.length() > MedalProtocol.MAX_PROFILE_LENGTH) errors.add("activeProfile supera el máximo de " + MedalProtocol.MAX_PROFILE_LENGTH + " caracteres");
+        if (profiles.isEmpty()) errors.add("profiles debe contener al menos un perfil");
+        else if (!isBlank(activeProfile) && !profiles.containsKey(activeProfile)) errors.add("activeProfile '" + activeProfile + "' no existe en profiles");
 
         for (Map.Entry<String, Profile> entry : profiles.entrySet()) {
             String profileName = entry.getKey();
             Profile profile = entry.getValue();
-            if (isBlank(profileName)) {
-                errors.add("profiles contiene un nombre de perfil vacío");
-            } else if (profileName.length() > MedalProtocol.MAX_PROFILE_LENGTH) {
-                errors.add("profiles." + profileName + " supera el máximo de " + MedalProtocol.MAX_PROFILE_LENGTH + " caracteres");
-            } else if (profile == null) {
-                errors.add("profiles." + profileName + " no puede ser null");
-            } else {
-                validateProfile(profileName, profile, errors);
-            }
+            if (isBlank(profileName)) errors.add("profiles contiene un nombre de perfil vacío");
+            else if (profileName.length() > MedalProtocol.MAX_PROFILE_LENGTH) errors.add("profiles." + profileName + " supera el máximo de " + MedalProtocol.MAX_PROFILE_LENGTH + " caracteres");
+            else if (profile == null) errors.add("profiles." + profileName + " no puede ser null");
+            else validateProfile(profileName, profile, errors);
         }
 
-        if (messages == null) {
-            errors.add("messages no puede ser null");
-        } else {
-            messages.validate("messages", errors);
-        }
-
-        if (errors.isEmpty()) {
-            validateSnapshotBudget(errors);
-        }
+        if (messages == null) errors.add("messages no puede ser null");
+        else messages.validate("messages", errors);
+        if (errors.isEmpty()) validateSnapshotBudget(errors);
         return Collections.unmodifiableList(new ArrayList<>(errors));
     }
 
     public void validateOrThrow() {
         List<String> errors = validate();
-        if (!errors.isEmpty()) {
-            throw new ConfigValidationException(errors);
-        }
+        if (!errors.isEmpty()) throw new ConfigValidationException(errors);
     }
 
     private void validateSnapshotBudget(List<String> errors) {
         Profile profile = activeProfileConfig();
-        if (profile == null) {
-            return;
-        }
+        if (profile == null) return;
         Map<String, Integer> unlockCaps = profile.trainerUnlockCaps();
         List<MedalClientSnapshot.MedalDefinitionView> definitions = profile.medals().stream()
                 .sorted(Comparator.comparingInt(MedalDefinition::order))
                 .map(medal -> new MedalClientSnapshot.MedalDefinitionView(
-                        medal.id(), medal.trainer(), medal.name(), medal.description(),
+                        medal.id(), medal.trainer(), medal.resolvedTrainerName(), medal.name(), medal.description(),
                         medal.texture(), medal.color(), medal.order(),
                         unlockCaps.getOrDefault(medal.trainer(), profile.maxCap())
                 ))
@@ -151,9 +127,7 @@ public record ZianRctConfig(
         if (profile.maxCap < profile.initialCap || profile.maxCap > 100) errors.add(prefix + ".maxCap debe estar entre initialCap y 100");
         if (isBlank(profile.series)) errors.add(prefix + ".series no puede estar vacío");
         if (profile.chain.isEmpty()) errors.add(prefix + ".chain debe contener al menos un entrenador");
-        if (profile.medals.size() > MedalProtocol.MAX_MEDALS) {
-            errors.add(prefix + ".medals supera el máximo de " + MedalProtocol.MAX_MEDALS + " elementos");
-        }
+        if (profile.medals.size() > MedalProtocol.MAX_MEDALS) errors.add(prefix + ".medals supera el máximo de " + MedalProtocol.MAX_MEDALS + " elementos");
 
         Set<String> trainers = new LinkedHashSet<>();
         int previousCap = profile.initialCap;
@@ -190,6 +164,7 @@ public record ZianRctConfig(
                 if (!trainers.contains(medal.trainer)) errors.add(path + ".trainer no pertenece a chain: " + medal.trainer);
                 if (!medalTrainers.add(medal.trainer)) errors.add(path + ".trainer ya tiene otra medalla: " + medal.trainer);
             }
+            validateBounded(path + ".trainerName", medal.trainerName, MedalProtocol.MAX_TRAINER_NAME_LENGTH, true, errors);
             validateBounded(path + ".name", medal.name, MedalProtocol.MAX_NAME_LENGTH, false, errors);
             validateBounded(path + ".description", medal.description, MedalProtocol.MAX_DESCRIPTION_LENGTH, false, errors);
             validateBounded(path + ".texture", medal.texture, MedalProtocol.MAX_TEXTURE_LENGTH, true, errors);
@@ -219,6 +194,16 @@ public record ZianRctConfig(
     private static boolean isSafeId(String value) { return value != null && SAFE_ID.matcher(value).matches(); }
     private static boolean isBlank(String value) { return value == null || value.isBlank(); }
 
+    private static String inferTrainerName(String trainer) {
+        if (isBlank(trainer)) return "Entrenador";
+        String value = trainer;
+        if (value.startsWith("rassvet_leader_")) value = value.substring("rassvet_leader_".length());
+        else if (value.startsWith("rassvet_master_")) value = value.substring("rassvet_master_".length());
+        value = value.replace('_', ' ').trim();
+        if (value.isEmpty()) return trainer;
+        return Character.toUpperCase(value.charAt(0)) + value.substring(1);
+    }
+
     public record Profile(int initialCap, int step, int maxCap, String series, List<ChainEntry> chain, List<MedalDefinition> medals, boolean giveMedalItem) {
         public Profile {
             chain = chain == null ? Collections.emptyList() : Collections.unmodifiableList(new ArrayList<>(chain));
@@ -242,7 +227,21 @@ public record ZianRctConfig(
     }
 
     public record ChainEntry(String trainer, Integer unlockCap) {}
-    public record MedalDefinition(String id, String trainer, String name, String description, String texture, String color, int order) {}
+
+    public record MedalDefinition(
+            String id,
+            String trainer,
+            String trainerName,
+            String name,
+            String description,
+            String texture,
+            String color,
+            int order
+    ) {
+        public String resolvedTrainerName() {
+            return isBlank(trainerName) ? inferTrainerName(trainer) : trainerName;
+        }
+    }
 
     public record Messages(String capUnlocked, String medalObtained, String reloadSuccess, String currentCap) {
         public static Messages defaults() {
