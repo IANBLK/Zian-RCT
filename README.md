@@ -38,9 +38,9 @@ Los comandos `/zianrct` requieren nivel de permiso de operador 2:
 
 ## Medallas y texturas personalizadas
 
-Las definiciones de medallas pueden referenciar una textura mediante `ResourceLocation`, pero el servidor **no envía archivos PNG dentro del payload de red**. La textura debe existir ya en los recursos del cliente.
+Zian-RCT incluye arte original para las diez medallas del perfil Rassvet en `assets/zianrct/textures/gui/medals/`, junto con fondos de tarjeta para estados obtenida/bloqueada, overlay de hover y candado. La configuración por defecto ya apunta a `zianrct:textures/gui/medals/<id>.png`, por lo que no requiere un resource pack adicional para usar el arte incluido.
 
-Para servidores públicos, las medallas con arte propio deben distribuirse mediante un resource pack. La opción recomendada es configurar el resource pack del servidor en `server.properties` (`resource-pack`, `resource-pack-sha1` y, si se desea exigirlo, `require-resource-pack=true`). Si una textura configurada no existe en el cliente, Zian-RCT usa su representación visual de respaldo.
+Las definiciones de medallas siguen pudiendo referenciar otras texturas mediante `ResourceLocation`. El servidor **no envía archivos PNG dentro del payload de red**: cualquier textura personalizada externa debe existir ya en los recursos del cliente, por ejemplo mediante un resource pack. Si una textura configurada no existe, el medallero conserva su representación visual de respaldo.
 
 ## Licencia e integración con RCT
 
