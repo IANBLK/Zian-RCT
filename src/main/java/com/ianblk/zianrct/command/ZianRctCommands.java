@@ -315,32 +315,50 @@ public final class ZianRctCommands {
         Path path = FMLPaths.CONFIGDIR.get().resolve(ZianRctConfigLoader.FILE_NAME);
         final ZianRctConfig next;
         try {
-            next = ZianRctConfigLoader.readExisting(path);
+            next = ZianRctConfigLoader.loadOrCreate(path);
         } catch (IOException | RuntimeException exception) {
             source.sendFailure(Component.literal("No se recargó Zian RCT: " + exception.getMessage()));
             return 0;
         }
 
-        ConfigState.replace(next);
-        packController.regenerate(source.getServer(), "/zianrct reload");
-
-        int syncFailures = 0;
-        for (ServerPlayer player : source.getServer().getPlayerList().getPlayers()) {
-            if (!ZianRctNetwork.sendSnapshot(player, medalService)) {
-                syncFailures++;
+        var completion = packController.reloadConfig(source.getServer(), next, "/zianrct reload");
+        if (completion.isDone()) {
+            RctPackController.ConfigReloadResult immediate = completion.join();
+            if (!immediate.success()) {
+                source.sendFailure(Component.literal(immediate.message()));
+                return 0;
             }
         }
 
-        int finalSyncFailures = syncFailures;
-        String success = next.messages().reloadSuccess();
         source.sendSuccess(
-                () -> Component.literal(
-                        finalSyncFailures == 0
-                                ? success
-                                : success + " No se pudo reenviar el snapshot a " + finalSyncFailures + " jugador(es)."
-                ),
-                true
+                () -> Component.literal("Recarga de Zian RCT iniciada; se aplicará solo si RCT verifica la progresión generada."),
+                false
         );
+
+        completion.thenAccept(result -> {
+            if (!result.success()) {
+                source.sendFailure(Component.literal("No se aplicó Zian RCT: " + result.message()));
+                return;
+            }
+
+            int syncFailures = 0;
+            for (ServerPlayer player : source.getServer().getPlayerList().getPlayers()) {
+                if (!ZianRctNetwork.sendSnapshot(player, medalService)) {
+                    syncFailures++;
+                }
+            }
+
+            int finalSyncFailures = syncFailures;
+            source.sendSuccess(
+                    () -> Component.literal(
+                            finalSyncFailures == 0
+                                    ? result.message()
+                                    : result.message() + " No se pudo reenviar el snapshot a "
+                                            + finalSyncFailures + " jugador(es)."
+                    ),
+                    true
+            );
+        });
         return 1;
     }
 }
