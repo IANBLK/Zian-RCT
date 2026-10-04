@@ -9,6 +9,7 @@ import com.ianblk.zianrct.medal.MedalService;
 import com.ianblk.zianrct.network.ZianRctNetwork;
 import com.ianblk.zianrct.rct.RctPackController;
 import com.ianblk.zianrct.rct.RctProgressService;
+import com.ianblk.zianrct.permission.RctPermissions;
 import com.mojang.brigadier.CommandDispatcher;
 import com.mojang.brigadier.arguments.IntegerArgumentType;
 import com.mojang.brigadier.arguments.StringArgumentType;
@@ -34,14 +35,15 @@ public final class ZianRctCommands {
     ) {
         dispatcher.register(
                 Commands.literal("medals")
+                        .requires(source -> RctPermissions.allows(source, "medals", false))
                         .executes(context -> openMedals(context.getSource(), medalService))
         );
 
         dispatcher.register(
                 Commands.literal("zianrct")
-                        .requires(source -> source.hasPermission(2))
                         .then(Commands.literal("medal")
                                 .then(Commands.literal("give")
+                                        .requires(source -> RctPermissions.allows(source, "admin.medal.give", true))
                                         .then(Commands.argument("jugador", EntityArgument.player())
                                                 .then(Commands.argument("medalla", StringArgumentType.word())
                                                         .suggests((context, builder) -> suggestMedalIds(builder))
@@ -52,6 +54,7 @@ public final class ZianRctCommands {
                                                                 StringArgumentType.getString(context, "medalla")
                                                         )))))
                                 .then(Commands.literal("revoke")
+                                        .requires(source -> RctPermissions.allows(source, "admin.medal.revoke", true))
                                         .then(Commands.argument("jugador", EntityArgument.player())
                                                 .then(Commands.argument("medalla", StringArgumentType.word())
                                                         .suggests((context, builder) -> suggestMedalIds(builder))
@@ -62,6 +65,7 @@ public final class ZianRctCommands {
                                                                 StringArgumentType.getString(context, "medalla")
                                                         )))))
                                 .then(Commands.literal("list")
+                                        .requires(source -> RctPermissions.allows(source, "admin.medal.list", true))
                                         .then(Commands.argument("jugador", EntityArgument.player())
                                                 .executes(context -> list(
                                                         context.getSource(),
@@ -71,12 +75,14 @@ public final class ZianRctCommands {
                         )
                         .then(Commands.literal("cap")
                                 .then(Commands.literal("get")
+                                        .requires(source -> RctPermissions.allows(source, "admin.cap.get", true))
                                         .then(Commands.argument("jugador", EntityArgument.player())
                                                 .executes(context -> capGet(
                                                         context.getSource(),
                                                         EntityArgument.getPlayer(context, "jugador")
                                                 ))))
                                 .then(Commands.literal("set")
+                                        .requires(source -> RctPermissions.allows(source, "admin.cap.set", true))
                                         .then(Commands.argument("jugador", EntityArgument.player())
                                                 .then(Commands.argument("cap", IntegerArgumentType.integer(1, 10_000))
                                                         .executes(context -> capSet(
@@ -85,12 +91,14 @@ public final class ZianRctCommands {
                                                                 IntegerArgumentType.getInteger(context, "cap")
                                                         )))))
                                 .then(Commands.literal("add")
+                                        .requires(source -> RctPermissions.allows(source, "admin.cap.add", true))
                                         .then(Commands.argument("jugador", EntityArgument.player())
                                                 .executes(context -> capAdd(
                                                         context.getSource(),
                                                         EntityArgument.getPlayer(context, "jugador")
                                                 ))))
                                 .then(Commands.literal("remove")
+                                        .requires(source -> RctPermissions.allows(source, "admin.cap.remove", true))
                                         .then(Commands.argument("jugador", EntityArgument.player())
                                                 .executes(context -> capRemove(
                                                         context.getSource(),
@@ -98,12 +106,14 @@ public final class ZianRctCommands {
                                                 ))))
                         )
                         .then(Commands.literal("progress")
+                                .requires(source -> RctPermissions.allows(source, "admin.progress", true))
                                 .then(Commands.argument("jugador", EntityArgument.player())
                                         .executes(context -> progress(
                                                 context.getSource(),
                                                 EntityArgument.getPlayer(context, "jugador")
                                         ))))
                         .then(Commands.literal("reload")
+                                .requires(source -> RctPermissions.allows(source, "admin.reload", true))
                                 .executes(context -> reload(
                                         context.getSource(),
                                         medalService,

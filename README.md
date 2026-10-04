@@ -20,7 +20,10 @@ Proyecto en desarrollo por fases. Las fases actuales ya incluyen configuración 
 
 El comando público `/medals` sincroniza el snapshot autoritativo del servidor y abre el medallero en el cliente.
 
-Los comandos `/zianrct` requieren nivel de permiso de operador 2:
+Los comandos administrativos `/zianrct` requieren OP nivel 2 por defecto.
+Con LuckPerms pueden delegarse mediante los nodos siguientes; una denegación
+explícita también se respeta para operadores. LuckPerms es opcional, como mod
+de NeoForge o plugin de Bukkit en Youer, y no se incluye en el JAR.
 
 - `/zianrct medal give <jugador> <medalla>`
 - `/zianrct medal revoke <jugador> <medalla>`
@@ -31,6 +34,23 @@ Los comandos `/zianrct` requieren nivel de permiso de operador 2:
 - `/zianrct cap remove <jugador>`
 - `/zianrct progress <jugador>`
 - `/zianrct reload`
+
+## Permisos (Beta 2)
+
+- `zianrct.medals`: abrir `/medals` (todos por defecto).
+- `zianrct.battle`: interactuar y aceptar desafíos de la cadena configurada (todos por defecto).
+- `zianrct.admin.medal.give`, `zianrct.admin.medal.revoke`, `zianrct.admin.medal.list`.
+- `zianrct.admin.cap.get`, `zianrct.admin.cap.set`, `zianrct.admin.cap.add`, `zianrct.admin.cap.remove`.
+- `zianrct.admin.progress`, `zianrct.admin.reload`.
+
+Los nodos administrativos usan OP nivel 2 cuando están sin definir. Si el proveedor
+instalado no está disponible, el acceso se deniega. La consola conserva sus permisos.
+En Youer se habilita el acceso al envoltorio de comandos de Bukkit para que las
+comprobaciones anteriores puedan ejecutarse; los permisos ya registrados no se sobrescriben.
+
+Ejemplos: `/lp group moderador permission set zianrct.admin.medal.give true`
+y `/lp user IANBLK permission set zianrct.admin.reload false`.
+Reconecta después de cambiar permisos para actualizar el autocompletado.
 
 `cap set` solo acepta topes alcanzables por la cadena configurada. Cuando varios entrenadores producen el mismo tope, se usa el primer prefijo que alcanza ese valor. En el perfil Rassvet por defecto, el tope 100 se alcanza al derrotar a Glacius, por lo que `cap set ... 100` marca la cadena hasta Glacius y no fuerza la derrota de Aurelia. Aurelia sigue siendo una victoria final/medalla separada con el tope ya en 100.
 

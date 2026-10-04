@@ -5,6 +5,7 @@ import com.ianblk.zianrct.ZianRCT;
 import com.ianblk.zianrct.config.ConfigState;
 import com.ianblk.zianrct.config.ZianRctConfig;
 import com.ianblk.zianrct.rct.RctProgressService;
+import com.ianblk.zianrct.permission.RctPermissions;
 import com.mojang.brigadier.CommandDispatcher;
 import com.mojang.brigadier.arguments.StringArgumentType;
 import net.minecraft.ChatFormatting;
@@ -19,6 +20,9 @@ import net.minecraft.world.entity.Entity;
 import net.neoforged.neoforge.common.NeoForge;
 import net.neoforged.neoforge.event.RegisterCommandsEvent;
 import net.neoforged.neoforge.event.entity.player.PlayerInteractEvent;
+import net.neoforged.neoforge.event.entity.player.PlayerEvent;
+import net.neoforged.neoforge.event.server.ServerStoppedEvent;
+import net.neoforged.neoforge.event.tick.ServerTickEvent;
 
 import java.util.List;
 import java.util.Map;
@@ -46,6 +50,12 @@ public final class LeagueBattlePromptService {
     public LeagueBattlePromptService() {
         NeoForge.EVENT_BUS.addListener(this::onEntityInteract);
         NeoForge.EVENT_BUS.addListener(this::onRegisterCommands);
+        NeoForge.EVENT_BUS.addListener((PlayerEvent.PlayerLoggedOutEvent event) -> pending.remove(event.getEntity().getUUID()));
+        NeoForge.EVENT_BUS.addListener((ServerStoppedEvent event) -> pending.clear());
+        NeoForge.EVENT_BUS.addListener((ServerTickEvent.Post event) -> {
+            long now = System.currentTimeMillis();
+            pending.values().removeIf(invite -> invite.expiresAtMillis() < now);
+        });
     }
 
     private void onEntityInteract(PlayerInteractEvent.EntityInteract event) {
@@ -61,6 +71,11 @@ public final class LeagueBattlePromptService {
 
         event.setCanceled(true);
         event.setCancellationResult(InteractionResult.SUCCESS);
+        if (!RctPermissions.allows(player.createCommandSourceStack(), "battle", false)) {
+            pending.remove(player.getUUID());
+            player.sendSystemMessage(Component.literal("No tienes permiso para iniciar este desafío.").withStyle(ChatFormatting.RED));
+            return;
+        }
 
         String prerequisiteMessage = missingPrerequisiteMessage(player, trainer.getTrainerId());
         if (prerequisiteMessage != null) {
@@ -95,6 +110,7 @@ public final class LeagueBattlePromptService {
     private void registerCommands(CommandDispatcher<CommandSourceStack> dispatcher) {
         dispatcher.register(
                 Commands.literal("zianrctbattle")
+                        .requires(source -> RctPermissions.allows(source, "battle", false))
                         .then(Commands.literal("accept")
                                 .then(Commands.argument("trainer", StringArgumentType.word())
                                         .executes(context -> accept(
@@ -230,7 +246,7 @@ public final class LeagueBattlePromptService {
             }
         } catch (RuntimeException exception) {
             ZianRCT.LOGGER.warn("Could not inspect Rassvet prerequisite progress for {} against {}", player.getGameProfile().getName(), trainerId, exception);
-            return null;
+            return "No se pudo verificar tu progreso. Inténtalo de nuevo o avisa a un administrador.";
         }
         return PREREQUISITE_MESSAGES.getOrDefault(
                 trainerId,

@@ -11,10 +11,36 @@ import java.util.UUID;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 
 class MedalStoreTest {
     @TempDir
     Path tempDir;
+
+    @Test
+    void failedWriteDoesNotGrantOrOverwriteTheExistingLedger() throws IOException {
+        Path file = tempDir.resolve("medals.json");
+        UUID player = UUID.randomUUID();
+        MedalStore store = MedalStore.open(file);
+        store.grantIfAbsent(player, new MedalRecord("novato", 1L, MedalOrigin.BATTLE), true);
+        String saved = Files.readString(file);
+        Files.createDirectory(tempDir.resolve("medals.json.tmp"));
+        assertThrows(IOException.class, () -> store.grantIfAbsent(player,
+                new MedalRecord("ferrum", 2L, MedalOrigin.BATTLE), true));
+        assertFalse(store.has(player, "ferrum"));
+        assertEquals(saved, Files.readString(file));
+        assertFalse(MedalStore.open(file).has(player, "ferrum"));
+    }
+
+    @Test
+    void nullMedalRecordsAreRejectedWithoutChangingTheFile() throws IOException {
+        Path file = tempDir.resolve("invalid.json");
+        String json = "{\"schemaVersion\":2,\"players\":[{\"uuid\":\"" + UUID.randomUUID()
+                + "\",\"medals\":[null]}]}";
+        Files.writeString(file, json);
+        assertThrows(IOException.class, () -> MedalStore.open(file));
+        assertEquals(json, Files.readString(file));
+    }
 
     @Test
     void persistenceSurvivesReopenAndDuplicateGrantDoesNotOverwrite() throws IOException {

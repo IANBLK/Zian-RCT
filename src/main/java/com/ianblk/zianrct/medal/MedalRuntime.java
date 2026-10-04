@@ -27,6 +27,7 @@ public final class MedalRuntime {
     }
 
     private void onServerStarted(ServerStartedEvent event) {
+        com.ianblk.zianrct.permission.YouerPermissionBridge.register();
         medalService.start(event.getServer());
         battleListener.registerIfAvailable();
     }

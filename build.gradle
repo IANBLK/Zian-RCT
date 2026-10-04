@@ -55,6 +55,7 @@ dependencies {
     testImplementation platform('org.junit:junit-bom:5.13.4')
     testImplementation 'org.junit.jupiter:junit-jupiter'
     testImplementation 'com.google.code.gson:gson:2.10.1'
+    testImplementation 'net.luckperms:api:5.4'
     testRuntimeOnly 'org.junit.platform:junit-platform-launcher'
 }
 

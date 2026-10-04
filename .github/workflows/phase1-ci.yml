@@ -2,6 +2,8 @@ name: Zian RCT CI
 
 on:
   push:
+    branches: [main, 'fix/**']
+  pull_request:
     branches: [main]
   workflow_dispatch:
 
