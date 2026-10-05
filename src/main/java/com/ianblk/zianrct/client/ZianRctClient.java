@@ -33,6 +33,8 @@ public final class ZianRctClient {
 
     private static void onClientTick(ClientTickEvent.Post event) {
         Minecraft minecraft = Minecraft.getInstance();
+        var editor = ClientNpcEditorState.consume();
+        if (editor != null && minecraft.player != null) minecraft.setScreen(new NpcEditorScreen(editor));
 
         while (OPEN_MEDALS_KEY.consumeClick()) {
             openMedalCase(minecraft);
@@ -85,5 +87,6 @@ public final class ZianRctClient {
 
     private static void onLoggingOut(ClientPlayerNetworkEvent.LoggingOut event) {
         ClientMedalState.clear();
+        ClientNpcEditorState.clear();
     }
 }

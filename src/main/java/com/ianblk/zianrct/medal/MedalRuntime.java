@@ -17,6 +17,7 @@ public final class MedalRuntime {
 
     public MedalRuntime(RctPackController packController) {
         this.packController = packController;
+        new com.ianblk.zianrct.npc.NpcEditorService(rewardService);
         NeoForge.EVENT_BUS.addListener(this::onServerStarted);
         NeoForge.EVENT_BUS.addListener(this::onServerStopped);
         NeoForge.EVENT_BUS.addListener(this::onPlayerLoggedIn);

@@ -1,5 +1,13 @@
 # Changelog
 
+## 0.1.0-beta.5
+
+- Add an in-game NPC/Loot editor through `/zianrct npc edit`, with trainer-ID search, selection of nearby existing NPCs and creation from loaded RCT trainer definitions.
+- Add native RCT persistence controls and per-entity movement locks with saved anchors, paused during active battles.
+- Configure copied held-item rewards and AVECOINS credits in the GUI. Preserve the one-time per-player/trainer journal and frozen claims from beta.4.
+- Recheck delegated LuckPerms permissions on every server action, bind single-use tokens to the administrator, validate nearby targets and enforce payload/rate limits.
+- Add a required independent editor network channel; beta.5 is required on server and clients. Existing medal protocol, progress and trainer teams are preserved.
+
 ## 0.1.0-beta.4
 
 - Add configurable one-time rewards per player UUID and RCT trainer ID, independent from medals and historical reconciliation.
