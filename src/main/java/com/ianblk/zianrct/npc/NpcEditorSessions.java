@@ -2,11 +2,13 @@ package com.ianblk.zianrct.npc;
 import java.util.*;
 
 public final class NpcEditorSessions {
-    public record Session(UUID token, UUID npc, String trainer, List<String> matches, long expires) {}
+    public record Session(UUID token, UUID npc, String trainer, String query, NpcEditorState.Mode mode,
+                          String confirmation, int page, Set<UUID> visibleNpcs, long expires) {}
     private final Map<UUID, Session> sessions = new HashMap<>();
     private final Map<UUID, Long> last = new HashMap<>();
-    public Session open(UUID player, UUID npc, String trainer, List<String> matches, long now) {
-        Session session = new Session(UUID.randomUUID(), npc, trainer, List.copyOf(matches), now + 300000);
+    public Session open(UUID player, UUID npc, String trainer, String query, NpcEditorState.Mode mode,
+                        String confirmation, int page, Set<UUID> visibleNpcs, long now) {
+        Session session = new Session(UUID.randomUUID(), npc, trainer, query, mode, confirmation, page, Set.copyOf(visibleNpcs), now + 300000);
         sessions.put(player, session); return session;
     }
     public Session take(UUID player, UUID token, long now) {

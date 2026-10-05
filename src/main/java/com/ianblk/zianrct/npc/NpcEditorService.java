@@ -21,11 +21,11 @@ public final class NpcEditorService {
     private static NpcEditorService instance;
     private static final String FROZEN = "ZianRctEditorFrozen";
     private static final Gson GSON = new Gson();
+    private static final int PAGE_SIZE = 5;
     private final TrainerRewardService rewards;
     private final NpcEditorSessions sessions = new NpcEditorSessions();
     public NpcEditorService(TrainerRewardService rewards) {
-        this.rewards = rewards;
-        instance = this;
+        this.rewards = rewards; instance = this;
         NeoForge.EVENT_BUS.addListener(this::registerCommands);
         NeoForge.EVENT_BUS.addListener(this::tick);
         NeoForge.EVENT_BUS.addListener((PlayerEvent.PlayerLoggedOutEvent e) -> sessions.remove(e.getEntity().getUUID()));
@@ -34,114 +34,171 @@ public final class NpcEditorService {
     public static void receive(ServerPlayer player, NpcEditorAction action) {
         if (instance != null) instance.action(player, action);
     }
+    private int command(net.minecraft.commands.CommandSourceStack source) {
+        try { open(source.getPlayerOrException()); return 1; }
+        catch (Exception e) { source.sendFailure(Component.literal(e.getMessage())); return 0; }
+    }
     private void registerCommands(RegisterCommandsEvent event) {
         event.getDispatcher().register(Commands.literal("zianrct").requires(s -> true)
-                .then(Commands.literal("npc").then(Commands.literal("edit")
-                        .requires(s -> RctPermissions.allows(s, "admin.npc.edit", true))
-                        .executes(c -> {
-                            try { open(c.getSource().getPlayerOrException()); return 1; }
-                            catch (Exception e) { c.getSource().sendFailure(Component.literal(e.getMessage())); return 0; }
-                        }))));
+                .then(Commands.literal("npc").requires(s -> RctPermissions.allows(s,"admin.npc.edit",true))
+                        .executes(c -> command(c.getSource()))
+                        .then(Commands.literal("edit").executes(c -> command(c.getSource())))));
     }
     private boolean allowed(ServerPlayer player, String permission) {
         return RctPermissions.allows(player.createCommandSourceStack(), permission, true);
     }
     public void open(ServerPlayer player) {
-        if (!allowed(player, "admin.npc.edit")) throw new IllegalStateException("No tienes permiso para editar NPC.");
-        TrainerMob nearby = nearest(player);
-        String trainer = nearby == null ? "rassvet_leader_novato" : nearby.getTrainerId();
-        send(player, nearby, trainer, search(trainer), "");
+        if (!allowed(player,"admin.npc.edit")) throw new IllegalStateException("No tienes permiso para editar NPC.");
+        send(player,null,"",NpcEditorState.Mode.LIST,"",0,"","");
     }
-    private List<String> search(String prefix) {
-        return RCTMod.getInstance().getTrainerManager().getAllData()
-                .map(Map.Entry::getKey).filter(id -> id.length() <= 128 && id.contains(prefix.toLowerCase(Locale.ROOT)))
-                .sorted().limit(12).toList();
+    private List<String> search(String query) {
+        return RCTMod.getInstance().getTrainerManager().getAllData().map(Map.Entry::getKey)
+                .filter(id -> id.length() <= 128 && id.contains(query.toLowerCase(Locale.ROOT))).sorted().toList();
     }
-    private TrainerMob nearest(ServerPlayer player) {
-        return player.serverLevel().getEntitiesOfClass(TrainerMob.class, player.getBoundingBox().inflate(8),
-                npc -> npc.isAlive() && !npc.isRemoved() && npc.distanceToSqr(player) <= 64)
-                .stream().min(Comparator.comparingDouble(npc -> npc.distanceToSqr(player))).orElse(null);
+    private List<TrainerMob> loaded(ServerPlayer player) {
+        List<TrainerMob> result = new ArrayList<>();
+        for (var entity : player.serverLevel().getAllEntities())
+            if (entity instanceof TrainerMob npc && npc.isAlive() && !npc.isRemoved()) result.add(npc);
+        result.sort(Comparator.comparingDouble((TrainerMob n) -> n.distanceToSqr(player)).thenComparing(n -> n.getUUID().toString()));
+        return result;
+    }
+    private TrainerMob lookup(ServerPlayer player, UUID id) {
+        var entity = player.serverLevel().getEntity(id);
+        if (!(entity instanceof TrainerMob npc) || !npc.isAlive() || npc.isRemoved())
+            throw new IllegalStateException("El NPC ya no está cargado en tu dimensión. Actualiza la lista.");
+        return npc;
     }
     private TrainerMob target(ServerPlayer player, NpcEditorSessions.Session session) {
-        if (session.npc() == null) return null;
-        var entity = player.serverLevel().getEntity(session.npc());
-        if (!(entity instanceof TrainerMob npc) || !npc.isAlive() || npc.isRemoved() || npc.distanceToSqr(player) > 64
-                || !session.trainer().equals(npc.getTrainerId())) throw new IllegalStateException("El NPC cambió, está lejos o no está cargado. Selecciónalo de nuevo.");
+        if (session.npc() == null) throw new IllegalStateException("Selecciona Modificar en la lista de NPC.");
+        TrainerMob npc = lookup(player,session.npc());
+        if (!session.trainer().equals(npc.getTrainerId())) throw new IllegalStateException("El entrenador cambió; selecciónalo de nuevo.");
         return npc;
     }
     private void editable(TrainerMob npc) {
-        if (npc == null) throw new IllegalStateException("Selecciona un NPC cercano o haz aparecer uno.");
         if (npc.isInBattle()) throw new IllegalStateException("Espera a que termine el combate.");
     }
     public void action(ServerPlayer player, NpcEditorAction action) {
-        if (!allowed(player, "admin.npc.edit")) return;
-        var session = sessions.take(player.getUUID(), UUID.fromString(action.nonce()), System.currentTimeMillis());
+        if (!allowed(player,"admin.npc.edit")) return;
+        var session = sessions.take(player.getUUID(),UUID.fromString(action.nonce()),System.currentTimeMillis());
         if (session == null) {
-            player.sendSystemMessage(Component.literal("Sesión caducada o petición repetida. Si no responde, abre /zianrct npc edit de nuevo."));
+            player.sendSystemMessage(Component.literal("Sesión caducada o petición repetida. Abre /zianrct npc de nuevo."));
             return;
         }
-        TrainerMob npc = null;
-        String selected = session.trainer();
-        List<String> matches = session.matches();
-        String notice = "";
+        var mode = session.mode();
+        String selected=session.trainer(),query=session.query(),confirmation="";
+        int page=session.page();
+        TrainerMob npc=null;
+        String notice="";
         try {
-            npc = target(player, session);
-            switch (action.action()) {
-                case "search" -> matches = search(action.value());
-                case "select" -> {
-                    if (!RCTMod.getInstance().getTrainerManager().isValidId(action.value())) throw new IllegalArgumentException("ID de entrenador RCT inexistente.");
-                    selected = action.value(); npc = null; matches = search(selected);
+            if (!NpcEditorProtocol.allowed(mode,session.confirmation(),action.action()))
+                throw new IllegalStateException("Acción no disponible en esta pantalla.");
+            // Navigation never needs to resolve a stale entity.
+            if (mode==NpcEditorState.Mode.EDIT && !Set.of("list","create").contains(action.action())) npc=target(player,session);
+            switch(action.action()) {
+                case "list" -> {mode=NpcEditorState.Mode.LIST;npc=null;selected="";query="";page=0;}
+                case "create" -> {mode=NpcEditorState.Mode.CREATE;npc=null;selected="";query="rassvet";page=0;}
+                case "search" -> {query=action.value();page=0;}
+                case "choose_template" -> {
+                    if (!RCTMod.getInstance().getTrainerManager().isValidId(action.value())) throw new IllegalArgumentException("ID de entrenador inexistente.");
+                    selected=action.value();
                 }
-                case "nearby" -> {
-                    npc = nearest(player);
-                    if (npc == null) throw new IllegalStateException("No hay un entrenador a menos de 8 bloques.");
-                    selected = npc.getTrainerId(); matches = search(selected);
+                case "next" -> page++;
+                case "previous" -> page--;
+                case "select_npc", "select_delete" -> {
+                    UUID id=UUID.fromString(action.value());
+                    if (!session.visibleNpcs().contains(id)) throw new IllegalArgumentException("Selecciona un NPC de la página actual.");
+                    npc=lookup(player,id);selected=npc.getTrainerId();mode=NpcEditorState.Mode.EDIT;
+                    if(action.action().equals("select_delete")){
+                        require(player,"admin.npc.delete");editable(npc);confirmation="delete";
+                    }
+                }
+                case "spawn_prompt" -> {
+                    require(player,"admin.npc.spawn");
+                    if(selected.isEmpty() || !RCTMod.getInstance().getTrainerManager().isValidId(selected))
+                        throw new IllegalArgumentException("Selecciona primero un entrenador de la lista.");
+                    confirmation="spawn";
                 }
                 case "spawn" -> {
-                    if (!allowed(player, "admin.npc.spawn")) throw new IllegalStateException("No tienes permiso para hacer aparecer entrenadores.");
-                    if (!RCTMod.getInstance().getTrainerManager().isValidId(selected)) throw new IllegalArgumentException("Selecciona un ID válido.");
-                    if (npc != null) throw new IllegalStateException("Ya hay un NPC seleccionado. Selecciona una plantilla para crear otro.");
-                    if (player.serverLevel().getEntitiesOfClass(TrainerMob.class, player.getBoundingBox().inflate(32)).size() >= 32)
+                    require(player,"admin.npc.spawn");
+                    if(!RCTMod.getInstance().getTrainerManager().isValidId(selected)) throw new IllegalArgumentException("El entrenador ya no está disponible.");
+                    String id=selected;
+                    if(loaded(player).stream().anyMatch(n -> id.equals(n.getTrainerId()) && n.distanceToSqr(player)<=256))
+                        throw new IllegalStateException("Ya existe este entrenador a menos de 16 bloques. Modifícalo desde la lista.");
+                    if(player.serverLevel().getEntitiesOfClass(TrainerMob.class,player.getBoundingBox().inflate(32)).size()>=32)
                         throw new IllegalStateException("Demasiados entrenadores cercanos.");
-                    Vec3 forward = new Vec3(player.getLookAngle().x, 0, player.getLookAngle().z).normalize().scale(2);
-                    Vec3 at = player.position().add(forward);
-                    TrainerMob created = TrainerMob.getEntityType().create(player.serverLevel());
-                    if (created == null) throw new IllegalStateException("No se pudo crear el entrenador.");
-                    created.setTrainerId(selected);
-                    created.moveTo(at.x, at.y, at.z, player.getYRot() + 180, 0);
+                    Vec3 ahead=Vec3.directionFromRotation(0,player.getYRot()).scale(2);
+                    Vec3 at=player.position().add(ahead);
+                    TrainerMob created=TrainerMob.getEntityType().create(player.serverLevel());
+                    if(created==null) throw new IllegalStateException("No se pudo crear el entrenador.");
+                    created.setTrainerId(selected);created.moveTo(at.x,at.y,at.z,player.getYRot()+180,0);
                     created.setHomePos(BlockPos.containing(at));
-                    if (!player.serverLevel().getChunkSource().hasChunk(created.blockPosition().getX() >> 4, created.blockPosition().getZ() >> 4)
+                    if(!player.serverLevel().getChunkSource().hasChunk(created.blockPosition().getX()>>4,created.blockPosition().getZ()>>4)
                             || !player.serverLevel().noCollision(created)
-                            || !player.serverLevel().getWorldBorder().isWithinBounds(created.getBoundingBox())) throw new IllegalStateException("Libera espacio delante de ti.");
-                    if (!player.serverLevel().addFreshEntity(created)) throw new IllegalStateException("No se pudo añadir el NPC.");
-                    npc = created;
-                    var spawner = RCTMod.getInstance().getTrainerSpawner();
-                    if (!spawner.isRegistered(created)) spawner.register(created);
-                    created.setPersistent(true);
-                    freeze(created, true);
-                    notice = "NPC creado: permanente y sin movimiento.";
+                            || !player.serverLevel().getWorldBorder().isWithinBounds(created.getBoundingBox()))
+                        throw new IllegalStateException("Libera espacio delante de ti.");
+                    if(!player.serverLevel().addFreshEntity(created)) throw new IllegalStateException("No se pudo añadir el NPC.");
+                    npc=created;mode=NpcEditorState.Mode.EDIT;
+                    var spawner=RCTMod.getInstance().getTrainerSpawner();
+                    if(!spawner.isRegistered(created)) spawner.register(created);
+                    created.setPersistent(true);freeze(created,true);
+                    notice="NPC creado. Ahora estás modificando ese NPC.";
                 }
-                case "persistent" -> { editable(npc); npc.setPersistent(!npc.isPersistenceRequired()); }
-                case "movement" -> { editable(npc); freeze(npc, !(npc.isNoAi() || npc.getPersistentData().getBoolean(FROZEN))); }
-                case "add_item", "clear_items", "money", "remove_reward" -> {
-                    if (!allowed(player, "admin.rewards.configure")) throw new IllegalStateException("No tienes permiso para configurar loot.");
-                    String lootId = selected;
-                    if ((npc != null && npc.isInBattle()) || RCTMod.getInstance().getTrainerSpawner().getSpawns().stream()
-                            .anyMatch(other -> other.isInBattle() && lootId.equals(other.getTrainerId())))
-                        throw new IllegalStateException("Espera a que terminen los combates contra este ID de entrenador.");
-                    switch (action.action()) {
-                        case "add_item" -> rewards.addItem(selected, player);
+                case "persistent" -> {editable(npc);npc.setPersistent(!npc.isPersistenceRequired());}
+                case "movement" -> {editable(npc);freeze(npc,!(npc.isNoAi()||npc.getPersistentData().getBoolean(FROZEN)));}
+                case "move" -> {require(player,"admin.npc.move");editable(npc);moveHere(player,npc);notice="NPC movido a tu bloque y orientación.";}
+                case "delete_prompt" -> {require(player,"admin.npc.delete");editable(npc);confirmation="delete";}
+                case "delete" -> {
+                    require(player,"admin.npc.delete");editable(npc);
+                    com.ianblk.zianrct.ZianRCT.LOGGER.info("[ZIAN-AUDIT] action=npc_delete admin={} npc={} trainer={}",player.getUUID(),npc.getUUID(),selected);
+                    npc.discard();npc=null;selected="";mode=NpcEditorState.Mode.LIST;page=0;notice="NPC eliminado. Medallas y recompensas conservadas.";
+                }
+                case "cancel" -> {}
+                case "add_item","clear_items","money","remove_reward" -> {
+                    require(player,"admin.rewards.configure");editable(npc);
+                    String id=selected;
+                    if(RCTMod.getInstance().getTrainerSpawner().getSpawns().stream()
+                            .anyMatch(n -> n.isInBattle() && id.equals(n.getTrainerId())))
+                        throw new IllegalStateException("Espera a que terminen los combates contra este ID.");
+                    switch(action.action()){
+                        case "add_item" -> rewards.addItem(selected,player);
                         case "clear_items" -> rewards.clearItems(selected);
-                        case "money" -> rewards.coins(selected, action.value(), Long.parseLong(action.extra()));
+                        case "money" -> rewards.coins(selected,action.value(),Long.parseLong(action.extra()));
                         case "remove_reward" -> rewards.remove(selected);
                     }
-                    notice = "Loot guardado. Solo afecta futuras victorias; único por jugador e ID.";
+                    notice="Loot guardado. Único por jugador e ID; premios reservados conservados.";
                 }
             }
-            com.ianblk.zianrct.ZianRCT.LOGGER.info("[ZIAN-AUDIT] action=npc_editor admin={} npc={} trainer={} operation={} result=APPLIED",
-                    player.getUUID(), npc == null ? "template" : npc.getUUID(), selected, action.action());
-        } catch (Exception e) { notice = e.getMessage() == null ? "No se pudo aplicar el cambio." : e.getMessage(); }
-        send(player, npc, selected, matches, notice);
+            com.ianblk.zianrct.ZianRCT.LOGGER.info("[ZIAN-AUDIT] action=npc_manager admin={} npc={} trainer={} operation={} result=APPLIED",
+                    player.getUUID(),npc==null?"template":npc.getUUID(),selected,action.action());
+        } catch(Exception error) {
+            notice=error.getMessage()==null?"No se pudo aplicar el cambio.":error.getMessage();
+            if(mode==NpcEditorState.Mode.EDIT && npc==null){mode=NpcEditorState.Mode.LIST;selected="";}
+        }
+        send(player,npc,selected,mode,query,page,confirmation,notice);
+    }
+    private void require(ServerPlayer player,String permission){
+        if(!allowed(player,permission))throw new IllegalStateException("No tienes permiso: zianrct."+permission);
+    }
+    private void moveHere(ServerPlayer player,TrainerMob npc){
+        var at=NpcPlacement.at(player.getX(),player.getY(),player.getZ(),player.getYRot());
+        var box=npc.getBoundingBox().move(at.x()-npc.getX(),at.y()-npc.getY(),at.z()-npc.getZ());
+        var level=player.serverLevel();
+        if(at.y()<level.getMinBuildHeight() || box.maxY>level.getMaxBuildHeight()
+                || !level.getWorldBorder().isWithinBounds(box) || level.getBlockCollisions(npc,box).iterator().hasNext()
+                || !level.getEntitiesOfClass(net.minecraft.world.entity.LivingEntity.class,box,
+                        e -> e!=npc && e!=player && e.isAlive()).isEmpty())
+            throw new IllegalStateException("Tu bloque no tiene espacio libre para el NPC.");
+        boolean persistent=npc.isPersistenceRequired();
+        // Release the old RCT persistence registration before relocation, then register the new location.
+        if(persistent)npc.setPersistent(false);
+        try{
+            npc.getNavigation().stop();npc.setDeltaMovement(Vec3.ZERO);
+            npc.teleportTo(at.x(),at.y(),at.z());npc.setYRot(at.yaw());npc.setYHeadRot(at.yaw());npc.setYBodyRot(at.yaw());npc.setXRot(0);
+            npc.setHomePos(BlockPos.containing(at.x(),at.y(),at.z()));
+            if(npc.getPersistentData().getBoolean(FROZEN)){
+                var data=npc.getPersistentData();data.putDouble("ZianRctEditorX",at.x());data.putDouble("ZianRctEditorY",at.y());data.putDouble("ZianRctEditorZ",at.z());
+            }
+        }finally{if(persistent&&!npc.isRemoved())npc.setPersistent(true);}
     }
     private void freeze(TrainerMob npc, boolean frozen) {
         var data = npc.getPersistentData();
@@ -162,22 +219,33 @@ public final class NpcEditorService {
         double x = data.getDouble("ZianRctEditorX"), y = data.getDouble("ZianRctEditorY"), z = data.getDouble("ZianRctEditorZ");
         if (npc.position().distanceToSqr(new Vec3(x,y,z)) > 0.0001) npc.teleportTo(x,y,z);
     }
-    private void send(ServerPlayer player, TrainerMob npc, String trainer, List<String> matches, String notice) {
-        var session = sessions.open(player.getUUID(), npc == null ? null : npc.getUUID(), trainer, matches, System.currentTimeMillis());
-        RewardDefinition reward = null;
-        List<String> descriptions = new ArrayList<>();
-        try {
-            reward = rewards.definitions().get(trainer);
-            if (reward != null) {
-                for (String item : reward.items()) descriptions.add(rewards.describe(player,
-                        new RewardClaim.Part(RewardClaim.Kind.ITEM, item, 1, RewardClaim.Phase.PENDING, "")));
-            }
-        } catch (Exception error) { descriptions.add("Recompensas no disponibles; revisa el log."); }
-        descriptions = descriptions.stream().map(s -> s.length() > 256 ? s.substring(0,256) : s).toList();
-        if (notice.length() > 256) notice = notice.substring(0,256);
-        var state = new NpcEditorState(session.token().toString(), trainer, npc == null ? "" : npc.getUUID().toString(),
-                npc != null && npc.isPersistenceRequired(), npc != null && (npc.isNoAi() || npc.getPersistentData().getBoolean(FROZEN)),
-                matches, descriptions, reward == null ? "avecoins:coppercoin" : reward.currency(), reward == null ? 0 : reward.coins(), notice);
-        PacketDistributor.sendToPlayer(player, new NpcEditorPayload(GSON.toJson(state)));
+    private void send(ServerPlayer player,TrainerMob npc,String trainer,NpcEditorState.Mode mode,String query,int requestedPage,String confirmation,String notice){
+        List<TrainerMob> all=mode==NpcEditorState.Mode.LIST?loaded(player):List.of();
+        List<String> templates=mode==NpcEditorState.Mode.CREATE?search(query):List.of();
+        int count=mode==NpcEditorState.Mode.LIST?all.size():templates.size();
+        int pages=Math.max(1,(count+PAGE_SIZE-1)/PAGE_SIZE);
+        int page=Math.max(0,Math.min(requestedPage,pages-1)),first=page*PAGE_SIZE,end=Math.min(count,first+PAGE_SIZE);
+        List<String> matches=mode==NpcEditorState.Mode.CREATE?templates.subList(first,end):List.of();
+        List<NpcEditorState.NpcView> views=new ArrayList<>();
+        if(mode==NpcEditorState.Mode.LIST)for(TrainerMob n:all.subList(first,end)){
+            var pos=n.blockPosition();
+            views.add(new NpcEditorState.NpcView(n.getUUID().toString(),n.getTrainerId(),pos.getX(),pos.getY(),pos.getZ(),(int)Math.sqrt(n.distanceToSqr(player))));
+        }
+        Set<UUID> visible=new HashSet<>();
+        views.forEach(v -> visible.add(UUID.fromString(v.uuid())));
+        var session=sessions.open(player.getUUID(),npc==null?null:npc.getUUID(),trainer,query,mode,confirmation,page,visible,System.currentTimeMillis());
+        RewardDefinition definition=null;List<String> descriptions=new ArrayList<>();
+        if(mode==NpcEditorState.Mode.EDIT)try{
+            definition=rewards.definitions().get(trainer);
+            if(definition!=null)for(String item:definition.items())descriptions.add(rewards.describe(player,
+                    new RewardClaim.Part(RewardClaim.Kind.ITEM,item,1,RewardClaim.Phase.PENDING,"")));
+        }catch(Exception error){descriptions.add("Recompensas no disponibles; revisa el log.");}
+        descriptions=descriptions.stream().map(s -> s.length()>256?s.substring(0,256):s).toList();
+        if(notice.length()>256)notice=notice.substring(0,256);
+        var state=new NpcEditorState(session.token().toString(),mode,trainer,npc==null?"":npc.getUUID().toString(),
+                npc!=null && npc.isPersistenceRequired(),npc!=null && (npc.isNoAi()||npc.getPersistentData().getBoolean(FROZEN)),
+                matches,views,descriptions,definition==null?"avecoins:coppercoin":definition.currency(),definition==null?0:definition.coins(),
+                notice,query,page,pages,confirmation);
+        PacketDistributor.sendToPlayer(player,new NpcEditorPayload(GSON.toJson(state)));
     }
 }

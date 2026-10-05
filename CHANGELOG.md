@@ -1,5 +1,14 @@
 # Changelog
 
+## 0.1.0-beta.6
+
+- Open a paginated loaded-NPC list with `/zianrct npc`, showing UUIDs, coordinates and distance; retain `/zianrct npc edit` as a route to the same manager.
+- Separate template creation from editing an existing entity. Require server-confirmed creation and block nearby duplicate trainer IDs.
+- Add UUID-bound confirmed deletion through the NPC list/editor without removing player progress or earned reward history.
+- Add a separately permission-protected move action to the administrator's block centre, feet height and facing. Update native home position and saved movement anchors.
+- Recheck action stages and loaded entity identity, protect ongoing battles, and add `zianrct.admin.npc.move` / `zianrct.admin.npc.delete`.
+- Require editor channel `npc2` on server and client; preserve medal protocol and saved entity/reward data.
+
 ## 0.1.0-beta.5
 
 - Add an in-game NPC/Loot editor through `/zianrct npc edit`, with trainer-ID search, selection of nearby existing NPCs and creation from loaded RCT trainer definitions.

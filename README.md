@@ -58,7 +58,7 @@ Reconecta después de cambiar permisos para actualizar el autocompletado.
 
 ## Recompensas únicas por entrenador (Beta 4)
 
-**Beta 5:** administra NPC y loot desde `/zianrct npc edit`. La interfaz busca entrenadores ya cargados, permite hacerlos aparecer, controlar su permanencia/movimiento y configurar recompensas con el objeto de la mano y monedas. Usa permisos separados para editar NPC, crearlos y modificar loot. Consulta [la guía del editor](docs/NPC-EDITOR-BETA5.md). Instala beta.5 tanto en clientes como servidor.
+**Beta 6:** `/zianrct npc` abre una lista de NPC cargados en tu dimensión, con coordenadas y UUID para distinguir duplicados. Desde ella puedes crear, modificar o eliminar un NPC con confirmación, y mover el seleccionado al bloque y dirección del administrador. El editor conserva permanencia, movimiento y loot. Consulta [la guía del gestor](docs/NPC-MANAGER-BETA6.md). Instala beta.6 tanto en clientes como servidor.
 
 Configura objetos con `/zianrct reward add-item <trainerId>` teniendo el stack en la mano, y monedas con `/zianrct reward set-money <trainerId> avecoins:coppercoin 5`. Cada premio es único por jugador y entrenador, conserva los componentes del objeto y sobrevive a reinicios. Los premios pendientes se consultan con `/zianrct reward pending` y se reclaman con `/zianrct reward claim <operationId>`.
 
