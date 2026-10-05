@@ -56,7 +56,13 @@ Reconecta después de cambiar permisos para actualizar el autocompletado.
 
 `/zianrct reload` vuelve a leer `config/zianrct.json`, rechaza la recarga si la configuración es inválida, regenera el pack virtual de progresión y vuelve a enviar el snapshot de medallas a todos los jugadores conectados.
 
-## Medallas y texturas personalizadas
+## Recompensas únicas por entrenador (Beta 4)
+
+Configura objetos con `/zianrct reward add-item <trainerId>` teniendo el stack en la mano, y monedas con `/zianrct reward set-money <trainerId> avecoins:coppercoin 5`. Cada premio es único por jugador y entrenador, conserva los componentes del objeto y sobrevive a reinicios. Los premios pendientes se consultan con `/zianrct reward pending` y se reclaman con `/zianrct reward claim <operationId>`.
+
+La configuración inicial está vacía. Los pagos inciertos requieren revisión y no se repiten automáticamente. Los nuevos permisos administrativos, configuración y pruebas se explican en [la guía de recompensas](docs/TRAINER-REWARDS-BETA4.md). El editor gráfico y los premios repetibles con espera son etapas posteriores.
+
+## Medallero
 
 **Beta 3:** las diez medallas predeterminadas muestran el render aprobado mediante una imagen original integrada, sin volver a generar los diseños. El medallero es compacto, tiene botón Cerrar y paginación según el espacio disponible. Conserva los identificadores, el progreso y el protocolo 2. Consulta [el arte y la validación](docs/MEDALS-BETA3.md).
 

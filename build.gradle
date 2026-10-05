@@ -21,6 +21,7 @@ repositories {
 
 neoForge {
     version = neo_version
+    accessTransformers.from(file('src/main/resources/META-INF/accesstransformer.cfg'))
 
     runs {
         client {

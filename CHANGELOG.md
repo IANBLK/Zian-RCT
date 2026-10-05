@@ -1,5 +1,15 @@
 # Changelog
 
+## 0.1.0-beta.4
+
+- Add configurable one-time rewards per player UUID and RCT trainer ID, independent from medals and historical reconciliation.
+- Administrators can copy held item stacks with their components and configure an optional AVECOINS 2.3/2.4 credit using permission-protected commands.
+- Freeze rewards at victory, persist per-component delivery intents, retain pending rewards for full inventories/wallets and skip completed components on retries.
+- Keep interrupted or uncertain external deliveries blocked for evidence-based administrative review; never replay an uncertain credit or item delivery automatically.
+- Save and verify player inventory data before acknowledging item components. Invalid reward configuration/journals disable reward mutations without replacing their evidence.
+- Add optional AVECOINS metadata, dedicated reward permissions, player pending/claim commands and administrative review/confirmation commands.
+- Preserve existing medal progress, artwork, protocol 2 and native RCT progression. Repeat cooldown rewards and the graphical trainer editor remain future stages.
+
 ## 0.1.0-beta.3
 
 - Display the ten Rassvet badges using the original pixels of the approved medal render, embedded as a source atlas; retain medal IDs, earned progress and protocol 2.
