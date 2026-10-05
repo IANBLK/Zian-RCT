@@ -28,12 +28,34 @@ public final class TrainerRewardCommands {
                     var player = c.getSource().getPlayerOrException();
                     var pending = service.claims(player.getUUID()).stream().filter(r -> !r.complete()).toList();
                     if (pending.isEmpty()) player.sendSystemMessage(Component.literal("No tienes recompensas pendientes."));
-                    for (var claim : pending.stream().limit(20).toList()) player.sendSystemMessage(Component.literal(claim.trainer() + " | " + claim.id() + " | " + (claim.review() ? "REVISIÓN" : "PENDIENTE")));
+                    for (var claim : pending.stream().limit(20).toList()) {
+                        var message = Component.literal(claim.trainer() + " | " + claim.id() + " | " + (claim.review() ? "REVISIÓN" : "PENDIENTE"));
+                        if (!claim.review()) message.append(Component.literal(" [Reclamar]").withStyle(style -> style
+                                .withColor(net.minecraft.ChatFormatting.GOLD)
+                                .withClickEvent(new net.minecraft.network.chat.ClickEvent(net.minecraft.network.chat.ClickEvent.Action.RUN_COMMAND,
+                                        "/zianrct reward claim " + claim.id()))
+                                .withHoverEvent(new net.minecraft.network.chat.HoverEvent(net.minecraft.network.chat.HoverEvent.Action.SHOW_TEXT,
+                                        Component.literal("Pulsa para reclamar este premio pendiente.")))));
+                        player.sendSystemMessage(message);
+                    }
                     if (pending.size() > 20) player.sendSystemMessage(Component.literal("Mostrando 20 de " + pending.size() + ". Reclama las disponibles y consulta de nuevo."));
                 })));
         reward.then(Commands.literal("claim")
                 .requires(s -> RctPermissions.allows(s, "rewards.claim", false))
                 .then(Commands.argument("operation", StringArgumentType.word())
+                        .suggests((context, builder) -> {
+                            var source = context.getSource();
+                            if (source.getPlayer() != null && RctPermissions.allows(source, "rewards.claim", false)) {
+                                try {
+                                    var player = source.getPlayer();
+                                    for (String id : PendingClaimSuggestions.ids(service.claims(player.getUUID()), player.getUUID(), builder.getRemaining()))
+                                        builder.suggest(id);
+                                } catch (RuntimeException ignored) {
+                                    // An unavailable journal or expired player session never exposes another player's IDs.
+                                }
+                            }
+                            return builder.buildFuture();
+                        })
                         .executes(c -> execute(c.getSource(), () -> service.claim(c.getSource().getPlayerOrException(),
                                 UUID.fromString(StringArgumentType.getString(c, "operation")))))));
         reward.then(Commands.literal("status").requires(s -> RctPermissions.allows(s, "admin.rewards.review", true))

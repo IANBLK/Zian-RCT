@@ -1,5 +1,11 @@
 # Changelog
 
+## 0.1.0-beta.7
+
+- Autocomplete `/zianrct reward claim <operation>` with the executing player's actionable pending reward IDs, filtered by the typed prefix.
+- Add a clickable `[Reclamar]` action to pending reward chat entries. Completed or review-blocked rewards are not offered for claiming.
+- Recheck claim permissions for suggestions; preserve ownership checks, one-time delivery and the existing NPC/medal protocols.
+
 ## 0.1.0-beta.6
 
 - Open a paginated loaded-NPC list with `/zianrct npc`, showing UUIDs, coordinates and distance; retain `/zianrct npc edit` as a route to the same manager.

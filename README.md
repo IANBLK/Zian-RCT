@@ -64,6 +64,8 @@ Configura objetos con `/zianrct reward add-item <trainerId>` teniendo el stack e
 
 La configuración inicial está vacía. Los pagos inciertos requieren revisión y no se repiten automáticamente. Los nuevos permisos administrativos, configuración y pruebas se explican en [la guía de recompensas](docs/TRAINER-REWARDS-BETA4.md). Los premios repetibles con espera y la creación de equipos nuevos son etapas posteriores.
 
+**Beta 7:** `/zianrct reward claim ` autocompleta con Tab los IDs pendientes propios que pueden reclamarse. `/zianrct reward pending` también ofrece un botón **[Reclamar]** en el chat. Los premios pagados o bloqueados por revisión no se ofrecen para autocompletar.
+
 ## Medallero
 
 **Beta 3:** las diez medallas predeterminadas muestran el render aprobado mediante una imagen original integrada, sin volver a generar los diseños. El medallero es compacto, tiene botón Cerrar y paginación según el espacio disponible. Conserva los identificadores, el progreso y el protocolo 2. Consulta [el arte y la validación](docs/MEDALS-BETA3.md).

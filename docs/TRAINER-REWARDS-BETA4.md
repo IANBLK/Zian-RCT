@@ -51,6 +51,8 @@ Normal victories reserve the reward and attempt delivery. A full inventory, miss
 /zianrct reward claim <operation-uuid>
 ```
 
+From beta.7, type `/zianrct reward claim ` with a trailing space and press **Tab** to select one of your actionable pending IDs. You can also click **[Reclamar]** beside a pending entry. Completed rewards, rewards belonging to other players and review-blocked components are excluded from suggestions. Clicking a stale completed entry does not deliver again.
+
 Claim IDs belong to the player; another player cannot claim them. Rejoining displays a pending-reward reminder, without automatically replaying deliveries. Restore required item mods or the wallet provider before retrying unavailable components.
 
 Manual claims are limited to one attempt per player per second. Pending output shows up to 20 operations at a time; after claiming those, query again for the remaining entries.
