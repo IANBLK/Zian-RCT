@@ -20,8 +20,8 @@ separate required dependencies. Do not install RCTMod alongside this branch.
   files are read without modification. A new ledger then becomes authoritative;
   subsequent restarts never re-import an old snapshot over newer progress.
 - League prerequisites and party caps apply to league NPCs. Independent challenges
-  do not require joining Rassvet. League XP/candy caps activate after a league
-  encounter, imported league progress or an administrator cap change; existing
+  do not require joining Rassvet. League XP/candy caps apply from the first entry, including the initial cap
+  before defeating any trainer. Existing
   Pokemon above the cap are never downgraded.
 
 ## Upgrade procedure

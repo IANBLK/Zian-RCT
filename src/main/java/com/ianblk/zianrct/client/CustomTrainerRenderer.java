@@ -17,6 +17,10 @@ public final class CustomTrainerRenderer extends MobRenderer<IndependentTrainerM
     }
     @Override public ResourceLocation getTextureLocation(IndependentTrainerMob trainer){
         ResourceLocation skin=CustomTrainerSkinState.get(trainer.getTrainerId());
+        if(skin==null){
+            String league=com.ianblk.zianrct.creator.LeagueTrainerSkins.texture(trainer.getTrainerId());
+            if(league!=null)skin=ResourceLocation.parse(league);
+        }
         return skin!=null?skin:ResourceLocation.fromNamespaceAndPath("zianrct","textures/entity/trainers/amber_captain.png");
     }
 }

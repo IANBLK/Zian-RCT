@@ -62,6 +62,7 @@ public final class StandaloneSmoke {
                 if(!runtime.start(doubles,player))throw new IllegalStateException("Native doubles battle did not start");
                 battle=runtime.api().getBattleManager().getStates().iterator().next().getBattle().getBattleId();
                 if(!doubles.isInBattle())throw new IllegalStateException("NPC battle association missing");
+                ExperienceCapsSmoke.verify(server,runtime.api().getBattleManager().getState(battle).getBattle());
                 Files.writeString(marker,"Own NPC persistence and legacy migration fixture\n");
                 ZianRCT.LOGGER.info("Zian RCT standalone smoke: native doubles started; NPC {}",restart?"restart persistence verified":"NBT fixture created");
                 phase=1;ticks=0;

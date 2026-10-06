@@ -63,6 +63,7 @@ def run(pass_number):
         process = subprocess.Popen([gradle, "--no-daemon", "runStandaloneSmoke", "-x", "downloadAssets"], cwd=ROOT, env=env, stdout=output, stderr=subprocess.STDOUT)
         try:
             wait_for(process, log, "standalone smoke passed:")
+            wait_for(process, log, "initial cap smoke passed:")
             wait_for(process, log, "legendary storage smoke delivered and replay blocked")
             if pass_number == 1:
                 config = GAME / "config/zianrct.json"

@@ -8,9 +8,15 @@ public final class ExperienceCaps {
     public static void register(){
         CobblemonEvents.EXPERIENCE_CANDY_USE_PRE.subscribe(Priority.LOWEST,
             (java.util.function.Consumer<com.cobblemon.mod.common.api.events.pokemon.interaction.ExperienceCandyUseEvent.Pre>)event->{
-                var player=event.getPokemon().getOwnerPlayer();if(player==null)return;
+                var player=event.getPlayer();if(player==null)return;
                 try{var progress=StandaloneRuntime.getInstance().getData(player);
-                    if(progress.ledger().leagueActive() && event.getPokemon().getLevel()>=progress.getLevelCap())event.cancel();
+                    int cap=progress.getLevelCap();
+                    var pokemon=event.getPokemon();
+                    int allowed=ExperienceCapPolicy.allowed(pokemon.getLevel(),cap,pokemon.getExperience(),pokemon.getExperienceGroup().getExperience(cap),event.getExperienceYield());
+                    if(pokemon.getLevel()>=cap){
+                        event.cancel();
+                        player.sendSystemMessage(net.minecraft.network.chat.Component.literal(cap>=100?"Has alcanzado el nivel máximo de 100.":"Tu tope actual es nivel "+cap+". Supera el siguiente entrenador de la Liga para aumentarlo."));
+                    }else event.setExperienceYield(allowed);
                 }catch(RuntimeException error){event.cancel();}
             });
         CobblemonEvents.EXPERIENCE_GAINED_EVENT_PRE.subscribe(Priority.LOWEST,
@@ -18,12 +24,10 @@ public final class ExperienceCaps {
                 var player=event.getPokemon().getOwnerPlayer();if(player==null || player.serverLevel().getServer()==null)return;
                 try{
                     var progress=StandaloneRuntime.getInstance().getData(player);
-                    if(!progress.ledger().leagueActive())return;
                     int cap=progress.getLevelCap();
-                    if(cap>=100 || event.getExperience()<=0)return;
-                    int ceiling=event.getPokemon().getExperienceGroup().getExperience(cap+1)-1;
-                    int allowed=Math.max(0,ceiling-event.getPokemon().getExperience());
-                    event.setExperience(Math.min(event.getExperience(),allowed));
+                    if(event.getExperience()<=0)return;
+                    var pokemon=event.getPokemon();
+                    event.setExperience(ExperienceCapPolicy.allowed(pokemon.getLevel(),cap,pokemon.getExperience(),pokemon.getExperienceGroup().getExperience(cap),event.getExperience()));
                 }catch(RuntimeException error){event.setExperience(0);com.ianblk.zianrct.ZianRCT.LOGGER.error("XP stopped because player progress could not be verified",error);}
             });
     }
