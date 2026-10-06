@@ -1,5 +1,13 @@
 # Changelog
 
+## 0.1.0-beta.13
+
+- Add a Prueba tab linking an independent legendary custodian NPC to another owned JEFE trainer. Boss victory delivers its existing configured loot and unlocks the custodian separately for that player. The custodian has a single implemented legendary/mythical Pokémon and native single battle.
+- On a real custodian victory, reserve one Pokémon with fixed UUID, six random IVs from 25–30 and configurable shiny chance (default 1/512). Send it to the player's PC automatically and verify native file-backed PC/party persistence before closing the trial. Losing allows another attempt; confirmed delivery blocks future battle/reward attempts across restarts.
+- Persist boss/victory battle evidence and delivery phases atomically. Full PC/unsupported storage leaves the frozen reward pending; uncertain delivery stays blocked for verification or administrative evidence-based closure. No automatic reroll, refund or replay of ambiguous awards.
+- Add `/zianrct legendary status`, `claim`, and permission-protected `confirm-delivered` for review closure. Add `zianrct.legendary.claim`, `zianrct.admin.legendary.configure`, `zianrct.admin.legendary.resolve`; retain Youer/LuckPerms checks. Trial ownership is internal per-player state, not a LuckPerms permission grant.
+- Freeze trial identity/species/level/shiny rules once any player has progress. Retain creator teams, skins, loot, medals and dialogue crash fixes. Require matching beta.13 clients/server via npc7. Dedicated CI adds an independent legendary fixture and journal regression tests.
+
 ## 0.1.0-beta.12
 
 - Add default automatic moves for newly created independent trainers: choose species, level and difficulty. Easy/Normal draw from level-up moves available at that level; Hard/Boss also consider legal TM, tutor, egg and evolution moves. Rank attack strength, accuracy, same-type bonuses and type coverage; advanced presets reserve a support move when available.

@@ -37,7 +37,8 @@ public final class CustomTrainerResources {
             mob.addProperty("maxTrainerWins",-1);mob.addProperty("maxTrainerDefeats",-1);mob.addProperty("battleCooldownTicks",240);mob.addProperty("spawnWeightFactor",0);
             put(out,"mobs/trainers/single/"+d.id()+".json",mob);
             var dialogs=new JsonObject();
-            dialog(dialogs,"on_battle_start",d.start());dialog(dialogs,"battle_start",d.start());
+            String welcome=d.trial()==null?d.start():"Has logrado superar la prueba y demostrado tu valía. Ahora tienes la oportunidad de luchar con el legendario.";
+            dialog(dialogs,"on_battle_start",welcome);dialog(dialogs,"battle_start",welcome);
             dialog(dialogs,"on_battle_lost",d.playerWins());dialog(dialogs,"battle_lost",d.playerWins());dialog(dialogs,"trainer_lost",d.playerWins());
             dialog(dialogs,"on_battle_won",d.playerLoses());dialog(dialogs,"battle_won",d.playerLoses());dialog(dialogs,"trainer_won",d.playerLoses());
             put(out,"dialogs/trainers/single/"+d.id()+".json",dialogs);

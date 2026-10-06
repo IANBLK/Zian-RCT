@@ -18,6 +18,7 @@ public final class TrainerRewardService {
     private com.ianblk.zianrct.rct.RctPackController packs;
     public void attach(com.ianblk.zianrct.rct.RctPackController packs){this.packs=packs;}
     public TrainerRewardService(){
+        new com.ianblk.zianrct.legendary.LegendaryTrials();
         net.neoforged.neoforge.common.NeoForge.EVENT_BUS.addListener(net.neoforged.bus.api.EventPriority.HIGHEST,this::onInteract);
     }
     private void onInteract(net.neoforged.neoforge.event.entity.player.PlayerInteractEvent.EntityInteract event){
@@ -33,6 +34,8 @@ public final class TrainerRewardService {
         }
     }
     public String blocked(ServerPlayer player,String trainer){
+        String trialBlocked=com.ianblk.zianrct.legendary.LegendaryTrials.blocked(player,trainer);
+        if(trialBlocked!=null)return trialBlocked;
         if(packs!=null && packs.isBusy())return "Se está recargando la configuración de entrenadores. Espera un momento.";
         String requested=com.ianblk.zianrct.rct.RctTrainerOptions.formats().get(trainer);
         try{
@@ -72,6 +75,7 @@ public final class TrainerRewardService {
     private String walletStatus = "";
     private final Map<UUID, Long> lastClaim = new HashMap<>();
     public void start(MinecraftServer server) {
+        com.ianblk.zianrct.legendary.LegendaryTrials.start(server);
         this.server = server;
         config=null;journal=null;wallet=null;
         try {
@@ -84,7 +88,7 @@ public final class TrainerRewardService {
             ZianRCT.LOGGER.error("Trainer rewards disabled; invalid configuration/journal preserved", error);
         }
     }
-    public void stop() { config = null; journal = null; wallet = null; server = null; lastClaim.clear(); }
+    public void stop() { com.ianblk.zianrct.legendary.LegendaryTrials.stop();config = null; journal = null; wallet = null; server = null; lastClaim.clear(); }
     private void bindWallet() {
         wallet = null;
         try { wallet = AvecoinsWallet.bind(); walletStatus = "AVECOINS compatible"; }
@@ -98,7 +102,9 @@ public final class TrainerRewardService {
         TrainerRewardConfig active = config;
         return active != null && active.enabled() && active.definition(trainer) != null;
     }
+    public boolean interested(String trainer){return configured(trainer)||com.ianblk.zianrct.legendary.LegendaryTrials.interested(trainer);}
     public void won(ServerPlayer player, String trainer, UUID battle) {
+        com.ianblk.zianrct.legendary.LegendaryTrials.won(player,trainer,battle);
         try {
             ready();
             if (!config.enabled()) return;
@@ -167,6 +173,7 @@ public final class TrainerRewardService {
     public String status() { return config == null ? "Recompensas desactivadas por error" : "enabled=" + config.enabled() + "; " + walletStatus; }
     public void saveCustom(com.ianblk.zianrct.creator.CustomTrainer definition) throws IOException {
         definition=com.ianblk.zianrct.creator.AutomaticTrainerMoves.prepare(definition);
+        com.ianblk.zianrct.legendary.LegendaryTrials.validate(definition);
         ready();noBattle(definition.id());com.ianblk.zianrct.creator.CustomTrainerValidation.validate(definition);
         com.ianblk.zianrct.creator.CustomTrainerStore.save(definition);
         packs.regenerate(server,"custom trainer definition saved");

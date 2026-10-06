@@ -533,6 +533,10 @@ public final class RctPackController {
     ) {
         for(var d:com.ianblk.zianrct.creator.CustomTrainerStore.all().values()){
             if(!trainerManager.isValidId(d.id()))throw new IllegalStateException("Entrenador propio no cargado: "+d.id());
+            if(d.trial()!=null){
+                com.ianblk.zianrct.legendary.LegendaryTrials.validate(d);
+                ZianRCT.LOGGER.info("Zian RCT legendary trial definition verified: {}",d.id());
+            }
             if(d.autoMoves()){
                 var prepared=com.ianblk.zianrct.creator.AutomaticTrainerMoves.prepare(d);
                 com.ianblk.zianrct.creator.CustomTrainerValidation.validate(prepared);

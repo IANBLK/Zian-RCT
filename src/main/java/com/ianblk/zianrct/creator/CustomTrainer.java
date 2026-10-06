@@ -1,7 +1,13 @@
 package com.ianblk.zianrct.creator;
 import java.util.*;
 public record CustomTrainer(String id,String name,String difficulty,String format,int skin,
-                            List<Member> team,String start,String playerWins,String playerLoses,boolean autoMoves) {
+                            List<Member> team,String start,String playerWins,String playerLoses,boolean autoMoves,Trial trial) {
+    public record Trial(String boss,int shinyDenominator){
+        public Trial {if(boss==null || !boss.matches("zian_custom_[a-z0-9_]{1,48}") || shinyDenominator<1 || shinyDenominator>1000000)throw new IllegalArgumentException("Jefe o probabilidad shiny inválidos.");}
+    }
+    public CustomTrainer(String id,String name,String difficulty,String format,int skin,List<Member> team,String start,String playerWins,String playerLoses,boolean autoMoves){
+        this(id,name,difficulty,format,skin,team,start,playerWins,playerLoses,autoMoves,null);
+    }
     public CustomTrainer(String id,String name,String difficulty,String format,int skin,List<Member> team,String start,String playerWins,String playerLoses){
         this(id,name,difficulty,format,skin,team,start,playerWins,playerLoses,false);
     }
@@ -30,5 +36,5 @@ public record CustomTrainer(String id,String name,String difficulty,String forma
         for(String text:List.of(start,playerWins,playerLoses)) if(text.length()>256 || text.chars().anyMatch(Character::isISOControl))
             throw new IllegalArgumentException("Diálogo inválido (máximo 256 caracteres por frase).");
     }
-    public CustomTrainer format(String format){return new CustomTrainer(id,name,difficulty,format,skin,team,start,playerWins,playerLoses,autoMoves);}
+    public CustomTrainer format(String format){return new CustomTrainer(id,name,difficulty,format,skin,team,start,playerWins,playerLoses,autoMoves,trial);}
 }

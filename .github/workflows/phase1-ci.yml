@@ -59,7 +59,7 @@ jobs:
             "trainers": [{
               "id": "zian_custom_ci",
               "name": "CI independent trainer",
-              "difficulty": "NORMAL",
+              "difficulty": "JEFE",
               "autoMoves": true,
               "format": "GEN_9_DOUBLES",
               "skin": 0,
@@ -69,6 +69,18 @@ jobs:
               ],
               "start": "CI challenge",
               "playerWins": "Well played",
+              "playerLoses": "Try again"
+            }, {
+              "id": "zian_custom_ci_legendary",
+              "name": "CI legendary custodian",
+              "difficulty": "JEFE",
+              "format": "GEN_9_SINGLES",
+              "skin": 1,
+              "autoMoves": true,
+              "trial": {"boss": "zian_custom_ci", "shinyDenominator": 512},
+              "team": [{"species": "mewtwo", "level": 70, "moves": ["psychic"]}],
+              "start": "Trial passed",
+              "playerWins": "Legendary defeated",
               "playerLoses": "Try again"
             }]
           }
@@ -86,6 +98,8 @@ jobs:
           PROPS
 
       - name: Dedicated server Rassvet generation and reload smoke test
+        env:
+          ZIANRCT_LEGENDARY_SMOKE: 'true'
         shell: bash
         run: |
           set -euo pipefail
@@ -191,12 +205,14 @@ jobs:
           wait_for_log "Zian RCT medal store ready" 120
           wait_for_log "Registered Zian RCT BATTLE_ENDED listener on RCTApi instance 'rctmod'" 120
           echo "Phase 4 medal runtime initialized with persistent store and RCT BATTLE_ENDED hook."
-          wait_for_log "Generated 15 Zian RCT virtual resources" 120
+          wait_for_log "Generated 18 Zian RCT virtual resources" 120
           wait_for_log "generated progression verified for 10 trainers" 120
           wait_for_log "custom trainer definitions verified:.*zian_custom_ci" 120
           wait_for_log "automatic trainer moves verified: zian_custom_ci" 120
+          wait_for_log "legendary trial definition verified: zian_custom_ci_legendary" 120
+          wait_for_log "legendary storage smoke delivered and replay blocked" 120
           wait_for_log "rassvet_leader_novato=0" 120
-          echo "Embedded Rassvet baseline active: 15 generated resources verified with default relative caps."
+          echo "Embedded Rassvet baseline active: 18 generated resources verified with default relative caps."
 
           medals_console_response=$(python "$RUNNER_TEMP/rcon.py" medals)
           echo "RCON /medals from console response: $medals_console_response"
@@ -292,11 +308,11 @@ jobs:
           path.write_text(json.dumps(data, ensure_ascii=False, indent=2) + '\n', encoding='utf-8')
           PY
 
-          generated_before=$(grep -c "Generated 15 Zian RCT virtual resources" server-smoke.log || true)
+          generated_before=$(grep -c "Generated 18 Zian RCT virtual resources" server-smoke.log || true)
           echo "RCON team-change /reload response: $(python "$RUNNER_TEMP/rcon.py" reload)"
           changed=0
           for _ in $(seq 1 180); do
-            generated_after=$(grep -c "Generated 15 Zian RCT virtual resources" server-smoke.log || true)
+            generated_after=$(grep -c "Generated 18 Zian RCT virtual resources" server-smoke.log || true)
             if [ "$generated_after" -gt "$generated_before" ] && grep -q "rassvet_leader_novato=1" server-smoke.log; then
               changed=1
               break

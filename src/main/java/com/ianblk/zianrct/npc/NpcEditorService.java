@@ -50,6 +50,10 @@ public final class NpcEditorService {
         if(session.mode()!=NpcEditorState.Mode.DESIGN)return;
         try{
             var definition=com.ianblk.zianrct.creator.CustomTrainerStore.decode(payload.json());
+            var old=com.ianblk.zianrct.creator.CustomTrainerStore.get(definition.id());
+            boolean trialChanged=!Objects.equals(definition.trial(),old==null?null:old.trial())
+                || (definition.trial()!=null && old!=null && (!definition.team().equals(old.team()) || !definition.format().equals(old.format())));
+            if(trialChanged && !allowed(player,"admin.legendary.configure"))throw new IllegalArgumentException("Necesitas zianrct.admin.legendary.configure para cambiar una prueba.");
             if(!session.trainer().isEmpty() && !session.trainer().equals(definition.id()))throw new IllegalArgumentException("No cambies el ID de una definición existente.");
             if(session.trainer().isEmpty() && (com.ianblk.zianrct.creator.CustomTrainerStore.get(definition.id())!=null
                     || RCTMod.getInstance().getTrainerManager().isValidId(definition.id())))throw new IllegalArgumentException("Ya existe este ID. Edita su definición desde un NPC propio.");

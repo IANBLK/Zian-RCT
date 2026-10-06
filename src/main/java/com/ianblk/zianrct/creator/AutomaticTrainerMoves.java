@@ -27,6 +27,6 @@ public final class AutomaticTrainerMoves {
             team.add(new CustomTrainer.Member(member.species(),member.level(),chosen));
         }
         return new CustomTrainer(definition.id(),definition.name(),definition.difficulty(),definition.format(),definition.skin(),team,
-                definition.start(),definition.playerWins(),definition.playerLoses(),true);
+                definition.start(),definition.playerWins(),definition.playerLoses(),true,definition.trial());
     }
 }

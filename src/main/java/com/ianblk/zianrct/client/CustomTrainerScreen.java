@@ -21,6 +21,8 @@ public final class CustomTrainerScreen extends Screen {
     private Button save,back;
     private String error="";
     private boolean autoMoves=true;
+    private boolean trialEnabled;
+    private String trialBoss="",shinyDenominator="512";
     private record Label(String text,int row){}
     public CustomTrainerScreen(NpcEditorState state){
         super(Component.literal("Zian RCT · Definir entrenador"));this.state=state;
@@ -33,12 +35,14 @@ public final class CustomTrainerScreen extends Screen {
     private void load(CustomTrainer d){
         id=d.id();name=d.name();difficulty=d.difficulty();format=d.format();skin=d.skin();start=d.start();win=d.playerWins();loss=d.playerLoses();
         autoMoves=d.autoMoves();
+        trialEnabled=d.trial()!=null;if(trialEnabled){trialBoss=d.trial().boss();shinyDenominator=Integer.toString(d.trial().shinyDenominator());}
         Arrays.fill(species,"");
         for(int i=0;i<d.team().size();i++){var m=d.team().get(i);species[i]=m.species();levels[i]=Integer.toString(m.level());moves[i]=String.join(",",m.moves());}
     }
     private void copy(CustomTrainerScreen p){
         id=p.id;name=p.name;difficulty=p.difficulty;format=p.format;skin=p.skin;start=p.start;win=p.win;loss=p.loss;tab=p.tab;scroll=p.scroll;
         autoMoves=p.autoMoves;
+        trialEnabled=p.trialEnabled;trialBoss=p.trialBoss;shinyDenominator=p.shinyDenominator;
         System.arraycopy(p.species,0,species,0,6);System.arraycopy(p.levels,0,levels,0,6);System.arraycopy(p.moves,0,moves,0,6);
     }
     private void read(){reads.forEach(Runnable::run);}
@@ -46,7 +50,7 @@ public final class CustomTrainerScreen extends Screen {
         rows.clear();labels.clear();reads.clear();clearWidgets();
         w=Math.min(540,width-16);h=Math.min(320,height-16);x=(width-w)/2;y=(height-h)/2;
         int left=x+12,usable=w-24;
-        for(int i=0;i<3;i++){int selected=i;button(left+i*(usable/3),0,usable/3-4,List.of("Identidad","Equipo","Diálogos").get(i),()->{read();tab=selected;scroll=0;init();});}
+        for(int i=0;i<4;i++){int selected=i;button(left+i*(usable/4),0,usable/4-4,List.of("Identidad","Equipo","Diálogos","Prueba").get(i),()->{read();tab=selected;scroll=0;init();});}
         if(tab==0){
             label("ID propio (prefijo zian_custom_):",26);
             EditBox idBox=field(left,40,usable,64,id);idBox.setEditable(state.trainer().isEmpty());reads.add(()->id=idBox.getValue());
@@ -75,11 +79,22 @@ public final class CustomTrainerScreen extends Screen {
                 row+=64;
             }
             contentHeight=row;
-        }else{
+        }else if(tab==2){
             label("Al iniciar el combate:",26);EditBox s=field(left,42,usable,256,start);reads.add(()->start=s.getValue());
             label("Cuando gana el jugador:",68);EditBox a=field(left,84,usable,256,win);reads.add(()->win=a.getValue());
             label("Cuando pierde el jugador:",110);EditBox b=field(left,126,usable,256,loss);reads.add(()->loss=b.getValue());
             label("Se guardan como diálogos propios de este ID.",154);contentHeight=180;
+        }else{
+            button(left,28,usable,"Prueba legendaria: "+(trialEnabled?"Activada":"Desactivada")+" (cambiar)",()->{read();trialEnabled=!trialEnabled;init();});
+            label("ID del jefe que desbloquea este NPC (dificultad JEFE):",56);
+            EditBox boss=field(left,72,usable,64,trialBoss);reads.add(()->trialBoss=boss.getValue());
+            label("Probabilidad shiny: 1 entre (512 por defecto):",100);
+            EditBox chance=field(left,116,usable,7,shinyDenominator);reads.add(()->shinyDenominator=chance.getValue());
+            label("Equipo: un legendario/singular, batalla Individual.",145);
+            label("Al vencer: Pokémon al PC, IV aleatorios de 25 a 30.",163);
+            label("Único por jugador. Perder permite volver a intentar.",181);
+            label("Crea primero el jefe; su loot se configura por separado.",199);
+            contentHeight=226;
         }
         save=addRenderableWidget(gold(x+12,y+h-25,160,"Guardar definición",()->submit()));
         back=addRenderableWidget(gold(x+w-112,y+h-25,100,"Volver a lista",()->PacketDistributor.sendToServer(new NpcEditorAction(state.nonce(),"list","",""))));
@@ -91,7 +106,8 @@ public final class CustomTrainerScreen extends Screen {
             List<CustomTrainer.Member> team=new ArrayList<>();
             for(int i=0;i<6;i++)if(!species[i].isBlank())team.add(new CustomTrainer.Member(species[i].trim().toLowerCase(Locale.ROOT),
                     Integer.parseInt(levels[i].trim()),autoMoves?List.of("tackle"):Arrays.stream(moves[i].split(",")).map(String::trim).map(s->s.toLowerCase(Locale.ROOT)).filter(s->!s.isEmpty()).toList()));
-            var d=new CustomTrainer(id.trim(),name.trim(),difficulty,format,skin,team,start,win,loss,autoMoves);
+            var trial=trialEnabled?new CustomTrainer.Trial(trialBoss.trim(),Integer.parseInt(shinyDenominator.trim())):null;
+            var d=new CustomTrainer(id.trim(),name.trim(),difficulty,format,skin,team,start,win,loss,autoMoves,trial);
             d=AutomaticTrainerMoves.prepare(d);
             PacketDistributor.sendToServer(new CustomTrainerSave(state.nonce(),new Gson().toJson(d)));
         }catch(RuntimeException e){error=e.getMessage()==null?"Revisa la definición":e.getMessage();}

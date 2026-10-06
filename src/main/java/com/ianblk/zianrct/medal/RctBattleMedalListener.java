@@ -93,7 +93,7 @@ public final class RctBattleMedalListener {
         state.getLosers().forEach(trainer -> {
             if (trainer.getEntity() instanceof TrainerMob trainerMob) {
                 String trainerId = configuredTrainerId(trainerMob.getTrainerId(), chain);
-                if (trainerId == null && rewardService.configured(trainerMob.getTrainerId())) trainerId = trainerMob.getTrainerId();
+                if (trainerId == null && rewardService.interested(trainerMob.getTrainerId())) trainerId = trainerMob.getTrainerId();
                 if (trainerId != null) {
                     defeatedTrainerIds.add(trainerId);
                 }
