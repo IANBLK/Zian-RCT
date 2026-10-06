@@ -41,6 +41,20 @@ public final class CustomTrainerResources {
             dialog(dialogs,"on_battle_start",welcome);dialog(dialogs,"battle_start",welcome);
             dialog(dialogs,"on_battle_lost",d.playerWins());dialog(dialogs,"battle_lost",d.playerWins());dialog(dialogs,"trainer_lost",d.playerWins());
             dialog(dialogs,"on_battle_won",d.playerLoses());dialog(dialogs,"battle_won",d.playerLoses());dialog(dialogs,"trainer_won",d.playerLoses());
+            var replies=Map.ofEntries(
+                Map.entry("trainer_busy","Estoy en otro combate. Espera a que termine."),
+                Map.entry("player_busy","Termina tu combate actual antes de retarme."),
+                Map.entry("on_cooldown","Nuestros equipos necesitan descansar un momento. Vuelve a intentarlo después."),
+                Map.entry("missing_pokemon","Necesitas al menos un Pokémon capaz de combatir."),
+                Map.entry("over_level_cap","Tu equipo supera tu tope de nivel actual de RCT."),
+                Map.entry("low_level_cap","Todavía no cumples el tope requerido para este desafío."),
+                Map.entry("wrong_series","Este es un reto independiente; revisa los requisitos actuales del combate."),
+                Map.entry("missing_required_series","Completa primero la serie requerida."),
+                Map.entry("missing_required_trainer","Derrota primero al entrenador requerido."),
+                Map.entry("done_generic","Este encuentro no está disponible en este momento."),
+                Map.entry("unknown_reason","No se pudo iniciar el combate. Revisa tu equipo y vuelve a intentarlo.")
+            );
+            replies.forEach((context,text)->dialog(dialogs,context,text));
             put(out,"dialogs/trainers/single/"+d.id()+".json",dialogs);
         }
         return out;

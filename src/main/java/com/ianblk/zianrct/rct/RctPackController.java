@@ -543,7 +543,10 @@ public final class RctPackController {
                 ZianRCT.LOGGER.info("Zian RCT automatic trainer moves verified: {}",d.id());
             }
             var dialogue=trainerManager.getData(d.id()).getDialog();
-            for(var context:java.util.Map.of("on_battle_start",d.start(),"on_battle_lost",d.playerWins(),"on_battle_won",d.playerLoses()).entrySet()){
+            var contexts=new java.util.LinkedHashMap<String,String>();
+            contexts.put("on_battle_start",d.start());contexts.put("on_battle_lost",d.playerWins());contexts.put("on_battle_won",d.playerLoses());
+            for(String context:java.util.List.of("trainer_busy","player_busy","on_cooldown","missing_pokemon","over_level_cap","wrong_series","missing_required_series","missing_required_trainer","done_generic","unknown_reason"))contexts.put(context,"required");
+            for(var context:contexts.entrySet()){
                 if(context.getValue().isBlank())continue;
                 var messages=dialogue.get(context.getKey());
                 if(messages==null || messages.length==0)throw new IllegalStateException("Diálogo propio no cargado: "+d.id()+" / "+context.getKey());

@@ -1,5 +1,11 @@
 # Changelog
 
+## 0.1.0-beta.15
+
+- Generate replies for independent trainer interaction contexts: busy trainer/player, cooldown, missing Pokémon, level cap, unavailable encounter and fallback requirements. Keep every speech lookup non-null.
+- Override independent trainer refusal dialogue to reflect its actual gates, avoiding inherited league-series refusal. Show the current cap when the player's team exceeds it; OP does not bypass native progression limits.
+- Regenerate saved trainer dialogues automatically. Preserve legendary eligibility, delivered rewards, level-cap rules, npc7 and all creator data. Full trainer saves still use native server-data reloads, which may briefly stall a heavily modded Youer server.
+
 ## 0.1.0-beta.14
 
 - Keep login quiet for completed legendary trials and unlocked encounters. Notify only the owner of pending/in-progress/review deliveries, respecting the legendary claim permission.

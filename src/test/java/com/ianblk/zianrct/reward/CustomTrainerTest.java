@@ -59,6 +59,14 @@ class CustomTrainerTest {
         assertEquals(text,start.get("literal").getAsString());assertEquals(text,start.get("translatable").getAsString());
         assertTrue(dialogs.getAsJsonArray("on_battle_won").isEmpty());assertTrue(dialogs.getAsJsonArray("on_battle_lost").isEmpty());
     }
+    @Test void independentInteractionContextsHaveSpeechReplies(){
+        var d=trainer();var resources=CustomTrainerResources.build(Map.of(d.id(),d));
+        var dialogs=JsonParser.parseString(new String(resources.get("dialogs/trainers/single/"+d.id()+".json"),java.nio.charset.StandardCharsets.UTF_8)).getAsJsonObject();
+        for(String context:List.of("trainer_busy","player_busy","on_cooldown","missing_pokemon","over_level_cap","wrong_series","missing_required_series","missing_required_trainer","done_generic","unknown_reason")){
+            var replies=dialogs.getAsJsonArray(context);assertNotNull(replies,context);assertFalse(replies.isEmpty());
+            assertFalse(replies.get(0).getAsJsonObject().get("translatable").getAsString().isBlank());
+        }
+    }
     @Test void difficultyAppliesPerfectHardBossIvsAndNativeHeldItemFormat(){
         for(String difficulty:List.of("FACIL","NORMAL","DIFICIL","JEFE")){
             var original=trainer();var d=new CustomTrainer(original.id(),original.name(),difficulty,original.format(),original.skin(),original.team(),original.start(),original.playerWins(),original.playerLoses());

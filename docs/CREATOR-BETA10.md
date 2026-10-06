@@ -1,5 +1,9 @@
 # Selector de equipo, skins y dificultad — beta.10
 
+Actualización beta.15: los NPC independientes también tienen respuestas para equipo por encima del tope, falta de Pokémon, combate ocupado, espera y otros rechazos. La respuesta usa los requisitos propios del NPC, sin atribuir el rechazo a una serie de medallas distinta. Si el equipo supera el tope, se muestra el nivel permitido. OP no elimina ese límite. Los diálogos guardados se regeneran sin recrear el NPC.
+
+Guardar una definición nueva o cambiar su contenido recarga los datos del servidor y reconstruye los entrenadores de RCT. En servidores Youer con muchos mods puede provocar una pausa breve; el aviso de watchdog de 10 segundos observado en el log terminó con el registro y verificación de los entrenadores, sin un cierre del servidor. Esta versión corrige los diálogos; no modifica el watchdog ni mueve las operaciones del motor RCT fuera de su hilo de servidor.
+
 Actualización beta.12: las definiciones nuevas empiezan en **Movimientos automáticos**. Basta elegir Pokémon, nivel y dificultad. Fácil prioriza ataques modestos y Normal ataques más fuertes, disponibles por nivel. Difícil/Jefe añaden movimientos legales por MT, tutor, huevo y evolución; priorizan potencia, precisión, ataques del mismo tipo y cobertura, y reservan una plaza de apoyo cuando existe. No es un optimizador competitivo ni exige que cuatro movimientos existan para especies con repertorios pequeños. Si no hay ningún movimiento disponible, el guardado se rechaza y permite pasar a Manual.
 
 El servidor recalcula los ataques al guardar y conserva el resultado. Cambiar nivel o dificultad requiere volver a guardar. En automático, los campos muestran el repertorio anterior y están bloqueados; en Manual se pueden editar y usar los selectores. El campo opcional `autoMoves` está ausente en configuraciones antiguas: se interpreta como false, preservando sus ataques. El canal npc6 exige cliente/servidor beta.12 compatibles.
