@@ -58,6 +58,8 @@ Reconecta después de cambiar permisos para actualizar el autocompletado.
 
 ## Recompensas únicas por entrenador (Beta 4)
 
+**Beta 12:** al crear un entrenador, el modo **Movimientos automáticos** permite elegir solo Pokémon, nivel y dificultad. Los ataques se preparan al guardar; IV y objetos siguen el preset de dificultad. El modo manual conserva los selectores y los equipos anteriores. Incluye la corrección del crash de diálogos de beta 11. Instala beta 12 en servidor y clientes.
+
 **Beta 11:** corrige el crash de los entrenadores independientes al iniciar o terminar un combate con burbujas de diálogo activadas. Los diálogos guardados se regeneran automáticamente; no hace falta recrear los NPC. Se conserva el contenido de beta 10. Instala la misma beta en servidor y clientes.
 
 **Beta 10:** el editor de equipo incluye **Pokémon…** y **Ataques…**, con búsqueda, páginas y selección de hasta cuatro movimientos de la especie. Se incluyen las seis skins entregadas por el administrador. Difícil y Jefe tienen IV perfectos y objetos equipados automáticos. Instala la misma beta en servidor y clientes. Consulta [los cambios y pruebas](docs/CREATOR-BETA10.md).

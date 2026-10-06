@@ -166,6 +166,7 @@ public final class TrainerRewardService {
     }
     public String status() { return config == null ? "Recompensas desactivadas por error" : "enabled=" + config.enabled() + "; " + walletStatus; }
     public void saveCustom(com.ianblk.zianrct.creator.CustomTrainer definition) throws IOException {
+        definition=com.ianblk.zianrct.creator.AutomaticTrainerMoves.prepare(definition);
         ready();noBattle(definition.id());com.ianblk.zianrct.creator.CustomTrainerValidation.validate(definition);
         com.ianblk.zianrct.creator.CustomTrainerStore.save(definition);
         packs.regenerate(server,"custom trainer definition saved");

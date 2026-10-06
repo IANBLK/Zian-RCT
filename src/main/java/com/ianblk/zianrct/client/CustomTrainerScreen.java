@@ -20,6 +20,7 @@ public final class CustomTrainerScreen extends Screen {
     private final List<Runnable> reads=new ArrayList<>();
     private Button save,back;
     private String error="";
+    private boolean autoMoves=true;
     private record Label(String text,int row){}
     public CustomTrainerScreen(NpcEditorState state){
         super(Component.literal("Zian RCT · Definir entrenador"));this.state=state;
@@ -31,11 +32,13 @@ public final class CustomTrainerScreen extends Screen {
     }
     private void load(CustomTrainer d){
         id=d.id();name=d.name();difficulty=d.difficulty();format=d.format();skin=d.skin();start=d.start();win=d.playerWins();loss=d.playerLoses();
+        autoMoves=d.autoMoves();
         Arrays.fill(species,"");
         for(int i=0;i<d.team().size();i++){var m=d.team().get(i);species[i]=m.species();levels[i]=Integer.toString(m.level());moves[i]=String.join(",",m.moves());}
     }
     private void copy(CustomTrainerScreen p){
         id=p.id;name=p.name;difficulty=p.difficulty;format=p.format;skin=p.skin;start=p.start;win=p.win;loss=p.loss;tab=p.tab;scroll=p.scroll;
+        autoMoves=p.autoMoves;
         System.arraycopy(p.species,0,species,0,6);System.arraycopy(p.levels,0,levels,0,6);System.arraycopy(p.moves,0,moves,0,6);
     }
     private void read(){reads.forEach(Runnable::run);}
@@ -57,15 +60,18 @@ public final class CustomTrainerScreen extends Screen {
             contentHeight=236;
         }else if(tab==1){
             label("Especie / nivel (1–100). Vacío = no usar esa plaza.",26);
-            int row=44;
+            button(left,42,usable,"Movimientos: "+(autoMoves?"Automáticos por dificultad":"Manuales")+" (cambiar)",()->{read();autoMoves=!autoMoves;init();});
+            label(autoMoves?"El servidor prepara los ataques al guardar; no necesitas elegirlos.":"Usa los selectores o escribe tus ataques.",66);
+            int row=84;
             for(int i=0;i<6;i++){
                 int slot=i;
                 EditBox s=field(left,row,usable-162,96,species[i]);EditBox l=field(left+usable-62,row,62,3,levels[i]);
                 button(left+usable-156,row,88,"Pokémon...",()->selectSpecies(slot));
                 reads.add(()->{species[slot]=s.getValue();levels[slot]=l.getValue();});
-                label("Movimientos (1–4, separados por coma):",row+22);
+                label(autoMoves?"Vista anterior; los ataques se recalculan al guardar.":"Movimientos (1–4, separados por coma):",row+22);
                 EditBox m=field(left,row+36,usable-94,200,moves[i]);reads.add(()->moves[slot]=m.getValue());
-                button(left+usable-88,row+36,88,"Ataques...",()->selectMoves(slot));
+                m.setEditable(!autoMoves);
+                if(!autoMoves)button(left+usable-88,row+36,88,"Ataques...",()->selectMoves(slot));
                 row+=64;
             }
             contentHeight=row;
@@ -84,8 +90,9 @@ public final class CustomTrainerScreen extends Screen {
         try{
             List<CustomTrainer.Member> team=new ArrayList<>();
             for(int i=0;i<6;i++)if(!species[i].isBlank())team.add(new CustomTrainer.Member(species[i].trim().toLowerCase(Locale.ROOT),
-                    Integer.parseInt(levels[i].trim()),Arrays.stream(moves[i].split(",")).map(String::trim).map(s->s.toLowerCase(Locale.ROOT)).filter(s->!s.isEmpty()).toList()));
-            var d=new CustomTrainer(id.trim(),name.trim(),difficulty,format,skin,team,start,win,loss);
+                    Integer.parseInt(levels[i].trim()),autoMoves?List.of("tackle"):Arrays.stream(moves[i].split(",")).map(String::trim).map(s->s.toLowerCase(Locale.ROOT)).filter(s->!s.isEmpty()).toList()));
+            var d=new CustomTrainer(id.trim(),name.trim(),difficulty,format,skin,team,start,win,loss,autoMoves);
+            d=AutomaticTrainerMoves.prepare(d);
             PacketDistributor.sendToServer(new CustomTrainerSave(state.nonce(),new Gson().toJson(d)));
         }catch(RuntimeException e){error=e.getMessage()==null?"Revisa la definición":e.getMessage();}
     }

@@ -1,7 +1,10 @@
 package com.ianblk.zianrct.creator;
 import java.util.*;
 public record CustomTrainer(String id,String name,String difficulty,String format,int skin,
-                            List<Member> team,String start,String playerWins,String playerLoses) {
+                            List<Member> team,String start,String playerWins,String playerLoses,boolean autoMoves) {
+    public CustomTrainer(String id,String name,String difficulty,String format,int skin,List<Member> team,String start,String playerWins,String playerLoses){
+        this(id,name,difficulty,format,skin,team,start,playerWins,playerLoses,false);
+    }
     public static final List<String> SKIN_NAMES=List.of("Explorador Ártico", "Centinela Nocturno",
             "Guardián Cian", "Aventurero del Desierto", "Guardabosques", "Capitán Ámbar");
     public static final List<String> SKINS=List.of("arctic_explorer", "night_sentinel", "cyan_guardian",
@@ -27,5 +30,5 @@ public record CustomTrainer(String id,String name,String difficulty,String forma
         for(String text:List.of(start,playerWins,playerLoses)) if(text.length()>256 || text.chars().anyMatch(Character::isISOControl))
             throw new IllegalArgumentException("Diálogo inválido (máximo 256 caracteres por frase).");
     }
-    public CustomTrainer format(String format){return new CustomTrainer(id,name,difficulty,format,skin,team,start,playerWins,playerLoses);}
+    public CustomTrainer format(String format){return new CustomTrainer(id,name,difficulty,format,skin,team,start,playerWins,playerLoses,autoMoves);}
 }

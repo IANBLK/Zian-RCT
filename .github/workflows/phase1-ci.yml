@@ -60,6 +60,7 @@ jobs:
               "id": "zian_custom_ci",
               "name": "CI independent trainer",
               "difficulty": "NORMAL",
+              "autoMoves": true,
               "format": "GEN_9_DOUBLES",
               "skin": 0,
               "team": [
@@ -193,6 +194,7 @@ jobs:
           wait_for_log "Generated 15 Zian RCT virtual resources" 120
           wait_for_log "generated progression verified for 10 trainers" 120
           wait_for_log "custom trainer definitions verified:.*zian_custom_ci" 120
+          wait_for_log "automatic trainer moves verified: zian_custom_ci" 120
           wait_for_log "rassvet_leader_novato=0" 120
           echo "Embedded Rassvet baseline active: 15 generated resources verified with default relative caps."
 

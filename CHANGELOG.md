@@ -1,5 +1,11 @@
 # Changelog
 
+## 0.1.0-beta.12
+
+- Add default automatic moves for newly created independent trainers: choose species, level and difficulty. Easy/Normal draw from level-up moves available at that level; Hard/Boss also consider legal TM, tutor, egg and evolution moves. Rank attack strength, accuracy, same-type bonuses and type coverage; advanced presets reserve a support move when available.
+- Recompute automatic teams authoritatively on server save, persist the resulting moves, and keep manual mode/selectors available. Existing definitions without the optional autoMoves flag stay manual and retain their moves. Changing difficulty/level in automatic mode updates the set on the next save.
+- Retain beta.11's dialogue crash fix, all six skins, difficulty IVs/equipment and reward histories. Require matching beta.12 clients/server via editor channel npc6. The heuristic is an initial team preset, not a competitive optimisation guarantee.
+
 ## 0.1.0-beta.11
 
 - Fix independent trainer dialogue generation for RCT speech bubbles. Provide both literal text and a non-null translatable lookup value, using the displayed text itself so client/server need no static translation entries for administrator-edited dialogue.

@@ -533,6 +533,11 @@ public final class RctPackController {
     ) {
         for(var d:com.ianblk.zianrct.creator.CustomTrainerStore.all().values()){
             if(!trainerManager.isValidId(d.id()))throw new IllegalStateException("Entrenador propio no cargado: "+d.id());
+            if(d.autoMoves()){
+                var prepared=com.ianblk.zianrct.creator.AutomaticTrainerMoves.prepare(d);
+                com.ianblk.zianrct.creator.CustomTrainerValidation.validate(prepared);
+                ZianRCT.LOGGER.info("Zian RCT automatic trainer moves verified: {}",d.id());
+            }
             var dialogue=trainerManager.getData(d.id()).getDialog();
             for(var context:java.util.Map.of("on_battle_start",d.start(),"on_battle_lost",d.playerWins(),"on_battle_won",d.playerLoses()).entrySet()){
                 if(context.getValue().isBlank())continue;
