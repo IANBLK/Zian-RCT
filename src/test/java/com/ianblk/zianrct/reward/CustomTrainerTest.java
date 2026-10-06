@@ -39,6 +39,26 @@ class CustomTrainerTest {
         assertEquals(CustomTrainer.SKINS.get(1),CustomTrainerStore.skins().get(trainer().id()));
         assertTrue(Files.exists(temp.resolve("zianrct-custom-trainers.json")));
     }
+    @Test void generatedDialogueHasNonNullNativeSpeechKeysAtStartWinAndLoss(){
+        var d=trainer();var resources=CustomTrainerResources.build(Map.of(d.id(),d));
+        var dialogs=JsonParser.parseString(new String(resources.get("dialogs/trainers/single/"+d.id()+".json"),java.nio.charset.StandardCharsets.UTF_8)).getAsJsonObject();
+        for(var context:dialogs.entrySet())for(var entry:context.getValue().getAsJsonArray()){
+            var message=entry.getAsJsonObject();
+            assertTrue(message.has("translatable"),context.getKey());
+            assertFalse(message.get("translatable").isJsonNull());
+            assertFalse(message.get("translatable").getAsString().isBlank());
+            assertEquals(message.get("literal"),message.get("translatable"));
+        }
+    }
+    @Test void editedDialoguePreservesUnicodePercentAndQuotesWhileBlankContextsStayEmpty(){
+        var original=trainer();String text="¿Listo? 100% \"poder\" — ¡Sí!";
+        var d=new CustomTrainer(original.id(),original.name(),original.difficulty(),original.format(),original.skin(),original.team(),text,"","   ");
+        var resources=CustomTrainerResources.build(Map.of(d.id(),d));
+        var dialogs=JsonParser.parseString(new String(resources.get("dialogs/trainers/single/"+d.id()+".json"),java.nio.charset.StandardCharsets.UTF_8)).getAsJsonObject();
+        var start=dialogs.getAsJsonArray("on_battle_start").get(0).getAsJsonObject();
+        assertEquals(text,start.get("literal").getAsString());assertEquals(text,start.get("translatable").getAsString());
+        assertTrue(dialogs.getAsJsonArray("on_battle_won").isEmpty());assertTrue(dialogs.getAsJsonArray("on_battle_lost").isEmpty());
+    }
     @Test void difficultyAppliesPerfectHardBossIvsAndNativeHeldItemFormat(){
         for(String difficulty:List.of("FACIL","NORMAL","DIFICIL","JEFE")){
             var original=trainer();var d=new CustomTrainer(original.id(),original.name(),difficulty,original.format(),original.skin(),original.team(),original.start(),original.playerWins(),original.playerLoses());

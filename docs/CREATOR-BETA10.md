@@ -1,5 +1,11 @@
 # Selector de equipo, skins y dificultad — beta.10
 
+Actualización beta.11: los diálogos independientes incluyen un valor `translatable` además del texto literal. RCT utiliza directamente ese valor para su burbuja; omitirlo producía una excepción de texto nulo al iniciar/finalizar combates y después un crash secundario de cierre en Showdown. Se usa el texto mostrado como clave de búsqueda, por lo que funciona sin un archivo estático de traducciones para los diálogos editados en el servidor. Una coincidencia con una clave de idioma instalada puede traducirse según el mecanismo nativo de Minecraft.
+
+Se regeneran los recursos de las definiciones guardadas sin borrar configuraciones, NPC, medallas ni historiales. La verificación de carga también construye los componentes de chat y burbuja con la API nativa. Prueba el inicio del combate, ganar, perder y volver a combatir, con las burbujas activadas. La corrección no sustituye el motor de Cobblemon ni convierte combates abortados en victorias.
+
+Fuente de integración: [RCT ChatUtils](https://gitlab.com/srcmc/rct/mod/-/raw/1.21.1/common/src/main/java/com/gitlab/srcmc/rctmod/api/utils/ChatUtils.java), que pasa `Text.getTranslatable()` a `TrainerMob.addMessage()`.
+
 Desde `/zianrct npc`, crea o modifica una definición propia y abre **Equipo**. Cada plaza conserva sus campos manuales y añade **Pokémon…** y **Ataques…**.
 
 El selector de Pokémon utiliza las especies implementadas de Cobblemon y permite buscar por nombre traducido o identificador. Aplicar otro Pokémon sustituye solamente esa plaza y propone hasta cuatro movimientos de nivel disponibles al nivel indicado. Desmarcar la especie y aplicar vacía la plaza. Cancelar o Escape conserva los valores anteriores.

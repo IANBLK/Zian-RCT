@@ -45,6 +45,17 @@ public final class CustomTrainerResources {
         return out;
     }
     private static JsonObject literal(String s){var o=new JsonObject();o.addProperty("literal",s);return o;}
-    private static void dialog(JsonObject o,String key,String text){var a=new JsonArray();if(!text.isBlank())a.add(literal(text));o.add(key,a);}
+    private static void dialog(JsonObject o,String key,String text){
+        var a=new JsonArray();
+        if(!text.isBlank()){
+            var message=literal(text);
+            // RCT's speech queue takes getTranslatable(), without consulting the literal fallback.
+            // Use the displayed text as its lookup key: absent a translation, both server and client
+            // display that same text. Dynamic admin dialogue does not need a static language pack.
+            message.addProperty("translatable",text);
+            a.add(message);
+        }
+        o.add(key,a);
+    }
     private static void put(Map<String,byte[]> out,String path,JsonObject json){out.put(path,json.toString().getBytes(StandardCharsets.UTF_8));}
 }

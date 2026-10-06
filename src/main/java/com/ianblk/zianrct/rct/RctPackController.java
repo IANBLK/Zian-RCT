@@ -533,6 +533,19 @@ public final class RctPackController {
     ) {
         for(var d:com.ianblk.zianrct.creator.CustomTrainerStore.all().values()){
             if(!trainerManager.isValidId(d.id()))throw new IllegalStateException("Entrenador propio no cargado: "+d.id());
+            var dialogue=trainerManager.getData(d.id()).getDialog();
+            for(var context:java.util.Map.of("on_battle_start",d.start(),"on_battle_lost",d.playerWins(),"on_battle_won",d.playerLoses()).entrySet()){
+                if(context.getValue().isBlank())continue;
+                var messages=dialogue.get(context.getKey());
+                if(messages==null || messages.length==0)throw new IllegalStateException("Diálogo propio no cargado: "+d.id()+" / "+context.getKey());
+                for(var message:messages){
+                    if(message==null || message.getTranslatable()==null || message.getTranslatable().isBlank())
+                        throw new IllegalStateException("Diálogo propio sin clave de burbuja: "+d.id()+" / "+context.getKey());
+                    // Exercise the same public component construction used by RCT's speech queue.
+                    net.minecraft.network.chat.Component.translatable(message.getTranslatable()).getString();
+                    message.getComponent().getString();
+                }
+            }
             String expected=RctTrainerOptions.formats().getOrDefault(d.id(),d.format());
             if(trainerManager.getData(d.id()).getTrainerTeam().getBattleFormat()==null || !trainerManager.getData(d.id()).getTrainerTeam().getBattleFormat().name().equals(expected))
                 throw new IllegalStateException("Formato propio no cargado: "+d.id());

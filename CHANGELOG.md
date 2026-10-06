@@ -1,5 +1,11 @@
 # Changelog
 
+## 0.1.0-beta.11
+
+- Fix independent trainer dialogue generation for RCT speech bubbles. Provide both literal text and a non-null translatable lookup value, using the displayed text itself so client/server need no static translation entries for administrator-edited dialogue.
+- Address the initiating NullPointerException in RCT's speech queue at battle start/end, which caused Cobblemon's secondary Showdown cleanup crash. Keep the battle engine, outcomes and reward journals unchanged.
+- Regenerate dialogues for existing saved independent definitions automatically; no NPC recreation or configuration reset is needed. Keep editor channel npc5 and all beta.10 selectors, skins and difficulty settings.
+
 ## 0.1.0-beta.10
 
 - Add searchable, paginated Pokémon and per-species move selectors to the independent team editor. Names follow the client's Cobblemon language; move tooltips show descriptions and combat values. Select up to four moves from the standard form's legal learnset, including TM/tutor moves regardless of level. Manual entry remains available.
