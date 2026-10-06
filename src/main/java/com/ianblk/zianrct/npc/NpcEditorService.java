@@ -34,6 +34,33 @@ public final class NpcEditorService {
     public static void receive(ServerPlayer player, NpcEditorAction action) {
         if (instance != null) instance.action(player, action);
     }
+    public static void saveCustom(ServerPlayer player,com.ianblk.zianrct.creator.CustomTrainerSave payload){
+        if(instance!=null)instance.custom(player,payload);
+    }
+    private void custom(ServerPlayer player,com.ianblk.zianrct.creator.CustomTrainerSave payload){
+        if(!allowed(player,"admin.npc.edit") || !allowed(player,"admin.trainer.create"))return;
+        UUID token=UUID.fromString(payload.nonce());
+        var session=sessions.take(player.getUUID(),token,System.currentTimeMillis());
+        if(session==null){
+            var active=sessions.peek(player.getUUID());
+            if(active!=null && active.mode()==NpcEditorState.Mode.DESIGN && active.token().equals(token))
+                send(player,null,active.trainer(),NpcEditorState.Mode.DESIGN,"",0,"","Sesión renovada. Tu borrador se conserva; pulsa Guardar de nuevo.");
+            return;
+        }
+        if(session.mode()!=NpcEditorState.Mode.DESIGN)return;
+        try{
+            var definition=com.ianblk.zianrct.creator.CustomTrainerStore.decode(payload.json());
+            if(!session.trainer().isEmpty() && !session.trainer().equals(definition.id()))throw new IllegalArgumentException("No cambies el ID de una definición existente.");
+            if(session.trainer().isEmpty() && (com.ianblk.zianrct.creator.CustomTrainerStore.get(definition.id())!=null
+                    || RCTMod.getInstance().getTrainerManager().isValidId(definition.id())))throw new IllegalArgumentException("Ya existe este ID. Edita su definición desde un NPC propio.");
+            rewards.saveCustom(definition);
+            send(player,null,definition.id(),NpcEditorState.Mode.CREATE,definition.id(),0,"","Definición guardada. Espera la recarga y crea el NPC seleccionado.");
+        }catch(Exception error){
+            String message=error.getMessage()==null?"No se pudo guardar":error.getMessage();
+            // Refresh the nonce, while the client preserves the submitted draft after a failed save.
+            send(player,null,session.trainer(),NpcEditorState.Mode.DESIGN,"",0,"",message);
+        }
+    }
     private int command(net.minecraft.commands.CommandSourceStack source) {
         try { open(source.getPlayerOrException()); return 1; }
         catch (Exception e) { source.sendFailure(Component.literal(e.getMessage())); return 0; }
@@ -93,10 +120,17 @@ public final class NpcEditorService {
             if (!NpcEditorProtocol.allowed(mode,session.confirmation(),action.action()))
                 throw new IllegalStateException("Acción no disponible en esta pantalla.");
             // Navigation never needs to resolve a stale entity.
-            if (mode==NpcEditorState.Mode.EDIT && !Set.of("list","create").contains(action.action())) npc=target(player,session);
+            if (mode==NpcEditorState.Mode.EDIT && !Set.of("list","create","designer").contains(action.action())) npc=target(player,session);
             switch(action.action()) {
                 case "list" -> {mode=NpcEditorState.Mode.LIST;npc=null;selected="";query="";page=0;}
                 case "create" -> {mode=NpcEditorState.Mode.CREATE;npc=null;selected="";query="rassvet";page=0;}
+                case "designer" -> {
+                    require(player,"admin.trainer.create");
+                    if(mode==NpcEditorState.Mode.EDIT && com.ianblk.zianrct.creator.CustomTrainerStore.get(selected)==null)
+                        throw new IllegalArgumentException("Solo puedes editar definiciones propias; las de RCT se conservan.");
+                    if(mode==NpcEditorState.Mode.CREATE)selected="";
+                    mode=NpcEditorState.Mode.DESIGN;npc=null;query="";page=0;
+                }
                 case "search" -> {query=action.value();page=0;}
                 case "choose_template" -> {
                     if (!RCTMod.getInstance().getTrainerManager().isValidId(action.value())) throw new IllegalArgumentException("ID de entrenador inexistente.");
@@ -128,7 +162,9 @@ public final class NpcEditorService {
                         throw new IllegalStateException("Demasiados entrenadores cercanos.");
                     Vec3 ahead=Vec3.directionFromRotation(0,player.getYRot()).scale(2);
                     Vec3 at=player.position().add(ahead);
-                    TrainerMob created=TrainerMob.getEntityType().create(player.serverLevel());
+                    TrainerMob created=com.ianblk.zianrct.creator.CustomTrainerStore.get(selected)!=null
+                            ?com.ianblk.zianrct.creator.CustomTrainerEntities.TYPE.get().create(player.serverLevel())
+                            :TrainerMob.getEntityType().create(player.serverLevel());
                     if(created==null) throw new IllegalStateException("No se pudo crear el entrenador.");
                     created.setTrainerId(selected);created.moveTo(at.x,at.y,at.z,player.getYRot()+180,0);
                     created.setHomePos(BlockPos.containing(at));
@@ -249,11 +285,16 @@ public final class NpcEditorService {
         if(notice.length()>256)notice=notice.substring(0,256);
         String next="";
         if(mode==NpcEditorState.Mode.EDIT)try{next=rewards.next(player,trainer);}catch(RuntimeException error){next="Recompensas no disponibles.";}
+        String draft="";
+        if(mode==NpcEditorState.Mode.DESIGN){
+            var own=com.ianblk.zianrct.creator.CustomTrainerStore.get(trainer);
+            if(own!=null)draft=GSON.toJson(own);
+        }
         var state=new NpcEditorState(session.token().toString(),mode,trainer,npc==null?"":npc.getUUID().toString(),
                 npc!=null && npc.isPersistenceRequired(),npc!=null && (npc.isNoAi()||npc.getPersistentData().getBoolean(FROZEN)),
                 matches,views,descriptions,definition==null?"avecoins:coppercoin":definition.currency(),definition==null?0:definition.coins(),
                 notice,query,page,pages,confirmation,definition==null?"UNIQUE":definition.mode().name(),
-                definition==null?0:definition.cooldownMinutes(),next,mode==NpcEditorState.Mode.EDIT?rewards.format(trainer):"GEN_9_SINGLES");
+                definition==null?0:definition.cooldownMinutes(),next,mode==NpcEditorState.Mode.EDIT?rewards.format(trainer):"GEN_9_SINGLES",draft);
         PacketDistributor.sendToPlayer(player,new NpcEditorPayload(GSON.toJson(state)));
     }
 }

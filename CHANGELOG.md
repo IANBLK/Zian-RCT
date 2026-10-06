@@ -1,5 +1,14 @@
 # Changelog
 
+## 0.1.0-beta.9
+
+- Show visible trainer names and readable return times in repeated reward delivery messages; add Shift/right-click availability queries and a clickable availability link in Rassvet invitations.
+- Add a permission-protected independent trainer creator with own IDs, names, difficulty presets, 1–6 Pokémon/levels/moves, single/double format, installed-skin selection and contextual dialogues.
+- Generate optional standalone challenge resources outside the Rassvet chain, with no league prerequisites or automatic natural spawning. Preserve existing medals, player series selection and reward history.
+- Persist owned definitions atomically and validate species/moves and identity bounds before publishing; prevent overwriting external trainer IDs or changing definitions during active battles/reloads.
+- Synchronize installed skin references and extend the public RCT renderer without copying dependency assets. Require editor channel npc4 on clients/server.
+- Add independent creator/resource/message tests and a dedicated-server fixture for an owned double-format trainer. Legendary encounter unlocks and arbitrary skin import remain later stages.
+
 ## 0.1.0-beta.8
 
 - Add unique/repeated reward policy and per-player wait settings in the NPC Loot GUI, with personal eligibility queries and pending-cycle blocking.

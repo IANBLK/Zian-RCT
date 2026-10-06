@@ -22,9 +22,14 @@ public final class TrainerRewardService {
     }
     private void onInteract(net.neoforged.neoforge.event.entity.player.PlayerInteractEvent.EntityInteract event){
         if(event.getEntity() instanceof ServerPlayer player && event.getTarget() instanceof com.gitlab.srcmc.rctmod.world.entities.TrainerMob npc){
+            if(player.isShiftKeyDown() && configured(npc.getTrainerId())){
+                event.setCanceled(true);event.setCancellationResult(net.minecraft.world.InteractionResult.SUCCESS);
+                player.sendSystemMessage(Component.literal("<Entrenador "+name(npc.getTrainerId())+"> "+next(player,npc.getTrainerId())));
+                return;
+            }
             String reason=blocked(player,npc.getTrainerId());
             if(reason!=null){event.setCanceled(true);event.setCancellationResult(net.minecraft.world.InteractionResult.SUCCESS);
-                player.sendSystemMessage(Component.literal(reason));}
+                player.sendSystemMessage(Component.literal("<Entrenador "+name(npc.getTrainerId())+"> "+reason));}
         }
     }
     public String blocked(ServerPlayer player,String trainer){
@@ -49,7 +54,16 @@ public final class TrainerRewardService {
         }catch(Exception error){return "No se pudo verificar este desafío. Consulta al administrador.";}
     }
     private static String waitText(long millis){
-        long seconds=(millis+999)/1000;return (seconds/3600)+"h "+((seconds%3600)/60)+"m "+(seconds%60)+"s";
+        return RewardMessages.waitFor(millis);
+    }
+    public static String name(String trainer){
+        try{
+            var text=RCTMod.getInstance().getTrainerManager().getData(trainer).getTrainerTeam().getName();
+            String value=text.getComponent().getString();
+            if(!value.isBlank())return value.toLowerCase(Locale.ROOT).startsWith("líder ")?value.substring(6):value;
+        }catch(RuntimeException ignored){}
+        String value=trainer.replace("rassvet_leader_","").replace("rassvet_master_","").replaceAll("_[0-9a-f]{4}$","").replace('_',' ');
+        return value.isEmpty()?trainer:Character.toUpperCase(value.charAt(0))+value.substring(1);
     }
     private volatile TrainerRewardConfig config;
     private RewardJournal journal;
@@ -113,6 +127,7 @@ public final class TrainerRewardService {
     public Map<String, RewardDefinition> definitions() { ready(); return config.definitions(); }
     public String next(ServerPlayer player,String trainer){
         ready();var definition=config.definition(trainer);
+        if(!config.enabled())return "Recompensas nuevas desactivadas; los premios reservados siguen reclamables.";
         if(definition==null || definition.empty())return "Sin premio configurado.";
         long remaining=journal.remaining(player.getUUID(),trainer,definition,System.currentTimeMillis());
         if(remaining==-1)return "Premio único ya obtenido.";
@@ -136,16 +151,27 @@ public final class TrainerRewardService {
     public void format(String trainer,String format) throws IOException {
         trainer(trainer);noBattle(trainer);
         packs.requireTrainerSource(server,trainer,false);
-        com.ianblk.zianrct.rct.RctTrainerOptions.format(trainer,format);
+        var own=com.ianblk.zianrct.creator.CustomTrainerStore.get(trainer);
+        if(own!=null)com.ianblk.zianrct.creator.CustomTrainerStore.save(own.format(format));
+        else com.ianblk.zianrct.rct.RctTrainerOptions.format(trainer,format);
         packs.regenerate(server,"trainer battle format changed");
     }
     public String format(String trainer){
+        var own=com.ianblk.zianrct.creator.CustomTrainerStore.get(trainer);
+        if(own!=null)return own.format();
         String configured=com.ianblk.zianrct.rct.RctTrainerOptions.formats().get(trainer);
         if(configured!=null)return configured;
         try{return RCTMod.getInstance().getTrainerManager().getData(trainer).getTrainerTeam().getBattleFormat().name();}
         catch(RuntimeException error){return "GEN_9_SINGLES";}
     }
     public String status() { return config == null ? "Recompensas desactivadas por error" : "enabled=" + config.enabled() + "; " + walletStatus; }
+    public void saveCustom(com.ianblk.zianrct.creator.CustomTrainer definition) throws IOException {
+        ready();noBattle(definition.id());com.ianblk.zianrct.creator.CustomTrainerValidation.validate(definition);
+        com.ianblk.zianrct.creator.CustomTrainerStore.save(definition);
+        packs.regenerate(server,"custom trainer definition saved");
+        com.ianblk.zianrct.creator.CustomTrainerSkins.sync(server);
+        ZianRCT.LOGGER.info("[ZIAN-AUDIT] action=custom_trainer_save id={} name={}",definition.id(),definition.name());
+    }
     public String describe(ServerPlayer player, RewardClaim.Part part) {
         if (part.kind() == RewardClaim.Kind.COINS) return part.amount() + " " + part.data();
         try {
@@ -163,6 +189,10 @@ public final class TrainerRewardService {
     }
     private void deliver(ServerPlayer player, UUID id) throws IOException {
         ready();
+        RewardClaim before=journal.get(id);
+        if(before!=null && before.player().equals(player.getUUID()) && before.complete()){
+            player.sendSystemMessage(Component.literal("Esta recompensa ya fue entregada. "+next(player,before.trainer())));return;
+        }
         RewardDelivery.deliver(journal, player.getUUID(), id, new RewardDelivery.Port() {
             public String unavailable(RewardClaim.Part part) {
                 if (!player.isAlive() || player.isRemoved()) return "player_not_alive";
@@ -194,7 +224,7 @@ public final class TrainerRewardService {
             }
         });
         RewardClaim result = journal.get(id);
-        player.sendSystemMessage(Component.literal(result.complete() ? "Recompensa de " + result.trainer() + " entregada."
+        player.sendSystemMessage(Component.literal(result.complete() ? RewardMessages.delivered(name(result.trainer()),Math.max(0,result.nextEligibleAt()-System.currentTimeMillis()),result.cooldownMinutes()>0)
                 : result.review() ? "Recompensa " + id + " pendiente de revisión administrativa."
                 : "Recompensa " + id + " pendiente. Libera espacio o revisa la cartera y usa /zianrct reward claim " + id));
         ZianRCT.LOGGER.info("[ZIAN-AUDIT] action=trainer_reward_claim playerUuid={} trainer={} operation={} result={}",

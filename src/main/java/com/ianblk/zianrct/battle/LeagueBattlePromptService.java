@@ -222,6 +222,8 @@ public final class LeagueBattlePromptService {
                 .append(Component.literal("¿Quieres comenzar este desafío?").withStyle(ChatFormatting.WHITE));
         player.sendSystemMessage(line);
         player.sendSystemMessage(Component.empty().append(accept).append(Component.literal("  ")).append(reject));
+        player.sendSystemMessage(Component.literal("[Ver disponibilidad de recompensa]").withStyle(style->style.withColor(ChatFormatting.GOLD)
+                .withClickEvent(new ClickEvent(ClickEvent.Action.RUN_COMMAND,"/zianrct reward next "+trainer.getTrainerId()))));
         player.sendSystemMessage(Component.literal("La invitación caduca en 15 segundos.").withStyle(ChatFormatting.DARK_GRAY));
     }
 

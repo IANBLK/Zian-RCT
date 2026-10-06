@@ -46,6 +46,7 @@ public final class MedalRuntime {
         if (event.getEntity() instanceof ServerPlayer player) {
             medalService.reconcile(player);
             rewardService.notifyPending(player);
+            com.ianblk.zianrct.creator.CustomTrainerSkins.sync(player);
         }
     }
 

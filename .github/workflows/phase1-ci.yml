@@ -52,6 +52,27 @@ jobs:
             exit 1
           fi
 
+          mkdir -p run/config
+          cat > run/config/zianrct-custom-trainers.json <<'TRAINER'
+          {
+            "schemaVersion": 1,
+            "trainers": [{
+              "id": "zian_custom_ci",
+              "name": "CI independent trainer",
+              "difficulty": "NORMAL",
+              "format": "GEN_9_DOUBLES",
+              "skin": 0,
+              "team": [
+                {"species": "pikachu", "level": 20, "moves": ["thunderbolt"]},
+                {"species": "eevee", "level": 20, "moves": ["tackle"]}
+              ],
+              "start": "CI challenge",
+              "playerWins": "Well played",
+              "playerLoses": "Try again"
+            }]
+          }
+          TRAINER
+
           echo 'eula=true' > run/eula.txt
           cat > run/server.properties <<'PROPS'
           online-mode=false
@@ -169,10 +190,11 @@ jobs:
           wait_for_log "Zian RCT medal store ready" 120
           wait_for_log "Registered Zian RCT BATTLE_ENDED listener on RCTApi instance 'rctmod'" 120
           echo "Phase 4 medal runtime initialized with persistent store and RCT BATTLE_ENDED hook."
-          wait_for_log "Generated 11 Zian RCT virtual resources" 120
+          wait_for_log "Generated 15 Zian RCT virtual resources" 120
           wait_for_log "generated progression verified for 10 trainers" 120
+          wait_for_log "custom trainer definitions verified:.*zian_custom_ci" 120
           wait_for_log "rassvet_leader_novato=0" 120
-          echo "Embedded Rassvet baseline active: 11 generated resources verified with default relative caps."
+          echo "Embedded Rassvet baseline active: 15 generated resources verified with default relative caps."
 
           medals_console_response=$(python "$RUNNER_TEMP/rcon.py" medals)
           echo "RCON /medals from console response: $medals_console_response"
@@ -268,11 +290,11 @@ jobs:
           path.write_text(json.dumps(data, ensure_ascii=False, indent=2) + '\n', encoding='utf-8')
           PY
 
-          generated_before=$(grep -c "Generated 11 Zian RCT virtual resources" server-smoke.log || true)
+          generated_before=$(grep -c "Generated 15 Zian RCT virtual resources" server-smoke.log || true)
           echo "RCON team-change /reload response: $(python "$RUNNER_TEMP/rcon.py" reload)"
           changed=0
           for _ in $(seq 1 180); do
-            generated_after=$(grep -c "Generated 11 Zian RCT virtual resources" server-smoke.log || true)
+            generated_after=$(grep -c "Generated 15 Zian RCT virtual resources" server-smoke.log || true)
             if [ "$generated_after" -gt "$generated_before" ] && grep -q "rassvet_leader_novato=1" server-smoke.log; then
               changed=1
               break

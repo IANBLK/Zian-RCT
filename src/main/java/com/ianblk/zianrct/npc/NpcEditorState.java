@@ -5,8 +5,8 @@ import java.util.UUID;
 public record NpcEditorState(String nonce, Mode mode, String trainer, String npc, boolean persistent, boolean frozen,
                              List<String> matches, List<NpcView> npcs, List<String> rewards, String currency,
                              long coins, String notice, String query, int page, int pages, String confirmation,
-                             String rewardMode,long cooldownMinutes,String nextReward,String battleFormat) {
-    public enum Mode { LIST, CREATE, EDIT }
+                             String rewardMode,long cooldownMinutes,String nextReward,String battleFormat,String customDraft) {
+    public enum Mode { LIST, CREATE, EDIT, DESIGN }
     public record NpcView(String uuid, String trainer, int x, int y, int z, int distance) {
         public NpcView {
             UUID.fromString(uuid);
@@ -20,7 +20,8 @@ public record NpcEditorState(String nonce, Mode mode, String trainer, String npc
                 || query == null || query.length() > 128 || page < 0 || pages < 1 || page >= pages
                 || !java.util.Set.of("", "spawn", "delete").contains(confirmation)
                 || !java.util.Set.of("UNIQUE","REPEAT").contains(rewardMode) || cooldownMinutes<0 || cooldownMinutes>43200
-                || nextReward==null || nextReward.length()>256 || battleFormat==null || battleFormat.length()>64)
+                || nextReward==null || nextReward.length()>256 || battleFormat==null || battleFormat.length()>64
+                || customDraft==null || customDraft.length()>12000)
             throw new IllegalArgumentException("Editor snapshot invalid");
         if (!npc.isEmpty()) UUID.fromString(npc);
         matches = List.copyOf(matches); npcs = List.copyOf(npcs); rewards = List.copyOf(rewards);

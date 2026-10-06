@@ -42,7 +42,7 @@ public final class NpcEditorScreen extends Screen {
             contentHeight=row+4;
         }else if(state.mode()==NpcEditorState.Mode.CREATE){
             button(left,0,usable,"Volver a la lista",()->send("list","",""));
-            label("Crear un NPC de un entrenador existente",26,0xF7E2AC);
+            button(left,24,usable,"Definir entrenador desde cero",()->send("designer","",""));
             if(state.confirmation().equals("spawn")){
                 label("Confirmar creación de: "+state.trainer(),48,0xF7E2AC);
                 label("Aparecerá delante de ti, permanente y fijo.",66,0xB8B8B8);
@@ -81,7 +81,8 @@ public final class NpcEditorScreen extends Screen {
                     button(left,144,usable,"Batalla: "+format+" (cambiar)",()->send("format",state.battleFormat().equals("GEN_9_DOUBLES")?"GEN_9_SINGLES":"GEN_9_DOUBLES",""));
                     label("El formato se comparte por ID de entrenador.",168,0xB8B8B8);
                     button(left,190,usable,"Eliminar este NPC...",()->send("delete_prompt","",""));
-                    contentHeight=218;
+                    if(state.trainer().startsWith("zian_custom_"))button(left,220,usable,"Editar definición propia",()->send("designer","",""));
+                    contentHeight=state.trainer().startsWith("zian_custom_")?248:218;
                 }else{
                     label("Loot compartido por ID · Espera por jugador",72,0xB8B8B8);
                     button(left,92,usable,"Tipo de premio: "+(repeatChoice?"Repetible":"Único")+" (cambiar)",()->{repeatChoice=!repeatChoice;init();});

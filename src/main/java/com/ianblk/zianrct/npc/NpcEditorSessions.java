@@ -18,6 +18,7 @@ public final class NpcEditorSessions {
         if (before != null && now - before < 500) return null;
         last.put(player, now); sessions.remove(player); return session;
     }
+    public Session peek(UUID player){return sessions.get(player);}
     public void remove(UUID player) { sessions.remove(player); last.remove(player); }
     public void clear() { sessions.clear(); last.clear(); }
 }
