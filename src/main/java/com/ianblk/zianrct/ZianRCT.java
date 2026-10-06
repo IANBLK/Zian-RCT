@@ -33,12 +33,14 @@ public final class ZianRCT {
 
     public ZianRCT(IEventBus modEventBus, ModContainer container) {
         com.ianblk.zianrct.creator.CustomTrainerEntities.register(modEventBus);
+        com.ianblk.zianrct.standalone.ExperienceCaps.register();
         ZianRctConfig bootstrapDefaults = ZianRctConfig.defaults();
         ConfigState.replace(bootstrapDefaults);
         modEventBus.addListener(ZianRctNetwork::registerPayloads);
         this.rctPackController = new RctPackController(modEventBus);
         this.medalRuntime = new MedalRuntime(rctPackController);
         this.battlePromptService = new LeagueBattlePromptService();
+        new com.ianblk.zianrct.standalone.StandaloneSmoke();
         NeoForge.EVENT_BUS.addListener(this::onServerAboutToStart);
         if (FMLEnvironment.dist == Dist.CLIENT) {
             ZianRctClient.init(modEventBus);

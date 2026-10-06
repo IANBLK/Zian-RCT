@@ -14,7 +14,7 @@ public final class ZianRctNetwork {
     }
 
     public static void registerPayloads(RegisterPayloadHandlersEvent event) {
-        var editor = event.registrar("npc7");
+        var editor = event.registrar("npc8");
         editor.playToServer(com.ianblk.zianrct.creator.CustomTrainerSave.TYPE,com.ianblk.zianrct.creator.CustomTrainerSave.CODEC,
                 (payload,context)->context.enqueueWork(()->{
                     if(context.player() instanceof ServerPlayer player)com.ianblk.zianrct.npc.NpcEditorService.saveCustom(player,payload);

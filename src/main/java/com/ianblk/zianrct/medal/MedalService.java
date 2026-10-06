@@ -1,6 +1,6 @@
 package com.ianblk.zianrct.medal;
 
-import com.gitlab.srcmc.rctmod.api.RCTMod;
+import com.ianblk.zianrct.standalone.StandaloneRuntime;
 import com.ianblk.zianrct.ZianRCT;
 import com.ianblk.zianrct.config.ConfigState;
 import com.ianblk.zianrct.config.ZianRctConfig;
@@ -166,7 +166,7 @@ public final class MedalService {
         }
 
         MinecraftServer server = player.serverLevel().getServer();
-        var trainerManager = RCTMod.getInstance().getTrainerManager();
+        var trainerManager = StandaloneRuntime.getInstance().getTrainerManager();
         for (ZianRctConfig.MedalDefinition medal : ConfigState.current().activeProfileConfig().medals()) {
             if (medal == null
                     || active.has(player.getUUID(), medal.id())

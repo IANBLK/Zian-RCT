@@ -18,10 +18,10 @@ class RctBattleMedalListenerTest {
     void configuredTrainerIdAcceptsOnlyExactChainIds() {
         assertEquals(
                 "rassvet_leader_novato",
-                RctBattleMedalListener.configuredTrainerId("rassvet_leader_novato", CHAIN)
+                ConfiguredTrainerIds.configuredTrainerId("rassvet_leader_novato", CHAIN)
         );
-        assertNull(RctBattleMedalListener.configuredTrainerId("other_trainer", CHAIN));
-        assertNull(RctBattleMedalListener.configuredTrainerId("", CHAIN));
-        assertNull(RctBattleMedalListener.configuredTrainerId(null, CHAIN));
+        assertNull(ConfiguredTrainerIds.configuredTrainerId("other_trainer", CHAIN));
+        assertNull(ConfiguredTrainerIds.configuredTrainerId("", CHAIN));
+        assertNull(ConfiguredTrainerIds.configuredTrainerId(null, CHAIN));
     }
 }

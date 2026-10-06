@@ -27,6 +27,11 @@ neoForge {
         client {
             client()
         }
+        standaloneSmoke {
+            server()
+            gameDirectory = project.file("build/standalone-smoke")
+            programArgument "--nogui"
+        }
         server {
             server()
             programArgument '--nogui'
@@ -47,7 +52,6 @@ configurations {
 dependencies {
     implementation "curse.maven:cobblemon-687131:${cobblemon_file_id}"
     implementation "curse.maven:radical-cobblemon-trainers-api-1152792:${rctapi_file_id}"
-    implementation "curse.maven:rctmod-1009534:${rctmod_file_id}"
     implementation "dev.architectury:architectury-neoforge:${architectury_version}"
     implementation("thedarkcolour:kotlinforforge-neoforge:${kotlin_for_forge_version}") {
         exclude group: 'net.neoforged.fancymodloader', module: 'loader'

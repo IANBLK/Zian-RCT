@@ -51,6 +51,7 @@ public final class LegendaryTrials {
     }
     public static void stop(){server=null;journal=null;verifying.clear();smokePlayer=null;}
     public static boolean interested(String trainer){return CustomTrainerStore.all().values().stream().anyMatch(d->d.trial()!=null && (d.id().equals(trainer)||d.trial().boss().equals(trainer)));}
+    public static boolean delivered(UUID player,String trainer){var entry=journal==null?null:journal.get(player,trainer);return entry!=null && entry.phase()==TrialJournal.Phase.DELIVERED;}
     public static boolean canStart(UUID player,String trainer){
         var d=CustomTrainerStore.get(trainer);if(d==null || d.trial()==null)return true;
         try{validate(d);var entry=journal==null?null:journal.get(player,trainer);return entry!=null && entry.phase()==TrialJournal.Phase.UNLOCKED;}catch(Exception e){return false;}
@@ -162,7 +163,7 @@ public final class LegendaryTrials {
     private static void smoke(){
         if(!"true".equals(System.getenv("ZIANRCT_LEGENDARY_SMOKE")) || smokeDone)return;
         String trainer="zian_custom_ci_legendary",boss="zian_custom_ci";
-        if(!com.gitlab.srcmc.rctmod.api.RCTMod.getInstance().getTrainerManager().isValidId(trainer))return;
+        if(!com.ianblk.zianrct.standalone.StandaloneRuntime.getInstance().getTrainerManager().isValidId(trainer))return;
         try{
             if(smokePlayer==null){
                 smokePlayer=new ServerPlayer(server,server.overworld(),new com.mojang.authlib.GameProfile(UUID.randomUUID(),"ZianTrialSmoke"),net.minecraft.server.level.ClientInformation.createDefault()){
