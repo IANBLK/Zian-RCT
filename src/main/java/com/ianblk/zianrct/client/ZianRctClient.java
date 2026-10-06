@@ -26,6 +26,10 @@ public final class ZianRctClient {
     }
 
     public static void init(IEventBus modBus) {
+        modBus.addListener(net.neoforged.bus.api.EventPriority.LOWEST,(net.neoforged.neoforge.client.event.EntityRenderersEvent.RegisterRenderers event)->{
+                event.registerEntityRenderer(com.gitlab.srcmc.rctmod.world.entities.TrainerMob.getEntityType(),CustomTrainerRenderer::new);
+                event.registerEntityRenderer(com.ianblk.zianrct.creator.CustomTrainerEntities.TYPE.get(),CustomTrainerRenderer::new);
+        });
         modBus.addListener((RegisterKeyMappingsEvent event) -> event.register(OPEN_MEDALS_KEY));
         NeoForge.EVENT_BUS.addListener(ZianRctClient::onClientTick);
         NeoForge.EVENT_BUS.addListener(ZianRctClient::onLoggingOut);
@@ -33,6 +37,9 @@ public final class ZianRctClient {
 
     private static void onClientTick(ClientTickEvent.Post event) {
         Minecraft minecraft = Minecraft.getInstance();
+        var editor = ClientNpcEditorState.consume();
+        if (editor != null && minecraft.player != null) minecraft.setScreen(editor.mode()==com.ianblk.zianrct.npc.NpcEditorState.Mode.DESIGN
+                ?new CustomTrainerScreen(editor):new NpcEditorScreen(editor));
 
         while (OPEN_MEDALS_KEY.consumeClick()) {
             openMedalCase(minecraft);
@@ -85,5 +92,7 @@ public final class ZianRctClient {
 
     private static void onLoggingOut(ClientPlayerNetworkEvent.LoggingOut event) {
         ClientMedalState.clear();
+        ClientNpcEditorState.clear();
+        CustomTrainerSkinState.clear();
     }
 }

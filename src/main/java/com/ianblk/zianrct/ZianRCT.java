@@ -32,6 +32,7 @@ public final class ZianRCT {
     private final LeagueBattlePromptService battlePromptService;
 
     public ZianRCT(IEventBus modEventBus, ModContainer container) {
+        com.ianblk.zianrct.creator.CustomTrainerEntities.register(modEventBus);
         ZianRctConfig bootstrapDefaults = ZianRctConfig.defaults();
         ConfigState.replace(bootstrapDefaults);
         modEventBus.addListener(ZianRctNetwork::registerPayloads);
@@ -58,6 +59,13 @@ public final class ZianRCT {
     }
 
     private void onServerAboutToStart(ServerAboutToStartEvent event) {
+        try{com.ianblk.zianrct.creator.CustomTrainerStore.boot(FMLPaths.CONFIGDIR.get());}
+        catch(IOException|RuntimeException error){com.ianblk.zianrct.creator.CustomTrainerStore.clear();LOGGER.error("Custom trainer definitions unavailable; source file preserved",error);}
+        try { com.ianblk.zianrct.rct.RctTrainerOptions.boot(FMLPaths.CONFIGDIR.get()); }
+        catch (IOException | RuntimeException error) {
+            com.ianblk.zianrct.rct.RctTrainerOptions.clear();
+            LOGGER.error("Could not load trainer rematch/format options; source files preserved",error);
+        }
         Path configPath = FMLPaths.CONFIGDIR.get().resolve(ZianRctConfigLoader.FILE_NAME);
         try {
             ZianRctConfig loaded = ZianRctConfigLoader.loadOrCreate(configPath);

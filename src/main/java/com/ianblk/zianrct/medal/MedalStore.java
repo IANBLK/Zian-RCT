@@ -11,6 +11,8 @@ import java.nio.file.AtomicMoveNotSupportedException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.StandardCopyOption;
+import java.nio.file.StandardOpenOption;
+import java.nio.channels.FileChannel;
 import java.util.ArrayList;
 import java.util.LinkedHashMap;
 import java.util.LinkedHashSet;
@@ -74,7 +76,7 @@ public final class MedalStore {
             }
 
             return new MedalStore(file, MedalLedger.fromSnapshot(snapshot));
-        } catch (JsonParseException | IllegalArgumentException exception) {
+        } catch (JsonParseException | IllegalArgumentException | NullPointerException exception) {
             throw new IOException("Persistencia de medallas inválida: " + file, exception);
         }
     }
@@ -127,6 +129,9 @@ public final class MedalStore {
         Path temporary = file.resolveSibling(file.getFileName() + ".tmp");
         try (Writer writer = Files.newBufferedWriter(temporary)) {
             GSON.toJson(model, writer);
+        }
+        try (FileChannel channel = FileChannel.open(temporary, StandardOpenOption.WRITE)) {
+            channel.force(true);
         }
 
         try {

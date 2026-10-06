@@ -21,11 +21,13 @@ public final class RctBattleMedalListener {
     private static final String RCT_INSTANCE_ID = "rctmod";
 
     private final MedalService medalService;
+    private final com.ianblk.zianrct.reward.TrainerRewardService rewardService;
     private final EventListener<BattleState> battleEndedListener = this::onBattleEnded;
     private RCTApi registeredApi;
 
-    public RctBattleMedalListener(MedalService medalService) {
+    public RctBattleMedalListener(MedalService medalService, com.ianblk.zianrct.reward.TrainerRewardService rewardService) {
         this.medalService = medalService;
+        this.rewardService = rewardService;
     }
 
     public void registerIfAvailable() {
@@ -91,6 +93,7 @@ public final class RctBattleMedalListener {
         state.getLosers().forEach(trainer -> {
             if (trainer.getEntity() instanceof TrainerMob trainerMob) {
                 String trainerId = configuredTrainerId(trainerMob.getTrainerId(), chain);
+                if (trainerId == null && rewardService.interested(trainerMob.getTrainerId())) trainerId = trainerMob.getTrainerId();
                 if (trainerId != null) {
                     defeatedTrainerIds.add(trainerId);
                 }
@@ -102,11 +105,12 @@ public final class RctBattleMedalListener {
 
         for (ServerPlayer winner : winners) {
             MinecraftServer server = winner.serverLevel().getServer();
-            Runnable grant = () -> defeatedTrainerIds.forEach(trainerId ->
+            Runnable grant = () -> defeatedTrainerIds.forEach(trainerId -> {
                     medalService.medalForTrainer(trainerId).ifPresent(medal ->
                             medalService.grantIfAbsent(winner, medal.id(), MedalOrigin.BATTLE)
-                    )
-            );
+                    );
+                    rewardService.won(winner, trainerId,state.getBattle()==null?null:state.getBattle().getBattleId());
+            });
             if (server.isSameThread()) {
                 grant.run();
             } else {

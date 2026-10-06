@@ -7,7 +7,14 @@ modId="zianrct"
 version="${mod_version}"
 displayName="Zian RCT"
 authors="IANBLK"
-description='''Configuration, progression commands and medals for Radical Cobblemon Trainers.'''
+description='''Configuration, progression, medals and persistent one-time trainer rewards for Radical Cobblemon Trainers.'''
+
+[[dependencies.zianrct]]
+modId="avecoins"
+type="optional"
+versionRange="[0,)"
+ordering="AFTER"
+side="BOTH"
 
 [[dependencies.zianrct]]
 modId="neoforge"

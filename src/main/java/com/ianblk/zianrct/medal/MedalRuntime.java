@@ -11,11 +11,14 @@ import net.neoforged.neoforge.event.server.ServerStoppedEvent;
 
 public final class MedalRuntime {
     private final MedalService medalService = new MedalService();
-    private final RctBattleMedalListener battleListener = new RctBattleMedalListener(medalService);
+    private final com.ianblk.zianrct.reward.TrainerRewardService rewardService = new com.ianblk.zianrct.reward.TrainerRewardService();
+    private final RctBattleMedalListener battleListener = new RctBattleMedalListener(medalService, rewardService);
     private final RctPackController packController;
 
     public MedalRuntime(RctPackController packController) {
         this.packController = packController;
+        rewardService.attach(packController);
+        new com.ianblk.zianrct.npc.NpcEditorService(rewardService);
         NeoForge.EVENT_BUS.addListener(this::onServerStarted);
         NeoForge.EVENT_BUS.addListener(this::onServerStopped);
         NeoForge.EVENT_BUS.addListener(this::onPlayerLoggedIn);
@@ -27,22 +30,29 @@ public final class MedalRuntime {
     }
 
     private void onServerStarted(ServerStartedEvent event) {
+        com.ianblk.zianrct.permission.YouerPermissionBridge.register();
         medalService.start(event.getServer());
+        rewardService.start(event.getServer());
         battleListener.registerIfAvailable();
     }
 
     private void onServerStopped(ServerStoppedEvent event) {
         battleListener.resetRegistration();
         medalService.stop();
+        rewardService.stop();
     }
 
     private void onPlayerLoggedIn(PlayerEvent.PlayerLoggedInEvent event) {
         if (event.getEntity() instanceof ServerPlayer player) {
             medalService.reconcile(player);
+            rewardService.notifyPending(player);
+            com.ianblk.zianrct.legendary.LegendaryTrials.notifyPending(player);
+            com.ianblk.zianrct.creator.CustomTrainerSkins.sync(player);
         }
     }
 
     private void onRegisterCommands(RegisterCommandsEvent event) {
         ZianRctCommands.register(event.getDispatcher(), medalService, packController);
+        com.ianblk.zianrct.reward.TrainerRewardCommands.register(event.getDispatcher(), rewardService);
     }
 }

@@ -14,6 +14,28 @@ public final class ZianRctNetwork {
     }
 
     public static void registerPayloads(RegisterPayloadHandlersEvent event) {
+        var editor = event.registrar("npc7");
+        editor.playToServer(com.ianblk.zianrct.creator.CustomTrainerSave.TYPE,com.ianblk.zianrct.creator.CustomTrainerSave.CODEC,
+                (payload,context)->context.enqueueWork(()->{
+                    if(context.player() instanceof ServerPlayer player)com.ianblk.zianrct.npc.NpcEditorService.saveCustom(player,payload);
+                }));
+        editor.playToClient(com.ianblk.zianrct.creator.CustomTrainerSkins.TYPE,com.ianblk.zianrct.creator.CustomTrainerSkins.CODEC,
+                (payload,context)->context.enqueueWork(()->{
+                    try{com.ianblk.zianrct.client.CustomTrainerSkinState.accept(payload.json());}
+                    catch(RuntimeException error){ZianRCT.LOGGER.warn("Invalid custom trainer skin metadata",error);}
+                }));
+        editor.playToClient(com.ianblk.zianrct.npc.NpcEditorPayload.TYPE,
+                com.ianblk.zianrct.npc.NpcEditorPayload.CODEC,
+                (payload, context) -> context.enqueueWork(() -> {
+                    try { com.ianblk.zianrct.client.ClientNpcEditorState.accept(payload.json()); }
+                    catch (RuntimeException error) { ZianRCT.LOGGER.warn("Invalid NPC editor snapshot", error); }
+                }));
+        editor.playToServer(com.ianblk.zianrct.npc.NpcEditorAction.TYPE,
+                com.ianblk.zianrct.npc.NpcEditorAction.CODEC,
+                (payload, context) -> context.enqueueWork(() -> {
+                    if (context.player() instanceof ServerPlayer player)
+                        com.ianblk.zianrct.npc.NpcEditorService.receive(player, payload);
+                }));
         PayloadRegistrar registrar = event.registrar(MedalProtocol.NETWORK_VERSION);
         registrar.playToClient(
                 MedalSyncPayload.TYPE,

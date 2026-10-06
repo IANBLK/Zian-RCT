@@ -65,6 +65,8 @@ public final class RctPackController {
     }
 
     private void onServerStopped(ServerStoppedEvent event) {
+        com.ianblk.zianrct.creator.CustomTrainerStore.clear();
+        RctTrainerOptions.clear();
         activeServer = null;
         generatedReloadInFlight = false;
         pendingVerification = null;
@@ -322,7 +324,21 @@ public final class RctPackController {
 
         Map<String, TrainerPackSnapshot> stableSnapshots =
                 Collections.unmodifiableMap(new LinkedHashMap<>(snapshots));
-        Map<String, byte[]> generated = RctPackJsonBuilder.build(profile, series, stableSnapshots);
+        Map<String, byte[]> generated = new LinkedHashMap<>(RctPackJsonBuilder.build(profile, series, stableSnapshots));
+        for(var d:com.ianblk.zianrct.creator.CustomTrainerStore.all().values())com.ianblk.zianrct.creator.CustomTrainerValidation.validate(d);
+        generated.putAll(com.ianblk.zianrct.creator.CustomTrainerResources.build(com.ianblk.zianrct.creator.CustomTrainerStore.all()));
+        for(String trainer:RctTrainerOptions.repeat()){
+            String key="mobs/trainers/single/"+trainer+".json";
+            String source=generated.containsKey(key)?new String(generated.get(key),java.nio.charset.StandardCharsets.UTF_8)
+                    :readOriginalJsonIfPresent(server,ResourceLocation.fromNamespaceAndPath("rctmod",key)).orElseThrow(()->new IllegalStateException("Entrenador repetible inexistente: "+trainer));
+            generated.put(key,RctTrainerOverrides.repeatMob(source).getBytes(java.nio.charset.StandardCharsets.UTF_8));
+        }
+        for(var format:RctTrainerOptions.formats().entrySet()){
+            String key="trainers/"+format.getKey()+".json";
+            String source=generated.containsKey(key)?new String(generated.get(key),java.nio.charset.StandardCharsets.UTF_8):readOriginalJsonIfPresent(server,ResourceLocation.fromNamespaceAndPath("rctmod",key))
+                    .orElseThrow(()->new IllegalStateException("Equipo inexistente: "+format.getKey()));
+            generated.put(key,RctTrainerOverrides.format(source,format.getValue()).getBytes(java.nio.charset.StandardCharsets.UTF_8));
+        }
         return new GeneratedCandidate(profile, generated, stableSnapshots);
     }
 
@@ -447,8 +463,14 @@ public final class RctPackController {
         );
     }
 
-    private boolean isBusy() {
+    public boolean isBusy() {
         return generatedReloadInFlight || pendingVerification != null || configTransaction != null;
+    }
+    public void requireTrainerSource(MinecraftServer server,String trainer,boolean mob) {
+        if(com.ianblk.zianrct.creator.CustomTrainerStore.get(trainer)!=null)return;
+        String key=(mob?"mobs/trainers/single/":"trainers/")+trainer+".json";
+        if(readOriginalJsonIfPresent(server,ResourceLocation.fromNamespaceAndPath("rctmod",key)).isEmpty())
+            throw new IllegalArgumentException("Este ajuste requiere un entrenador con definición individual en datapack: "+key);
     }
 
     private static Optional<String> readOriginalJsonIfPresent(
@@ -509,6 +531,48 @@ public final class RctPackController {
             TrainerManager trainerManager,
             Map<String, TrainerPackSnapshot> snapshots
     ) {
+        for(var d:com.ianblk.zianrct.creator.CustomTrainerStore.all().values()){
+            if(!trainerManager.isValidId(d.id()))throw new IllegalStateException("Entrenador propio no cargado: "+d.id());
+            if(d.trial()!=null){
+                com.ianblk.zianrct.legendary.LegendaryTrials.validate(d);
+                ZianRCT.LOGGER.info("Zian RCT legendary trial definition verified: {}",d.id());
+            }
+            if(d.autoMoves()){
+                var prepared=com.ianblk.zianrct.creator.AutomaticTrainerMoves.prepare(d);
+                com.ianblk.zianrct.creator.CustomTrainerValidation.validate(prepared);
+                ZianRCT.LOGGER.info("Zian RCT automatic trainer moves verified: {}",d.id());
+            }
+            var dialogue=trainerManager.getData(d.id()).getDialog();
+            var contexts=new java.util.LinkedHashMap<String,String>();
+            contexts.put("on_battle_start",d.start());contexts.put("on_battle_lost",d.playerWins());contexts.put("on_battle_won",d.playerLoses());
+            for(String context:java.util.List.of("trainer_busy","player_busy","on_cooldown","missing_pokemon","over_level_cap","wrong_series","missing_required_series","missing_required_trainer","done_generic","unknown_reason"))contexts.put(context,"required");
+            for(var context:contexts.entrySet()){
+                if(context.getValue().isBlank())continue;
+                var messages=dialogue.get(context.getKey());
+                if(messages==null || messages.length==0)throw new IllegalStateException("Diálogo propio no cargado: "+d.id()+" / "+context.getKey());
+                for(var message:messages){
+                    if(message==null || message.getTranslatable()==null || message.getTranslatable().isBlank())
+                        throw new IllegalStateException("Diálogo propio sin clave de burbuja: "+d.id()+" / "+context.getKey());
+                    // Exercise the same public component construction used by RCT's speech queue.
+                    net.minecraft.network.chat.Component.translatable(message.getTranslatable()).getString();
+                    message.getComponent().getString();
+                }
+            }
+            String expected=RctTrainerOptions.formats().getOrDefault(d.id(),d.format());
+            if(trainerManager.getData(d.id()).getTrainerTeam().getBattleFormat()==null || !trainerManager.getData(d.id()).getTrainerTeam().getBattleFormat().name().equals(expected))
+                throw new IllegalStateException("Formato propio no cargado: "+d.id());
+        }
+        if(!com.ianblk.zianrct.creator.CustomTrainerStore.all().isEmpty())
+            ZianRCT.LOGGER.info("Zian RCT custom trainer definitions verified: {}",com.ianblk.zianrct.creator.CustomTrainerStore.all().keySet());
+        for(String trainer:RctTrainerOptions.repeat())
+            if(!trainerManager.isValidId(trainer) || trainerManager.getData(trainer).getMaxTrainerDefeats()!=-1
+                    || trainerManager.getData(trainer).getMaxTrainerWins()!=-1)
+                throw new IllegalStateException("Revancha no cargada: "+trainer);
+        for(var format:RctTrainerOptions.formats().entrySet()){
+            if(!trainerManager.isValidId(format.getKey()) || trainerManager.getData(format.getKey()).getTrainerTeam().getBattleFormat()==null
+                    || !trainerManager.getData(format.getKey()).getTrainerTeam().getBattleFormat().name().equals(format.getValue()))
+                throw new IllegalStateException("Formato no cargado: "+format.getKey());
+        }
         LinkedHashMap<String, Integer> relativeCaps = new LinkedHashMap<>();
         for (int index = 0; index < profile.chain().size(); index++) {
             String id = profile.chain().get(index).trainer();
