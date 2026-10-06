@@ -16,6 +16,8 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
 class MedalStoreTest {
     @TempDir
     Path tempDir;
+    @org.junit.jupiter.api.AfterEach
+    void cleanup() throws Exception { com.ianblk.zianrct.reward.RewardTestFiles.cleanup(tempDir); }
 
     @Test
     void failedWriteDoesNotGrantOrOverwriteTheExistingLedger() throws IOException {

@@ -13,12 +13,14 @@ public final class NpcEditorScreen extends Screen {
     private final List<TextLine> labels = new ArrayList<>();
     private int x,y,w,h,scroll,contentHeight;
     private Button close;
-    private EditBox trainer,currency,coins;
+    private EditBox trainer,currency,coins,cooldown;
+    private boolean repeatChoice;
     private static boolean lootTab;
     private long lastSend;
     private String confirm = "";
     private record TextLine(String text, int row, int color, int maxWidth) {}
-    public NpcEditorScreen(NpcEditorState state) { super(Component.literal("Zian RCT · Gestor de NPC")); this.state = state; if(state.mode()!=NpcEditorState.Mode.EDIT)lootTab=false; }
+    public NpcEditorScreen(NpcEditorState state) { super(Component.literal("Zian RCT · Gestor de NPC")); this.state = state;
+        repeatChoice=state.rewardMode().equals("REPEAT");if(state.mode()!=NpcEditorState.Mode.EDIT)lootTab=false; }
     @Override protected void init() {
         base.clear(); labels.clear(); clearWidgets();
         w=Math.min(520,width-16);h=Math.min(290,height-16);x=(width-w)/2;y=(height-h)/2;
@@ -75,16 +77,24 @@ public final class NpcEditorScreen extends Screen {
                     button(left,72,usable,"Mover a mi bloque y dirección",()->send("move","",""));
                     button(left,96,usable,"Permanente: "+(state.persistent()?"Sí":"No"),()->send("persistent","",""));
                     button(left,120,usable,"Movimiento: "+(state.frozen()?"Bloqueado":"Permitido"),()->send("movement","",""));
-                    button(left,150,usable,"Eliminar este NPC...",()->send("delete_prompt","",""));
-                    label("Los cambios son para este NPC concreto.",176,0xB8B8B8);
-                    contentHeight=198;
+                    String format=state.battleFormat().equals("GEN_9_DOUBLES")?"Doble":state.battleFormat().equals("GEN_9_SINGLES")?"Individual":state.battleFormat();
+                    button(left,144,usable,"Batalla: "+format+" (cambiar)",()->send("format",state.battleFormat().equals("GEN_9_DOUBLES")?"GEN_9_SINGLES":"GEN_9_DOUBLES",""));
+                    label("El formato se comparte por ID de entrenador.",168,0xB8B8B8);
+                    button(left,190,usable,"Eliminar este NPC...",()->send("delete_prompt","",""));
+                    contentHeight=218;
                 }else{
-                    label("Loot compartido por ID · Una vez por jugador",72,0xB8B8B8);
-                    label("Moneda AVECOINS / cantidad",92,0xB8B8B8);
-                    currency=field(left,108,usable-72,state.currency().isEmpty()?"avecoins:coppercoin":state.currency());
-                    coins=field(left+usable-66,108,66,Long.toString(state.coins()));
-                    button(left,132,usable,"Guardar monedas (0 = quitar)",()->send("money",currency.getValue(),coins.getValue()));
-                    row=158;
+                    label("Loot compartido por ID · Espera por jugador",72,0xB8B8B8);
+                    button(left,92,usable,"Tipo de premio: "+(repeatChoice?"Repetible":"Único")+" (cambiar)",()->{repeatChoice=!repeatChoice;init();});
+                    label("Espera en minutos (24 h = 1440):",116,0xB8B8B8);
+                    cooldown=field(left,132,usable-100,Long.toString(state.cooldownMinutes()==0?1440:state.cooldownMinutes()));
+                    button(left+usable-94,132,94,"Guardar tipo",()->send("policy",repeatChoice?"REPEAT":"UNIQUE",repeatChoice?cooldown.getValue():"0"));
+                    label("Para ti: "+state.nextReward(),156,0xF7E2AC);
+                    button(left,174,usable,"Actualizar mi espera",()->send("refresh","",""));
+                    label("Moneda AVECOINS / cantidad",198,0xB8B8B8);
+                    currency=field(left,214,usable-72,state.currency().isEmpty()?"avecoins:coppercoin":state.currency());
+                    coins=field(left+usable-66,214,66,Long.toString(state.coins()));
+                    button(left,238,usable,"Guardar monedas (0 = quitar)",()->send("money",currency.getValue(),coins.getValue()));
+                    row=264;
                     label("Objetos guardados: "+state.rewards().size(),row,0xF7E2AC);row+=18;
                     for(String item:state.rewards()){label(item,row,0xB8B8B8);row+=16;}
                     button(left,row,usable,"Añadir stack de mi mano principal",()->send("add_item","",""));row+=24;

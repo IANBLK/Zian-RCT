@@ -146,14 +146,18 @@ public final class NpcEditorService {
                 case "persistent" -> {editable(npc);npc.setPersistent(!npc.isPersistenceRequired());}
                 case "movement" -> {editable(npc);freeze(npc,!(npc.isNoAi()||npc.getPersistentData().getBoolean(FROZEN)));}
                 case "move" -> {require(player,"admin.npc.move");editable(npc);moveHere(player,npc);notice="NPC movido a tu bloque y orientación.";}
+                case "format" -> {
+                    require(player,"admin.npc.configure");editable(npc);rewards.format(selected,action.value());
+                    notice="Formato guardado para este ID. Aplicando recarga de RCT.";
+                }
                 case "delete_prompt" -> {require(player,"admin.npc.delete");editable(npc);confirmation="delete";}
                 case "delete" -> {
                     require(player,"admin.npc.delete");editable(npc);
                     com.ianblk.zianrct.ZianRCT.LOGGER.info("[ZIAN-AUDIT] action=npc_delete admin={} npc={} trainer={}",player.getUUID(),npc.getUUID(),selected);
                     npc.discard();npc=null;selected="";mode=NpcEditorState.Mode.LIST;page=0;notice="NPC eliminado. Medallas y recompensas conservadas.";
                 }
-                case "cancel" -> {}
-                case "add_item","clear_items","money","remove_reward" -> {
+                case "cancel", "refresh" -> {}
+                case "add_item","clear_items","money","remove_reward","policy" -> {
                     require(player,"admin.rewards.configure");editable(npc);
                     String id=selected;
                     if(RCTMod.getInstance().getTrainerSpawner().getSpawns().stream()
@@ -164,8 +168,9 @@ public final class NpcEditorService {
                         case "clear_items" -> rewards.clearItems(selected);
                         case "money" -> rewards.coins(selected,action.value(),Long.parseLong(action.extra()));
                         case "remove_reward" -> rewards.remove(selected);
+                        case "policy" -> rewards.policy(selected,RewardDefinition.Mode.valueOf(action.value()),Long.parseLong(action.extra()));
                     }
-                    notice="Loot guardado. Único por jugador e ID; premios reservados conservados.";
+                    notice=action.action().equals("policy")?"Tipo guardado. Aplicando revancha; premios previos conservados.":"Loot guardado; premios reservados conservados.";
                 }
             }
             com.ianblk.zianrct.ZianRCT.LOGGER.info("[ZIAN-AUDIT] action=npc_manager admin={} npc={} trainer={} operation={} result=APPLIED",
@@ -242,10 +247,13 @@ public final class NpcEditorService {
         }catch(Exception error){descriptions.add("Recompensas no disponibles; revisa el log.");}
         descriptions=descriptions.stream().map(s -> s.length()>256?s.substring(0,256):s).toList();
         if(notice.length()>256)notice=notice.substring(0,256);
+        String next="";
+        if(mode==NpcEditorState.Mode.EDIT)try{next=rewards.next(player,trainer);}catch(RuntimeException error){next="Recompensas no disponibles.";}
         var state=new NpcEditorState(session.token().toString(),mode,trainer,npc==null?"":npc.getUUID().toString(),
                 npc!=null && npc.isPersistenceRequired(),npc!=null && (npc.isNoAi()||npc.getPersistentData().getBoolean(FROZEN)),
                 matches,views,descriptions,definition==null?"avecoins:coppercoin":definition.currency(),definition==null?0:definition.coins(),
-                notice,query,page,pages,confirmation);
+                notice,query,page,pages,confirmation,definition==null?"UNIQUE":definition.mode().name(),
+                definition==null?0:definition.cooldownMinutes(),next,mode==NpcEditorState.Mode.EDIT?rewards.format(trainer):"GEN_9_SINGLES");
         PacketDistributor.sendToPlayer(player,new NpcEditorPayload(GSON.toJson(state)));
     }
 }

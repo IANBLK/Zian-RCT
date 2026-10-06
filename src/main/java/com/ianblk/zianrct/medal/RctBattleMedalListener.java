@@ -109,7 +109,7 @@ public final class RctBattleMedalListener {
                     medalService.medalForTrainer(trainerId).ifPresent(medal ->
                             medalService.grantIfAbsent(winner, medal.id(), MedalOrigin.BATTLE)
                     );
-                    rewardService.won(winner, trainerId);
+                    rewardService.won(winner, trainerId,state.getBattle()==null?null:state.getBattle().getBattleId());
             });
             if (server.isSameThread()) {
                 grant.run();

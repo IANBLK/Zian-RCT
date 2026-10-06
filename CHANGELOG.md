@@ -1,5 +1,13 @@
 # Changelog
 
+## 0.1.0-beta.8
+
+- Add unique/repeated reward policy and per-player wait settings in the NPC Loot GUI, with personal eligibility queries and pending-cycle blocking.
+- Persist separate reward cycles, frozen waits and actual battle IDs. Migrate legacy claims without changing their original IDs or replaying completed rewards.
+- Enable native RCT rematches for repeated challenges through verified virtual datapack overrides while retaining prerequisites and relative caps.
+- Add Individual/Double selection in the NPC editor, preserving the trainer's team and other battle settings. Require `zianrct.admin.npc.configure` for this shared-ID format change.
+- Keep changes blocked during active battles and verify requested native rules after reload. Require beta.8 on client/server with editor channel npc3.
+
 ## 0.1.0-beta.7
 
 - Autocomplete `/zianrct reward claim <operation>` with the executing player's actionable pending reward IDs, filtered by the typed prefix.

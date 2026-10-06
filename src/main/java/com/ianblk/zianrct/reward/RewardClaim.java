@@ -3,9 +3,14 @@ package com.ianblk.zianrct.reward;
 import java.util.List;
 import java.util.UUID;
 
-public record RewardClaim(UUID id, UUID player, String trainer, long created, List<Part> parts) {
+public record RewardClaim(UUID id, UUID player, String trainer, long created, List<Part> parts,
+                          long cycle, long cooldownMinutes, UUID battle) {
+    public RewardClaim(UUID id,UUID player,String trainer,long created,List<Part> parts){this(id,player,trainer,created,parts,0,0,null);}
+    public long nextEligibleAt(){return Math.addExact(created,Math.multiplyExact(cooldownMinutes,60000L));}
     public RewardClaim {
-        if (id == null || player == null || created < 0) throw new IllegalArgumentException("Reclamación inválida");
+        if((cycle>0 && cooldownMinutes==0) || (cooldownMinutes>0 && battle==null))
+            throw new IllegalArgumentException("Ciclo repetible sin evidencia de combate");
+        if (id == null || player == null || created < 0 || cycle < 0 || cooldownMinutes < 0 || cooldownMinutes > 43200) throw new IllegalArgumentException("Reclamación inválida");
         TrainerRewardConfig.validId(trainer);
         parts = List.copyOf(parts);
         if (parts.isEmpty() || parts.size() > 9) throw new IllegalArgumentException("Componentes inválidos");

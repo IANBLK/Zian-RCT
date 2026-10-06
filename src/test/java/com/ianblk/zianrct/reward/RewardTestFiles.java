@@ -5,9 +5,9 @@ import java.nio.file.*;
 import java.util.Comparator;
 
 /** Bounded cleanup retry for Windows' delayed unlink of atomically replaced test files. */
-final class RewardTestFiles {
+public final class RewardTestFiles {
     private RewardTestFiles() {}
-    static void cleanup(Path directory) throws IOException, InterruptedException {
+    public static void cleanup(Path directory) throws IOException, InterruptedException {
         Path root = directory.toAbsolutePath().normalize();
         IOException failure = null;
         for (int attempt = 0; attempt < 20; attempt++) {

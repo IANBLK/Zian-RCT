@@ -65,6 +65,7 @@ public final class RctPackController {
     }
 
     private void onServerStopped(ServerStoppedEvent event) {
+        RctTrainerOptions.clear();
         activeServer = null;
         generatedReloadInFlight = false;
         pendingVerification = null;
@@ -322,7 +323,19 @@ public final class RctPackController {
 
         Map<String, TrainerPackSnapshot> stableSnapshots =
                 Collections.unmodifiableMap(new LinkedHashMap<>(snapshots));
-        Map<String, byte[]> generated = RctPackJsonBuilder.build(profile, series, stableSnapshots);
+        Map<String, byte[]> generated = new LinkedHashMap<>(RctPackJsonBuilder.build(profile, series, stableSnapshots));
+        for(String trainer:RctTrainerOptions.repeat()){
+            String key="mobs/trainers/single/"+trainer+".json";
+            String source=generated.containsKey(key)?new String(generated.get(key),java.nio.charset.StandardCharsets.UTF_8)
+                    :readOriginalJsonIfPresent(server,ResourceLocation.fromNamespaceAndPath("rctmod",key)).orElseThrow(()->new IllegalStateException("Entrenador repetible inexistente: "+trainer));
+            generated.put(key,RctTrainerOverrides.repeatMob(source).getBytes(java.nio.charset.StandardCharsets.UTF_8));
+        }
+        for(var format:RctTrainerOptions.formats().entrySet()){
+            String key="trainers/"+format.getKey()+".json";
+            String source=readOriginalJsonIfPresent(server,ResourceLocation.fromNamespaceAndPath("rctmod",key))
+                    .orElseThrow(()->new IllegalStateException("Equipo inexistente: "+format.getKey()));
+            generated.put(key,RctTrainerOverrides.format(source,format.getValue()).getBytes(java.nio.charset.StandardCharsets.UTF_8));
+        }
         return new GeneratedCandidate(profile, generated, stableSnapshots);
     }
 
@@ -447,8 +460,13 @@ public final class RctPackController {
         );
     }
 
-    private boolean isBusy() {
+    public boolean isBusy() {
         return generatedReloadInFlight || pendingVerification != null || configTransaction != null;
+    }
+    public void requireTrainerSource(MinecraftServer server,String trainer,boolean mob) {
+        String key=(mob?"mobs/trainers/single/":"trainers/")+trainer+".json";
+        if(readOriginalJsonIfPresent(server,ResourceLocation.fromNamespaceAndPath("rctmod",key)).isEmpty())
+            throw new IllegalArgumentException("Este ajuste requiere un entrenador con definición individual en datapack: "+key);
     }
 
     private static Optional<String> readOriginalJsonIfPresent(
@@ -509,6 +527,15 @@ public final class RctPackController {
             TrainerManager trainerManager,
             Map<String, TrainerPackSnapshot> snapshots
     ) {
+        for(String trainer:RctTrainerOptions.repeat())
+            if(!trainerManager.isValidId(trainer) || trainerManager.getData(trainer).getMaxTrainerDefeats()!=-1
+                    || trainerManager.getData(trainer).getMaxTrainerWins()!=-1)
+                throw new IllegalStateException("Revancha no cargada: "+trainer);
+        for(var format:RctTrainerOptions.formats().entrySet()){
+            if(!trainerManager.isValidId(format.getKey()) || trainerManager.getData(format.getKey()).getTrainerTeam().getBattleFormat()==null
+                    || !trainerManager.getData(format.getKey()).getTrainerTeam().getBattleFormat().name().equals(format.getValue()))
+                throw new IllegalStateException("Formato no cargado: "+format.getKey());
+        }
         LinkedHashMap<String, Integer> relativeCaps = new LinkedHashMap<>();
         for (int index = 0; index < profile.chain().size(); index++) {
             String id = profile.chain().get(index).trainer();

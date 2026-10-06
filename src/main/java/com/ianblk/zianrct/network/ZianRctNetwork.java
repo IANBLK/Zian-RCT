@@ -14,7 +14,7 @@ public final class ZianRctNetwork {
     }
 
     public static void registerPayloads(RegisterPayloadHandlersEvent event) {
-        var editor = event.registrar("npc2");
+        var editor = event.registrar("npc3");
         editor.playToClient(com.ianblk.zianrct.npc.NpcEditorPayload.TYPE,
                 com.ianblk.zianrct.npc.NpcEditorPayload.CODEC,
                 (payload, context) -> context.enqueueWork(() -> {

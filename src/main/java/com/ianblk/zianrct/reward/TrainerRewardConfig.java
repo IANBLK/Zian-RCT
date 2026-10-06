@@ -11,7 +11,7 @@ public final class TrainerRewardConfig {
     private TrainerRewardConfig(Path path, Model model) { this.path = path; this.model = model; }
     public static TrainerRewardConfig open(Path path) throws IOException {
         if (!Files.exists(path)) {
-            Model initial = new Model(1, true, Map.of());
+            Model initial = new Model(2, true, Map.of());
             RewardFiles.write(path, initial);
             return new TrainerRewardConfig(path, initial);
         }
@@ -21,7 +21,8 @@ public final class TrainerRewardConfig {
         try {
             var json = root.getAsJsonObject();
             requireKeys(json, Set.of("schemaVersion", "enabled", "trainers"));
-            if (json.get("schemaVersion").getAsBigDecimal().intValueExact() != 1) throw new IllegalArgumentException("Versión no soportada");
+            int version=json.get("schemaVersion").getAsBigDecimal().intValueExact();
+            if(version!=1 && version!=2)throw new IllegalArgumentException("Versión no soportada");
             if (!json.get("enabled").isJsonPrimitive() || !json.get("enabled").getAsJsonPrimitive().isBoolean())
                 throw new IllegalArgumentException("enabled debe ser booleano");
             var trainers = json.getAsJsonObject("trainers");
@@ -30,16 +31,18 @@ public final class TrainerRewardConfig {
             for (var entry : trainers.entrySet()) {
                 validId(entry.getKey());
                 var definition = entry.getValue().getAsJsonObject();
-                requireKeys(definition, Set.of("currency", "coins", "items"));
+                requireKeys(definition, version==1?Set.of("currency", "coins", "items"):Set.of("currency", "coins", "items","mode","cooldownMinutes"));
                 List<String> items = new ArrayList<>();
                 for (var item : definition.getAsJsonArray("items")) {
                     if (!item.isJsonPrimitive() || !item.getAsJsonPrimitive().isString()) throw new IllegalArgumentException("Objeto inválido");
                     items.add(item.getAsString());
                 }
                 definitions.put(entry.getKey(), new RewardDefinition(definition.get("currency").getAsString(),
-                        definition.get("coins").getAsBigDecimal().longValueExact(), items));
+                        definition.get("coins").getAsBigDecimal().longValueExact(), items,
+                        version==1?RewardDefinition.Mode.UNIQUE:RewardDefinition.Mode.valueOf(definition.get("mode").getAsString()),
+                        version==1?0:definition.get("cooldownMinutes").getAsBigDecimal().longValueExact()));
             }
-            return new Model(1, json.get("enabled").getAsBoolean(), Collections.unmodifiableMap(definitions));
+            return new Model(2, json.get("enabled").getAsBoolean(), Collections.unmodifiableMap(definitions));
         } catch (RuntimeException error) { throw new IOException("Configuración de recompensas inválida", error); }
     }
     private static void requireKeys(JsonObject object, Set<String> keys) {
@@ -56,11 +59,11 @@ public final class TrainerRewardConfig {
         Map<String, RewardDefinition> next = new LinkedHashMap<>(model.trainers());
         if (definition == null) next.remove(trainer); else next.put(trainer, definition);
         if (next.size() > 256) throw new IOException("Máximo 256 entrenadores");
-        Model candidate = new Model(1, model.enabled(), Collections.unmodifiableMap(next));
+        Model candidate = new Model(2, model.enabled(), Collections.unmodifiableMap(next));
         save(candidate); model = candidate;
     }
     public synchronized void enabled(boolean enabled) throws IOException {
-        Model candidate = new Model(1, enabled, model.trainers());
+        Model candidate = new Model(2, enabled, model.trainers());
         save(candidate); model = candidate;
     }
     private void save(Model candidate) throws IOException {

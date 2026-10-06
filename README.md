@@ -58,6 +58,8 @@ Reconecta después de cambiar permisos para actualizar el autocompletado.
 
 ## Recompensas únicas por entrenador (Beta 4)
 
+**Beta 8:** el editor permite premios únicos o repetibles con espera por jugador, y cambiar el formato entre Individual y Doble. Consulta [repetición, migración y pruebas](docs/REPEAT-AND-DOUBLES-BETA8.md). Se conservan premios ya pagados y registros anteriores; el creador de equipos nuevos, skins y diálogos será una etapa posterior.
+
 **Beta 6:** `/zianrct npc` abre una lista de NPC cargados en tu dimensión, con coordenadas y UUID para distinguir duplicados. Desde ella puedes crear, modificar o eliminar un NPC con confirmación, y mover el seleccionado al bloque y dirección del administrador. El editor conserva permanencia, movimiento y loot. Consulta [la guía del gestor](docs/NPC-MANAGER-BETA6.md). Instala beta.6 tanto en clientes como servidor.
 
 Configura objetos con `/zianrct reward add-item <trainerId>` teniendo el stack en la mano, y monedas con `/zianrct reward set-money <trainerId> avecoins:coppercoin 5`. Cada premio es único por jugador y entrenador, conserva los componentes del objeto y sobrevive a reinicios. Los premios pendientes se consultan con `/zianrct reward pending` y se reclaman con `/zianrct reward claim <operationId>`.

@@ -22,6 +22,22 @@ public final class TrainerRewardCommands {
     }
     public static void register(CommandDispatcher<CommandSourceStack> dispatcher, TrainerRewardService service) {
         var reward = Commands.literal("reward");
+        reward.then(Commands.literal("next").requires(s -> RctPermissions.allows(s,"rewards.claim",false))
+                .then(Commands.argument("trainer",StringArgumentType.word()).executes(c -> execute(c.getSource(),()->{
+                    var player=c.getSource().getPlayerOrException();
+                    player.sendSystemMessage(Component.literal(service.next(player,StringArgumentType.getString(c,"trainer"))));
+                }))));
+        reward.then(Commands.literal("policy").requires(s -> RctPermissions.allows(s,"admin.rewards.configure",true))
+                .then(Commands.argument("trainer",StringArgumentType.word())
+                        .then(Commands.literal("unique").executes(c -> execute(c.getSource(),()->{
+                            service.policy(StringArgumentType.getString(c,"trainer"),RewardDefinition.Mode.UNIQUE,0);
+                            c.getSource().sendSuccess(()->Component.literal("Premio único guardado; aplicando configuración de RCT."),true);
+                        })))
+                        .then(Commands.literal("repeat").then(Commands.argument("minutes",LongArgumentType.longArg(1,43200))
+                                .executes(c -> execute(c.getSource(),()->{
+                                    service.policy(StringArgumentType.getString(c,"trainer"),RewardDefinition.Mode.REPEAT,LongArgumentType.getLong(c,"minutes"));
+                                    c.getSource().sendSuccess(()->Component.literal("Premio repetible guardado; aplicando revancha de RCT."),true);
+                                }))))));
         reward.then(Commands.literal("pending")
                 .requires(s -> RctPermissions.allows(s, "rewards.claim", false))
                 .executes(c -> execute(c.getSource(), () -> {

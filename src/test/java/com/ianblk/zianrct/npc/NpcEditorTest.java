@@ -31,9 +31,9 @@ class NpcEditorTest {
         assertThrows(IllegalArgumentException.class,()->NpcEditorProtocol.action(nonce,"money","x".repeat(129),"5"));
         assertThrows(IllegalArgumentException.class,()->NpcEditorProtocol.snapshot("x".repeat(16385)));
         assertThrows(IllegalArgumentException.class,()->new NpcEditorState(nonce,NpcEditorState.Mode.CREATE,"","",false,false,
-                Collections.nCopies(6,"trainer"),List.of(),List.of(),"",0,"","",0,1,""));
+                Collections.nCopies(6,"trainer"),List.of(),List.of(),"",0,"","",0,1,"","UNIQUE",0,"","GEN_9_SINGLES"));
         assertThrows(IllegalArgumentException.class,()->new NpcEditorState(nonce,NpcEditorState.Mode.EDIT,"trainer","",true,true,
-                List.of(),List.of(),List.of(),"coin",1729,"","",0,1,""));
+                List.of(),List.of(),List.of(),"coin",1729,"","",0,1,"","UNIQUE",0,"","GEN_9_SINGLES"));
     }
     @Test void creatingAndDeletingRequireTheirOwnServerConfirmedFlow(){
         assertFalse(NpcEditorProtocol.allowed(NpcEditorState.Mode.LIST,"","spawn"));

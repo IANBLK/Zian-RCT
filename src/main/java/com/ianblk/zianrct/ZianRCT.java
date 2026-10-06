@@ -58,6 +58,11 @@ public final class ZianRCT {
     }
 
     private void onServerAboutToStart(ServerAboutToStartEvent event) {
+        try { com.ianblk.zianrct.rct.RctTrainerOptions.boot(FMLPaths.CONFIGDIR.get()); }
+        catch (IOException | RuntimeException error) {
+            com.ianblk.zianrct.rct.RctTrainerOptions.clear();
+            LOGGER.error("Could not load trainer rematch/format options; source files preserved",error);
+        }
         Path configPath = FMLPaths.CONFIGDIR.get().resolve(ZianRctConfigLoader.FILE_NAME);
         try {
             ZianRctConfig loaded = ZianRctConfigLoader.loadOrCreate(configPath);
