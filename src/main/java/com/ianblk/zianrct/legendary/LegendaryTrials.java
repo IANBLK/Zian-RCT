@@ -133,12 +133,12 @@ public final class LegendaryTrials {
     }
     private static boolean verify(ServerPlayer player,TrialJournal.Entry entry) throws Exception {
         var store=storage(player);var persisted=store.adapter().load(PCStore.class,store.pc().getUuid(),player.registryAccess());
-        var savedPokemon=persisted==null?null:persisted.get(entry.pokemon());
+        var savedPokemon=findPersisted(persisted,entry.pokemon());
         boolean present=savedPokemon!=null;
         if(!present){
             var party=Cobblemon.INSTANCE.getStorage().getParty(player);
             var savedParty=store.adapter().load(com.cobblemon.mod.common.api.storage.party.PlayerPartyStore.class,party.getUuid(),player.registryAccess());
-            savedPokemon=savedParty==null?null:savedParty.get(entry.pokemon());present=savedPokemon!=null;
+            savedPokemon=findPersisted(savedParty,entry.pokemon());present=savedPokemon!=null;
         }
         if(!present)return false;
         String expected=entry.species().contains(":")?entry.species():"cobblemon:"+entry.species();
@@ -148,6 +148,12 @@ public final class LegendaryTrials {
         journal.phase(entry.player(),entry.trainer(),TrialJournal.Phase.DELIVERED);
         player.sendSystemMessage(Component.literal("Prueba completada: recibiste "+entry.species()+(entry.shiny()?" shiny":"")+" en tu PC. No podrás repetir esta recompensa."));
         ZianRCT.LOGGER.info("[ZIAN-AUDIT] action=legendary_delivered player={} trainer={} pokemon={} shiny={} ivs={} battle={}",entry.player(),entry.trainer(),entry.pokemon(),entry.shiny(),entry.ivs(),entry.victoryBattle());return true;
+    }
+    private static com.cobblemon.mod.common.pokemon.Pokemon findPersisted(com.cobblemon.mod.common.api.storage.PokemonStore<?> store,UUID uuid){
+        // Adapter.load restores the boxes/slots, but does not initialise the live UUID cache.
+        // Read the persisted members directly, without initialising or tracking a second live store.
+        if(store!=null)for(var pokemon:store)if(pokemon.getUuid().equals(uuid))return pokemon;
+        return null;
     }
     private static long ticks;
     private static ServerPlayer smokePlayer;
