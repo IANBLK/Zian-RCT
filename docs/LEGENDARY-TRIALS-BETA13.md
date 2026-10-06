@@ -1,5 +1,7 @@
 # Prueba de jefe y premio legendario — beta.13
 
+Actualización beta.14: al entrar solo se avisa de entregas pendientes, en confirmación o en revisión. Las pruebas cerradas o solamente desbloqueadas permanecen silenciosas. El historial completo sigue disponible mediante `/zianrct legendary status`, y hablar con el NPC de una prueba cerrada sigue indicando que ya recibiste el premio. Se conserva el mismo registro y protocolo npc7.
+
 Instala beta.13 en cliente y servidor. Se conserva el progreso anterior; la pestaña nueva requiere el canal npc7.
 
 ## Configuración desde el juego
@@ -41,4 +43,4 @@ El desbloqueo es un registro interno, no se concede un permiso global de LuckPer
 
 Pruebas automáticas: desbloqueo por jugador, victoria sin prueba rechazada, UUID/IV/shiny congelados, imposibilidad de reabrir entregas, persistencia tras reiniciar, corrupción y fallos de escritura. CI verifica dos definiciones propias, incluyendo el legendario y su jefe, así como los diálogos y movimientos nativos. En el mundo aislado de CI, `ZIANRCT_LEGENDARY_SMOKE=true` activa una cuenta sintética sin conexión para ejecutar desbloqueo, victoria, entrega real al PC, relectura de UUID/IV/shiny y bloqueo de otra recompensa. No se activa en servidores normales.
 
-Prueba en juego con dos cuentas sin OP: intentar el segundo NPC antes del jefe, derrotar al jefe y comprobar su loot, volver al segundo y perder, reintentar y ganar, confirmar el premio en el PC, reiniciar e intentar reclamar otra vez. La otra cuenta debe seguir bloqueada. Probar también PC lleno y liberación de espacio. CI no simula una batalla de un cliente real ni la entrega completa al almacenamiento de un jugador conectado.
+Prueba en juego con dos cuentas sin OP: intentar el segundo NPC antes del jefe, derrotar al jefe y comprobar su loot, volver al segundo y perder, reintentar y ganar, confirmar el premio en el PC, reiniciar e intentar reclamar otra vez. La otra cuenta debe seguir bloqueada. La prueba manual de PC lleno es opcional y no se exige para esta publicación beta; la protección de premio pendiente permanece activa. CI no simula una batalla de un cliente real ni la entrega completa al almacenamiento de un jugador conectado.

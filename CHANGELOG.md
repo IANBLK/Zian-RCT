@@ -1,5 +1,10 @@
 # Changelog
 
+## 0.1.0-beta.14
+
+- Keep login quiet for completed legendary trials and unlocked encounters. Notify only the owner of pending/in-progress/review deliveries, respecting the legendary claim permission.
+- Preserve the full `/zianrct legendary status` command and completed-trial interaction message. Keep the existing ledger, unique reward lock and npc7 protocol unchanged.
+
 ## 0.1.0-beta.13
 
 - Add a Prueba tab linking an independent legendary custodian NPC to another owned JEFE trainer. Boss victory delivers its existing configured loot and unlocks the custodian separately for that player. The custodian has a single implemented legendary/mythical Pokémon and native single battle.
