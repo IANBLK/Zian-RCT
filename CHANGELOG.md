@@ -1,5 +1,13 @@
 # Changelog
 
+## 0.1.0-beta.10
+
+- Add searchable, paginated Pokémon and per-species move selectors to the independent team editor. Names follow the client's Cobblemon language; move tooltips show descriptions and combat values. Select up to four moves from the standard form's legal learnset, including TM/tutor moves regardless of level. Manual entry remains available.
+- Keep selector changes in the creator draft until the administrator explicitly saves. Cancel preserves the draft; changing species selects up to four available level-up moves for that member only.
+- Replace the four dependency skin choices with six unchanged administrator-supplied 64×64 textures bundled for every client: Explorador Ártico, Centinela Nocturno, Guardián Cian, Aventurero del Desierto, Guardabosques and Capitán Ámbar. Existing numeric skin choices 0–3 now refer to the first four replacements.
+- Set difficulty IVs to 10 / 20 / 31 / 31. Easy has no held item; Normal uses Oran Berry, Hard Sitrus Berry and Boss Leftovers. Retain existing level, AI and legal EV presets. Changes apply to independent definitions when regenerated, including existing definitions.
+- Require beta.10 on server and clients (editor channel npc5), and add regression checks for difficulty output and all six bundled skin textures.
+
 ## 0.1.0-beta.9
 
 - Show visible trainer names and readable return times in repeated reward delivery messages; add Shift/right-click availability queries and a clickable availability link in Rassvet invitations.

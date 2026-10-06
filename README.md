@@ -58,6 +58,8 @@ Reconecta después de cambiar permisos para actualizar el autocompletado.
 
 ## Recompensas únicas por entrenador (Beta 4)
 
+**Beta 10:** el editor de equipo incluye **Pokémon…** y **Ataques…**, con búsqueda, páginas y selección de hasta cuatro movimientos de la especie. Se incluyen las seis skins entregadas por el administrador. Difícil y Jefe tienen IV perfectos y objetos equipados automáticos. Instala la misma beta en servidor y clientes. Consulta [los cambios y pruebas](docs/CREATOR-BETA10.md).
+
 **Beta 9:** consulta la espera con Mayús + clic derecho en el entrenador. Los pagos repetibles muestran su nombre y cuándo volver. Crea definiciones independientes desde **Crear NPC → Definir entrenador desde cero**, con Pokémon, niveles, movimientos, dificultad, skins instaladas y diálogos. No se añaden a la cadena de medallas Rassvet. Consulta [el creador y sus límites](docs/CREATOR-BETA9.md).
 
 **Beta 8:** el editor permite premios únicos o repetibles con espera por jugador, y cambiar el formato entre Individual y Doble. Consulta [repetición, migración y pruebas](docs/REPEAT-AND-DOUBLES-BETA8.md). Se conservan premios ya pagados y registros anteriores; el creador de equipos nuevos, skins y diálogos será una etapa posterior.

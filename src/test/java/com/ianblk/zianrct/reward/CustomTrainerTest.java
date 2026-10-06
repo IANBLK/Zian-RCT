@@ -33,11 +33,36 @@ class CustomTrainerTest {
         var dialogs=JsonParser.parseString(new String(r.get("dialogs/trainers/single/"+d.id()+".json"),java.nio.charset.StandardCharsets.UTF_8)).getAsJsonObject();
         assertEquals("Me has derrotado",dialogs.getAsJsonArray("on_battle_lost").get(0).getAsJsonObject().get("literal").getAsString());
     }
-    @Test void definitionsAndSkinReferencesSurviveRestartWithoutCopyingAssets() throws Exception{
+    @Test void definitionsAndSkinReferencesSurviveRestart() throws Exception{
         CustomTrainerStore.boot(temp);CustomTrainerStore.save(trainer());CustomTrainerStore.clear();CustomTrainerStore.boot(temp);
         assertEquals(trainer(),CustomTrainerStore.get(trainer().id()));
         assertEquals(CustomTrainer.SKINS.get(1),CustomTrainerStore.skins().get(trainer().id()));
         assertTrue(Files.exists(temp.resolve("zianrct-custom-trainers.json")));
+    }
+    @Test void difficultyAppliesPerfectHardBossIvsAndNativeHeldItemFormat(){
+        for(String difficulty:List.of("FACIL","NORMAL","DIFICIL","JEFE")){
+            var original=trainer();var d=new CustomTrainer(original.id(),original.name(),difficulty,original.format(),original.skin(),original.team(),original.start(),original.playerWins(),original.playerLoses());
+            var resources=CustomTrainerResources.build(Map.of(d.id(),d));
+            var team=JsonParser.parseString(new String(resources.get("trainers/"+d.id()+".json"),java.nio.charset.StandardCharsets.UTF_8)).getAsJsonObject().getAsJsonArray("team");
+            int totalEv=0;
+            for(var element:team){
+                var member=element.getAsJsonObject();
+                for(var stat:member.getAsJsonObject("ivs").entrySet())assertEquals(switch(difficulty){case "FACIL"->10;case "NORMAL"->20;default->31;},stat.getValue().getAsInt());
+                totalEv=member.getAsJsonObject("evs").entrySet().stream().mapToInt(e->e.getValue().getAsInt()).sum();
+                assertTrue(totalEv<=510);
+                if(difficulty.equals("FACIL"))assertFalse(member.has("heldItem"));
+                else assertEquals(switch(difficulty){case "NORMAL"->"oran_berry";case "DIFICIL"->"sitrus_berry";default->"leftovers";},member.getAsJsonArray("heldItem").get(0).getAsString());
+            }
+        }
+    }
+    @Test void everyNamedCatalogSkinIsABundled64PixelMinecraftTexture() throws Exception{
+        assertEquals(6,CustomTrainer.SKINS.size());assertEquals(CustomTrainer.SKINS.size(),CustomTrainer.SKIN_NAMES.size());
+        for(String path:CustomTrainer.SKINS){
+            try(var stream=getClass().getResourceAsStream("/assets/zianrct/"+path.substring("zianrct:".length()))){
+                assertNotNull(stream,path);var image=javax.imageio.ImageIO.read(stream);
+                assertNotNull(image);assertEquals(64,image.getWidth());assertEquals(64,image.getHeight());
+            }
+        }
     }
     @Test void arbitraryIdsBadLevelsAndIncompleteDoubleTeamsAreRejected(){
         var d=trainer();

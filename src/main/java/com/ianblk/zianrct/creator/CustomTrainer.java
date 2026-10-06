@@ -2,10 +2,11 @@ package com.ianblk.zianrct.creator;
 import java.util.*;
 public record CustomTrainer(String id,String name,String difficulty,String format,int skin,
                             List<Member> team,String start,String playerWins,String playerLoses) {
-    public static final List<String> SKINS=List.of("rctmod:textures/trainers/default.png",
-            "rctmod:textures/trainers/single/youngster_austin_0303.png",
-            "rctmod:textures/trainers/single/youngster_ben_0059.png",
-            "rctmod:textures/trainers/single/youngster_ben_0065.png");
+    public static final List<String> SKIN_NAMES=List.of("Explorador Ártico", "Centinela Nocturno",
+            "Guardián Cian", "Aventurero del Desierto", "Guardabosques", "Capitán Ámbar");
+    public static final List<String> SKINS=List.of("arctic_explorer", "night_sentinel", "cyan_guardian",
+            "desert_adventurer", "forest_ranger", "amber_captain").stream()
+            .map(name -> "zianrct:textures/entity/trainers/"+name+".png").toList();
     public record Member(String species,int level,List<String> moves) {
         public Member {
             if(species==null || !species.matches("(?:[a-z0-9_.-]+:)?[a-z0-9_]+") || species.length()>96 || level<1 || level>100)

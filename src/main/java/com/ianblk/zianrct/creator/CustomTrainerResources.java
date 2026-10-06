@@ -22,9 +22,12 @@ public final class CustomTrainerResources {
                 p.add("moveset",new Gson().toJsonTree(m.moves()));
                 var iv=new JsonObject();var ev=new JsonObject();
                 for(String stat:List.of("hp","atk","def","spa","spd","spe")){
-                    iv.addProperty(stat,new int[]{10,15,25,31}[tier]);ev.addProperty(stat,new int[]{0,0,64,84}[tier]);
+                    iv.addProperty(stat,new int[]{10,20,31,31}[tier]);ev.addProperty(stat,new int[]{0,0,64,84}[tier]);
                 }
-                p.add("ivs",iv);p.add("evs",ev);members.add(p);
+                p.add("ivs",iv);p.add("evs",ev);
+                // Conservative universal items: no choice lock, recoil or battle gimmick dependencies.
+                if(tier>0){var item=new JsonArray();item.add(new String[]{"","oran_berry","sitrus_berry","leftovers"}[tier]);p.add("heldItem",item);}
+                members.add(p);
             }
             team.add("team",members);put(out,"trainers/"+d.id()+".json",team);
             var mob=new JsonObject();mob.add("series",new Gson().toJsonTree(List.of("zian_challenges")));

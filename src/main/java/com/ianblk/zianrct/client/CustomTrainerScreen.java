@@ -50,7 +50,7 @@ public final class CustomTrainerScreen extends Screen {
             label("Nombre visible:",64);EditBox n=field(left,78,usable,64,name);reads.add(()->name=n.getValue());
             button(left,102,usable,"Dificultad: "+difficulty,()->{read();var all=List.of("FACIL","NORMAL","DIFICIL","JEFE");difficulty=all.get((all.indexOf(difficulty)+1)%4);init();});
             button(left,126,usable,"Batalla: "+(format.equals("GEN_9_DOUBLES")?"Doble":"Individual"),()->{read();format=format.equals("GEN_9_DOUBLES")?"GEN_9_SINGLES":"GEN_9_DOUBLES";init();});
-            button(left,150,usable,"Skin: "+List.of("Predeterminada","Joven Austin","Joven Ben 1","Joven Ben 2").get(skin),()->{read();skin=(skin+1)%CustomTrainer.SKINS.size();init();});
+            button(left,150,usable,"Skin: "+CustomTrainer.SKIN_NAMES.get(skin),()->{read();skin=(skin+1)%CustomTrainer.SKINS.size();init();});
             label("No exige medallas de Rassvet ni otorga nuevas medallas.",180);
             label("Dificultad ajusta IV/EV e IA; los niveles se editan aparte.",196);
             label("El loot se configura después en Modificar > Loot.",212);
@@ -60,10 +60,12 @@ public final class CustomTrainerScreen extends Screen {
             int row=44;
             for(int i=0;i<6;i++){
                 int slot=i;
-                EditBox s=field(left,row,usable-68,96,species[i]);EditBox l=field(left+usable-62,row,62,3,levels[i]);
+                EditBox s=field(left,row,usable-162,96,species[i]);EditBox l=field(left+usable-62,row,62,3,levels[i]);
+                button(left+usable-156,row,88,"Pokémon...",()->selectSpecies(slot));
                 reads.add(()->{species[slot]=s.getValue();levels[slot]=l.getValue();});
                 label("Movimientos (1–4, separados por coma):",row+22);
-                EditBox m=field(left,row+36,usable,200,moves[i]);reads.add(()->moves[slot]=m.getValue());
+                EditBox m=field(left,row+36,usable-94,200,moves[i]);reads.add(()->moves[slot]=m.getValue());
+                button(left+usable-88,row+36,88,"Ataques...",()->selectMoves(slot));
                 row+=64;
             }
             contentHeight=row;
@@ -86,6 +88,39 @@ public final class CustomTrainerScreen extends Screen {
             var d=new CustomTrainer(id.trim(),name.trim(),difficulty,format,skin,team,start,win,loss);
             PacketDistributor.sendToServer(new CustomTrainerSave(state.nonce(),new Gson().toJson(d)));
         }catch(RuntimeException e){error=e.getMessage()==null?"Revisa la definición":e.getMessage();}
+    }
+    private void selectSpecies(int slot){
+        read();
+        var choices=com.cobblemon.mod.common.api.pokemon.PokemonSpecies.getImplemented().stream()
+            .map(s->new TrainerChoiceScreen.Choice(s.getResourceIdentifier().toString(),s.getTranslatedName().getString(),"Pokédex #"+s.getNationalPokedexNumber()))
+            .sorted(Comparator.comparing(TrainerChoiceScreen.Choice::name)).toList();
+        String current=species[slot].contains(":")?species[slot]:"cobblemon:"+species[slot];
+        minecraft.setScreen(new TrainerChoiceScreen(this,"Seleccionar Pokémon · plaza "+(slot+1),choices,List.of(current),1,ids->{
+            if(ids.isEmpty()){species[slot]="";return;}
+            String chosen=ids.getFirst();
+            if(!chosen.equals(current)){
+                species[slot]=chosen;
+                var s=com.cobblemon.mod.common.api.pokemon.PokemonSpecies.getByIdentifier(net.minecraft.resources.ResourceLocation.parse(chosen));
+                int level;try{level=Integer.parseInt(levels[slot]);}catch(NumberFormatException e){level=25;}
+                moves[slot]=s.getStandardForm().getMoves().getLevelUpMovesUpTo(Math.max(1,Math.min(100,level))).stream()
+                    .map(com.cobblemon.mod.common.api.moves.MoveTemplate::getName).sorted().limit(4).collect(java.util.stream.Collectors.joining(","));
+            }
+        }));
+    }
+    private void selectMoves(int slot){
+        read();
+        var id=net.minecraft.resources.ResourceLocation.tryParse(species[slot].contains(":")?species[slot]:"cobblemon:"+species[slot]);
+        var s=id==null?null:com.cobblemon.mod.common.api.pokemon.PokemonSpecies.getByIdentifier(id);
+        if(s==null){error="Selecciona un Pokémon válido primero.";return;}
+        var choices=s.getStandardForm().getMoves().getAllLegalMoves().stream()
+            .map(m->new TrainerChoiceScreen.Choice(m.getName(),m.getDisplayName().getString(),m.getDescription().getString()+" · Potencia: "+m.getPower()+" · Precisión: "+m.getAccuracy()+" · PP: "+m.getPp()))
+            .sorted(Comparator.comparing(TrainerChoiceScreen.Choice::name)).toList();
+        var legal=choices.stream().map(TrainerChoiceScreen.Choice::id).collect(java.util.stream.Collectors.toSet());
+        var initial=Arrays.stream(moves[slot].split(",")).map(String::trim).filter(legal::contains).distinct().limit(4).toList();
+        minecraft.setScreen(new TrainerChoiceScreen(this,"Ataques de "+s.getTranslatedName().getString()+" (incluye MT / tutor)",choices,initial,4,ids->{
+            if(ids.isEmpty()){error="El Pokémon necesita al menos un ataque.";return;}
+            moves[slot]=String.join(",",ids);
+        }));
     }
     private EditBox field(int left,int row,int size,int max,String value){
         var box=new EditBox(font,left,y+32+row,size,18,Component.literal("Dato del entrenador"));box.setMaxLength(max);box.setValue(value);
