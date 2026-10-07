@@ -1,17 +1,19 @@
 # Zian-RCT
 
-Tope de nivel, progresión administrativa y sistema de medallas sobre Radical Cobblemon Trainers para Minecraft 1.21.1 / NeoForge.
+Entrenadores propios, NPC, progresión, medallas y recompensas sobre RCTAPI para Minecraft 1.21.1 / NeoForge.
 
 ## Estado
 
-Proyecto en desarrollo por fases. Las fases actuales ya incluyen configuración validada, integración de progresión RCT, persistencia de medallas, sincronización/GUI de cliente y comandos administrativos.
+Beta 0.2.0-beta.1 independiente de RCTMod. Antes de actualizar un mundo existente, consulta [la migración y las condiciones de licencia](docs/RCTAPI-STANDALONE.md). Usa el mismo JAR en cliente y servidor. La beta 0.1.0-beta.15 permanece en su rama anterior.
+
+Incluye configuración validada, NPC/editor propios, equipos automáticos, combates individuales y dobles, progresión y medallas persistentes, loot único/repetible y pruebas legendarias con entrega registrada.
 
 ## Dependencias objetivo
 
 - Minecraft 1.21.1
 - NeoForge 21.1.x
 - Cobblemon 1.8.1
-- Radical Cobblemon Trainers 0.19.2-beta (`rctmod`)
+- RCTMod debe estar ausente en esta rama.
 - Radical Cobblemon Trainers API 0.16.1-beta (`rctapi`)
 - Architectury 13.0.11
 - Kotlin for Forge 5.12.0

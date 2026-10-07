@@ -1,6 +1,6 @@
 package com.ianblk.zianrct.battle;
 
-import com.gitlab.srcmc.rctmod.world.entities.TrainerMob;
+import com.ianblk.zianrct.creator.IndependentTrainerMob;
 import com.ianblk.zianrct.ZianRCT;
 import com.ianblk.zianrct.config.ConfigState;
 import com.ianblk.zianrct.config.ZianRctConfig;
@@ -62,7 +62,7 @@ public final class LeagueBattlePromptService {
         if (!(event.getEntity() instanceof ServerPlayer player)) {
             return;
         }
-        if (!(event.getTarget() instanceof TrainerMob trainer)) {
+        if (!(event.getTarget() instanceof IndependentTrainerMob trainer)) {
             return;
         }
         if (!isRassvetTrainer(trainer.getTrainerId())) {
@@ -153,7 +153,7 @@ public final class LeagueBattlePromptService {
         }
 
         Entity entity = player.serverLevel().getEntity(invite.trainerUuid());
-        if (!(entity instanceof TrainerMob trainer)
+        if (!(entity instanceof IndependentTrainerMob trainer)
                 || !invite.trainerId().equals(trainer.getTrainerId())
                 || !isRassvetTrainer(trainer.getTrainerId())) {
             player.sendSystemMessage(Component.literal("El entrenador ya no está disponible.").withStyle(ChatFormatting.RED));
@@ -202,7 +202,7 @@ public final class LeagueBattlePromptService {
         return 1;
     }
 
-    private void sendPrompt(ServerPlayer player, TrainerMob trainer, PendingInvite invite) {
+    private void sendPrompt(ServerPlayer player, IndependentTrainerMob trainer, PendingInvite invite) {
         String uuid = invite.trainerUuid().toString();
         Component accept = Component.literal("[✔ Aceptar]")
                 .withStyle(style -> style

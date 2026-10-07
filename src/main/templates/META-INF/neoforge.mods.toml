@@ -7,7 +7,7 @@ modId="zianrct"
 version="${mod_version}"
 displayName="Zian RCT"
 authors="IANBLK"
-description='''Configuration, progression, medals and persistent one-time trainer rewards for Radical Cobblemon Trainers.'''
+description='''Standalone trainers, progression, medals and durable rewards powered by RCTAPI.'''
 
 [[dependencies.zianrct]]
 modId="avecoins"
@@ -46,8 +46,8 @@ side="BOTH"
 
 [[dependencies.zianrct]]
 modId="rctmod"
-type="required"
-versionRange="[0.19.2-beta,0.20.0)"
+type="incompatible"
+versionRange="[0,)"
 ordering="AFTER"
 side="BOTH"
 

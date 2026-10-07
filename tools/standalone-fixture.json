@@ -1,0 +1,30 @@
+{
+  "schemaVersion": 1,
+  "trainers": [{
+    "id": "zian_custom_ci",
+    "name": "CI independent trainer",
+    "difficulty": "JEFE",
+    "autoMoves": true,
+    "format": "GEN_9_DOUBLES",
+    "skin": 0,
+    "team": [
+      {"species": "pikachu", "level": 20, "moves": ["thunderbolt"]},
+      {"species": "eevee", "level": 20, "moves": ["tackle"]}
+    ],
+    "start": "CI challenge",
+    "playerWins": "Well played",
+    "playerLoses": "Try again"
+  }, {
+    "id": "zian_custom_ci_legendary",
+    "name": "CI legendary custodian",
+    "difficulty": "JEFE",
+    "format": "GEN_9_SINGLES",
+    "skin": 1,
+    "autoMoves": true,
+    "trial": {"boss": "zian_custom_ci", "shinyDenominator": 512},
+    "team": [{"species": "mewtwo", "level": 70, "moves": ["psychic"]}],
+    "start": "Trial passed",
+    "playerWins": "Legendary defeated",
+    "playerLoses": "Try again"
+  }]
+}
