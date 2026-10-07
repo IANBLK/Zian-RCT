@@ -4,7 +4,7 @@ Entrenadores propios, NPC, progresión, medallas y recompensas sobre RCTAPI para
 
 ## Estado
 
-Rama experimental 0.2.0-alpha.2 independiente de RCTMod. Antes de actualizar un mundo existente, consulta [la migración y las condiciones de licencia](docs/RCTAPI-STANDALONE.md). Usa el mismo JAR en cliente y servidor. La beta 0.1.0-beta.15 permanece en su rama anterior.
+Beta 0.2.0-beta.1 independiente de RCTMod. Antes de actualizar un mundo existente, consulta [la migración y las condiciones de licencia](docs/RCTAPI-STANDALONE.md). Usa el mismo JAR en cliente y servidor. La beta 0.1.0-beta.15 permanece en su rama anterior.
 
 Incluye configuración validada, NPC/editor propios, equipos automáticos, combates individuales y dobles, progresión y medallas persistentes, loot único/repetible y pruebas legendarias con entrega registrada.
 

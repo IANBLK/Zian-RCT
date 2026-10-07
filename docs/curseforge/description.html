@@ -1,68 +1,83 @@
-<p><strong>🏅 ZIAN RCT — BUILD YOUR COBBLEMON CHALLENGES</strong></p>
-<p>Create a trainer league, place your own challengers, and reward players for their victories. Zian RCT expands <strong>Radical Cobblemon Trainers</strong> with a medal interface, an in-game NPC manager, custom trainer creation, configurable loot, and unique legendary trials.</p>
-<p>Built for <strong>Minecraft 1.21.1 and NeoForge</strong>, with gameplay testing on <strong>Youer 1.21.1</strong>.</p>
-<p><strong>🏆 MEDALS AND PROGRESSION</strong></p>
-<p>Collect the ten medals included in the <strong>Rassvet profile</strong> by defeating their associated trainers. View earned and locked medals in a compact interface with custom artwork and pagination.</p>
-<p>Open the medal case with <strong>M</strong> or <strong>/medals</strong>. The key can be changed in Minecraft's Controls settings.</p>
-<p>Administrators can manage medals, inspect player progress, and adjust progression through protected commands. Independent trainers use their own IDs and reward settings; existing RCT level caps remain in effect.</p>
-<p><strong>🛠️ MANAGE NPCs INSIDE THE GAME</strong></p>
-<p>Open <strong>/zianrct npc</strong> to browse trainers currently loaded in your dimension. The manager shows their coordinates and distance so you can identify the NPC you want to edit.</p>
-<p>Create NPCs from available trainer definitions, modify existing ones, or delete a selected NPC with confirmation. Move an NPC to your current block and facing direction, configure persistence, and allow or block its movement.</p>
-<p>NPC placement and saved settings survive server restarts.</p>
-<p><strong>🎯 CREATE YOUR OWN TRAINERS</strong></p>
-<p>Define independent trainers from scratch through the in-game editor. Customize their visible name, difficulty, team, levels, included skin, and dialogue.</p>
-<p>Choose <strong>Easy, Normal, Hard, or Boss</strong>, build a team of <strong>1–6 Pokémon</strong>, and select <strong>Single or Double battles</strong>. Double battles require at least two Pokémon.</p>
-<p>Searchable Pokémon and move selectors help build your team. Choose up to four moves per Pokémon, or use <strong>Automatic Moves</strong>: select the species, level, and difficulty, then let the server prepare the moves when you save.</p>
-<p>Easy and Normal use available level-up moves. Hard and Boss also consider TM, tutor, egg, and evolution moves, prioritizing attack strength, accuracy, same-type bonuses, coverage, and support. Manual editing remains available.</p>
-<p>Difficulty also applies automatic IV, EV, AI, and held-item presets. Hard and Boss opponents use perfect IVs. Their battle equipment is configured separately from the loot players receive.</p>
-<p><strong>🎨 APPEARANCE AND DIALOGUE</strong></p>
-<p>Choose from <strong>six bundled trainer skins</strong> and configure dialogue for battle start, player victory, and player defeat.</p>
-<p>Interaction replies explain cooldowns, busy battles, missing Pokémon, or a team above the current level cap. Independent trainers report their own battle requirements.</p>
-<p>The current administrative interface uses Spanish labels. Importing additional PNG skins through the editor is not included in this beta.</p>
-<p><strong>🎁 CONFIGURABLE TRAINER LOOT</strong></p>
-<p>Reward victories with Minecraft or modded items, including Cobblemon items, and optionally with <strong>AVECOINS currency</strong>.</p>
-<p>Copy an item stack held in your main hand into the reward configuration, preserving its components. Choose a <strong>one-time reward</strong> or a <strong>repeatable reward with a per-player waiting period</strong>.</p>
-<p>Repeatable reward messages show the trainer's readable name and when the next reward becomes available. Use <strong>Shift + right-click</strong> on a configured reward trainer to check your availability.</p>
-<p>Pending rewards remain recorded when delivery cannot complete. Claim IDs support autocomplete and clickable claim actions in chat. Uncertain deliveries are held for administrative review instead of being automatically replayed.</p>
-<p><strong>🐉 UNIQUE LEGENDARY TRIALS</strong></p>
-<p>Link two independent trainers to create a special challenge:</p>
+<h2 style="color: #c79b36;"><strong>🏅 ZIAN RCT — YOUR LEAGUE, YOUR TRAINERS, YOUR CHALLENGES</strong></h2>
+<p>Build a Cobblemon league, create your own opponents, and reward players for overcoming your challenges. <strong>Zian RCT</strong> combines persistent NPCs, an in-game trainer editor, level progression, collectible medals, configurable loot, and unique legendary trials.</p>
+<p><strong>Powered by RCTAPI. This 0.2 generation runs without RCTMod.</strong> Install it on both client and server for <strong>Minecraft 1.21.1 / NeoForge</strong>. Gameplay has also been tested on <strong>Youer 1.21.1</strong>, including with a non-OP account.</p>
+<h2 style="color: #c79b36;"><strong>🏆 THE RASSVET LEAGUE AND MEDALS</strong></h2>
+<p>The included Rassvet profile contains ten trainer challenges: <strong>Novato, Ferrum, Aquila, Voltar, Engranaje, Bruma, Cognitus, Forjax, Glacius, and Maestra Aurelia</strong>.</p>
+<p>Defeat the required predecessor to advance through the league, unlock higher levels, and earn the corresponding medal. The default progression starts at <strong>level 10</strong> and advances through <strong>20, 30, 40, 50, 60, 70, 80, 90, and 100</strong>. Glacius unlocks level 100; Aurelia remains the final challenge and medal.</p>
+<p>Open the compact medal case with <strong>M</strong> or <strong>/medals</strong>. Its custom artwork distinguishes earned and locked medals. Progress, medals and completed victories remain saved after restarting.</p>
+<h2 style="color: #c79b36;"><strong>📈 LEVEL CAPS THAT APPLY FROM THE START</strong></h2>
+<p>Players must respect their unlocked level before defeating the first trainer. <strong>XL candies, Rare Candies and experience awards through Cobblemon cannot raise a Pokémon above the current cap.</strong></p>
+<p>Training resumes when the next level cap is unlocked. A candy rejected because the Pokémon is already at its cap is not consumed. OP status does not bypass this experience restriction.</p>
+<p>Pokémon already above the cap are not automatically downgraded. League NPCs reject parties exceeding the unlocked cap. Independent custom challenges do not require completing the Rassvet trainer chain and do not advance it.</p>
+<h2 style="color: #c79b36;"><strong>🛠️ AN IN-GAME NPC MANAGER</strong></h2>
+<p>Use <strong>/zianrct npc</strong> to manage trainer NPCs loaded in your current dimension. The list shows their location and distance so you can identify the correct NPC.</p>
 <ul>
-<li>Defeat a <strong>Boss</strong> trainer to receive its configured loot and unlock a second NPC for that player.</li>
-<li>Speak to the legendary custodian to begin its <strong>single-Pokémon, Single battle</strong>.</li>
-<li>Win to receive a new Pokémon of the configured legendary or mythical species and level, delivered directly to your <strong>PC</strong>.</li>
-<li>The reward has six random IVs between <strong>25 and 30</strong> and a configurable shiny chance, <strong>1 in 512 by default</strong>.</li>
-<li>Losing allows another attempt. Confirmed receipt permanently closes that trial for the player, including after a restart.</li>
+<li><strong>Create</strong> an NPC from a league or custom trainer definition.</li>
+<li><strong>Modify</strong> its settings through the in-game interface.</li>
+<li><strong>Move</strong> it to your current block and facing direction.</li>
+<li>Enable <strong>persistence</strong> and allow or block movement.</li>
+<li><strong>Delete</strong> a selected NPC with confirmation.</li>
 </ul>
-<p>Configure the link in the custodian's <strong>Trial / Prueba</strong> tab. The unlock is recorded per player; granting a general command permission does not qualify someone for the encounter.</p>
-<p>Reward UUID, IVs, and shiny result are fixed before delivery. Existing trial reward settings are locked once player progress exists. The automatic delivery is verified against Cobblemon's native file-backed PC/party storage; unsupported storage providers leave the reward pending.</p>
-<p><strong>📜 USEFUL COMMANDS</strong></p>
-<p><strong>/medals</strong> — Open your medal case.</p>
-<p><strong>/zianrct npc</strong> — Open the administrator NPC manager.</p>
-<p><strong>/zianrct reward pending</strong> — View your pending trainer rewards.</p>
-<p><strong>/zianrct reward claim &lt;operationId&gt;</strong> — Claim an eligible pending reward; use Tab to autocomplete its ID.</p>
-<p><strong>/zianrct reward next &lt;trainerId&gt;</strong> — Check your reward availability.</p>
-<p><strong>/zianrct legendary status</strong> — Check your legendary trial progress.</p>
-<p><strong>/zianrct legendary claim</strong> — Claim a pending legendary reward or verify an interrupted delivery.</p>
-<p><strong>/zianrct reload</strong> — Reload Zian RCT configuration.</p>
-<p><strong>🔐 LUCKPERMS SUPPORT</strong></p>
-<p>Manage player and administrator access through <strong>LuckPerms groups</strong>, using the NeoForge mod or the Bukkit plugin on Youer.</p>
-<p>Player permissions include <strong>zianrct.medals</strong>, <strong>zianrct.battle</strong>, <strong>zianrct.rewards.claim</strong>, and <strong>zianrct.legendary.claim</strong>. Editor and recovery permissions are separate administrative nodes.</p>
-<p>Explicit denials also apply to operators. Without LuckPerms, administrative actions use the level-2 OP fallback. OP status does not bypass completed legendary trials or native team level caps.</p>
-<p><strong>📦 INSTALLATION</strong></p>
-<p>Requires:</p>
+<p>Persistent NPCs keep their placement and settings after restarting. Deleting an NPC does not erase player medals or reward records.</p>
+<h2 style="color: #c79b36;"><strong>🎯 CREATE CUSTOM TRAINERS FROM SCRATCH</strong></h2>
+<p>Design independent opponents for money challenges, special events or legendary trials. Customize their <strong>name, difficulty, team, Pokémon levels, battle format, skin and dialogue</strong>.</p>
+<p>Choose <strong>Easy, Normal, Hard or Boss</strong>, with <strong>1–6 Pokémon</strong> at levels <strong>1–100</strong>. Select <strong>Single</strong> or <strong>Double</strong> battles; Double battles require at least two Pokémon capable of battling on each side.</p>
+<p>Searchable species and move selectors help you assemble teams. Choose up to four moves per Pokémon manually, or enable <strong>Automatic Moves</strong> and let the server prepare them from species, level and difficulty when you save.</p>
+<p>Easy and Normal use suitable level-up moves. Hard and Boss also consider TM, tutor, egg and evolution moves, using attack strength, accuracy, same-type bonuses, coverage and support in their selection.</p>
+<h2 style="color: #c79b36;"><strong>⚔️ AUTOMATIC DIFFICULTY PRESETS</strong></h2>
+<p>Difficulty controls AI settings, IVs, EVs and battle equipment:</p>
 <ul>
-<li><strong>Minecraft 1.21.1</strong></li>
-<li><strong>Java 21</strong></li>
-<li><strong>NeoForge 21.1.x</strong></li>
-<li><strong>Cobblemon 1.8.1</strong></li>
-<li><strong>Radical Cobblemon Trainers 0.19.2-beta</strong></li>
-<li><strong>Radical Cobblemon Trainers API 0.16.1-beta</strong></li>
-<li><strong>Architectury 13.0.11</strong></li>
-<li><strong>Kotlin for Forge 5.12.0</strong></li>
+<li><strong>Easy:</strong> 10 IVs in each stat, no EV investment and no held item.</li>
+<li><strong>Normal:</strong> 20 IVs in each stat, no EV investment and an Oran Berry.</li>
+<li><strong>Hard:</strong> perfect 31 IVs, 64 EVs per stat and a Sitrus Berry.</li>
+<li><strong>Boss:</strong> perfect 31 IVs, 84 EVs per stat and Leftovers.</li>
 </ul>
-<p>Install <strong>the same Zian RCT version on the client and server</strong>, together with the required dependencies.</p>
-<p><strong>AVECOINS 2.3 or 2.4</strong> is optional for currency rewards. <strong>LuckPerms</strong> is optional for permission management. <strong>Zian GUI</strong> can provide a shortcut to the medal interface.</p>
-<p><strong>🚧 BETA — ACTIVE DEVELOPMENT</strong></p>
-<p>This release includes custom trainer creation, persistent NPC management, repeated loot, and unique legendary rewards. Saving trainer definitions reloads server data and may briefly pause a heavily modded server.</p>
-<p>When reporting an issue, include your mod versions, server platform, relevant logs, and the steps needed to reproduce it.</p>
-<p><strong>Created by IANBLK • Minecraft 1.21.1 • NeoForge • Tested on Youer</strong></p>
+<p>Battle equipment is separate from the loot awarded to players. Selecting a Pokémon and level is enough to build an automatic team; manual moves remain available.</p>
+<h2 style="color: #c79b36;"><strong>🎨 LEADER SKINS AND DIALOGUE</strong></h2>
+<p>The ten Rassvet leaders and master have <strong>their own included skins</strong>, assigned by trainer ID. Custom trainers can choose from <strong>six additional bundled skin presets</strong>.</p>
+<p>Configure dialogue for battle start, player victory and player defeat. Replies appear in chat and can be displayed above the NPC, with messages explaining busy battles, resting time, missing Pokémon, completed encounters and level restrictions.</p>
+<p>The administrative interface currently uses Spanish labels. Runtime PNG importing through the editor is not included in this release.</p>
+<h2 style="color: #c79b36;"><strong>🎁 ONE-TIME AND REPEATABLE REWARDS</strong></h2>
+<p>Configure Minecraft or modded items, including Cobblemon items, and optionally award <strong>AVECOINS currency</strong>. Add the item stack held in your main hand to preserve its quantity and components.</p>
+<p>Choose a <strong>one-time reward</strong> or a <strong>repeatable reward with a per-player waiting period</strong>. Trainer messages use readable names and explain when the next reward becomes available. <strong>Shift + right-click</strong> on a configured reward trainer to check your eligibility.</p>
+<p>Completed rewards and remaining waiting times survive server restarts. Pending deliveries remain recorded, with autocomplete and clickable claim actions. Uncertain deliveries are held for administrative review rather than automatically repeated.</p>
+<h2 style="color: #c79b36;"><strong>🐉 UNIQUE LEGENDARY TRIALS</strong></h2>
+<p>Link a <strong>Boss</strong> trainer to a second, legendary custodian through the <strong>Trial / Prueba</strong> tab:</p>
+<ol>
+<li>Defeat the Boss to earn its configured reward and unlock the custodian for your account.</li>
+<li>Interact with the custodian to challenge its configured legendary or mythical Pokémon in a <strong>Single battle</strong>.</li>
+<li>Losing allows another attempt. Winning awards a new Pokémon of the configured species and level directly to your <strong>PC</strong>.</li>
+<li>The reward has random IVs from <strong>25 to 30 in all six stats</strong> and a configurable shiny chance, <strong>1 in 512 by default</strong>.</li>
+<li>Confirmed delivery closes that trial permanently for the player, including after restarting.</li>
+</ol>
+<p>Qualification is saved per player; a general permission or OP status does not replace the Boss victory or reopen a completed trial. The Pokémon UUID, IVs and shiny result are reserved before delivery, preventing a fresh roll when retrying a pending claim.</p>
+<p>Automatic delivery is verified with Cobblemon&#x27;s supported native file-backed storage. Other storage providers leave the reward pending for review instead of risking an unverified duplicate.</p>
+<h2 style="color: #c79b36;"><strong>🔐 PLAYER AND ADMINISTRATOR PERMISSIONS</strong></h2>
+<p>Supports <strong>LuckPerms</strong> through NeoForge and the Bukkit permission bridge on Youer. Player nodes include <strong>zianrct.medals</strong>, <strong>zianrct.battle</strong>, <strong>zianrct.rewards.claim</strong> and <strong>zianrct.legendary.claim</strong>.</p>
+<p>Editing NPCs, configuring trainers and rewards, changing progression and resolving uncertain deliveries use separate administrator permissions. Explicit denials also apply to operators. Without LuckPerms, administrative actions use the level-2 OP fallback.</p>
+<h2 style="color: #c79b36;"><strong>📜 USEFUL COMMANDS</strong></h2>
+<ul>
+<li><strong>/medals</strong> — Open the medal case; <strong>M</strong> is the default shortcut.</li>
+<li><strong>/zianrct npc</strong> — Open the administrator NPC manager.</li>
+<li><strong>/zianrct reward pending</strong> — List your pending trainer rewards.</li>
+<li><strong>/zianrct reward claim &lt;operationId&gt;</strong> — Claim a pending reward; press Tab to select its ID.</li>
+<li><strong>/zianrct reward next &lt;trainerId&gt;</strong> — Check reward availability.</li>
+<li><strong>/zianrct legendary status</strong> — View your legendary trial status.</li>
+<li><strong>/zianrct legendary claim</strong> — Claim a pending legendary reward or check an interrupted delivery.</li>
+<li><strong>/zianrct reload</strong> — Reload the mod configuration.</li>
+</ul>
+<h2 style="color: #c79b36;"><strong>📦 INSTALLATION AND DEPENDENCIES</strong></h2>
+<p>Requires <strong>Minecraft 1.21.1</strong>, <strong>Java 21</strong>, <strong>NeoForge 21.1.x</strong>, <strong>Cobblemon 1.8.1</strong>, <strong>RCTAPI 0.16.1-beta</strong>, <strong>Architectury 13.0.11</strong> and <strong>Kotlin for Forge 5.12.0</strong>.</p>
+<p>Install the <strong>same Zian RCT version on both client and server</strong>, with the required dependencies. <strong>Do not install RCTMod alongside Zian RCT 0.2.x</strong>; it is an incompatible dependency for this generation.</p>
+<p><strong>AVECOINS 2.3/2.4</strong> is optional for currency rewards. <strong>LuckPerms</strong> is optional for permission management. <strong>Zian GUI</strong> can provide a shortcut to the medal case.</p>
+<h2 style="color: #c79b36;"><strong>🔄 UPGRADING FROM AN OLDER RELEASE</strong></h2>
+<p>Back up the complete world, configuration and mod list before updating. Test a copied world, replace Zian RCT on both sides, remove RCTMod and retain RCTAPI and the other required libraries.</p>
+<p>The compatibility layer reads supported legacy trainer NPC data and player progression, while retaining Zian medal, loot and legendary journals. Verify your existing NPCs and rewards before moving the real server.</p>
+<p>This release does not include RCTMod&#x27;s natural trainer spawning, trainer spawner blocks, association NPCs, unrelated series or its full trainer catalog. Those blocks/items and unsupported trainer definitions require separate migration planning.</p>
+<h2 style="color: #c79b36;"><strong>⚡ TRAINER LOADING AND PERFORMANCE</strong></h2>
+<p>Zian RCT loads the configured league and custom trainer definitions. Battle Pokémon teams are created when needed and released after the encounter. Saving trainer definitions updates the trainer catalog without forcing a global Minecraft resource reload.</p>
+<p>Memory savings depend on the server, mods and workload; this release does not promise a fixed RAM reduction.</p>
+<h2 style="color: #c79b36;"><strong>🚧 BETA AND SUPPORT</strong></h2>
+<p>Gameplay testing on Youer covered Single and Double battles, progression and medals, candy caps, NPC persistence, rewards and waiting times, non-OP access, and a unique legendary award that remains closed after restarting.</p>
+<p>For bug reports, provide mod versions, server platform, relevant logs and clear reproduction steps. Source code, administrator documentation and issue reports are available on GitHub.</p>
+<h2 style="color: #c79b36;"><strong>Created by IANBLK • Powered by RCTAPI by HDainester / hd42 • Original Zian code licensed under MIT</strong></h2>

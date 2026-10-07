@@ -60,7 +60,12 @@ def run(pass_number):
     env = dict(os.environ, ZIANRCT_STANDALONE_SMOKE="true", ZIANRCT_LEGENDARY_SMOKE="true")
     gradle = str(ROOT / "gradlew.bat") if os.name == "nt" else "gradle"
     with log.open("w", encoding="utf-8") as output:
-        process = subprocess.Popen([gradle, "--no-daemon", "runStandaloneSmoke", "-x", "downloadAssets"], cwd=ROOT, env=env, stdout=output, stderr=subprocess.STDOUT)
+        command = [gradle, "--no-daemon", "runStandaloneSmoke"]
+        # A fresh CI checkout needs MDG's generated asset properties. Existing local
+        # environments can skip the download after that required file exists.
+        if (ROOT / "build/moddev/minecraft_assets.properties").exists():
+            command += ["-x", "downloadAssets"]
+        process = subprocess.Popen(command, cwd=ROOT, env=env, stdout=output, stderr=subprocess.STDOUT)
         try:
             wait_for(process, log, "standalone smoke passed:")
             wait_for(process, log, "initial cap smoke passed:")

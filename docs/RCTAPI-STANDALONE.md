@@ -1,6 +1,6 @@
-# RCTAPI standalone migration (experimental)
+# RCTAPI standalone migration (beta)
 
-The 0.2.0 alpha branch replaces RCTMod with original Zian implementations. RCTAPI
+The 0.2.0-beta.1 release replaces RCTMod with original Zian implementations. RCTAPI
 0.16.1-beta, Cobblemon 1.8.1, NeoForge 1.21.1, Architectury and KotlinForForge remain
 separate required dependencies. Do not install RCTMod alongside this branch.
 
@@ -38,7 +38,7 @@ This branch does not reproduce RCTMod's natural spawning, trainer spawner blocks
 association NPCs, unrelated trainer series or upstream catalogs. Previously saved
 NPCs referencing definitions outside the configured league/custom catalog cannot
 battle until their definitions have been recreated. Removing RCTMod also removes
-its blocks/items; do not use this alpha on the only copy of an existing world.
+its blocks/items; do not use this beta on the only copy of an existing world.
 
 ## Licensing
 
