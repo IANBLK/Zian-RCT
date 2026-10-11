@@ -185,8 +185,15 @@ public final class LegendaryTrials {
     private static void tick(){
         if(server==null || journal==null || ++ticks%20!=0)return;
         smoke();
-        try{for(var entry:journal.all())if(entry.phase()==TrialJournal.Phase.APPLYING){
-            var player=server.getPlayerList().getPlayer(entry.player());if(player==null)continue;
+        try{
+            var online=new LinkedHashMap<UUID,ServerPlayer>();
+            for(var player:server.getPlayerList().getPlayers())online.put(player.getUUID(),player);
+            // In-flight participants can be virtual players registered only in PlayerList's UUID lookup.
+            for(var key:List.copyOf(verifying.keySet())){
+                var participant=server.getPlayerList().getPlayer(UUID.fromString(key.substring(0,36)));
+                if(participant!=null)online.put(participant.getUUID(),participant);
+            }
+            for(var player:online.values())for(var entry:journal.forPlayer(player.getUUID()))if(entry.phase()==TrialJournal.Phase.APPLYING){
             String key=entry.player()+":"+entry.trainer();
             try{if(verify(player,entry)){verifying.remove(key);continue;}}
             catch(Exception e){ZianRCT.LOGGER.warn("Legendary delivery readback failed: {}",key,e);}
@@ -197,7 +204,7 @@ public final class LegendaryTrials {
     public static void claim(ServerPlayer player){
         if(journal==null){player.sendSystemMessage(Component.literal("Registro de pruebas no disponible."));return;}
         if(!RctPermissions.allows(player.createCommandSourceStack(),"legendary.claim",false))return;
-        try{for(var entry:journal.all())if(entry.player().equals(player.getUUID())){
+        try{for(var entry:journal.forPlayer(player.getUUID()))if(entry.player().equals(player.getUUID())){
             if(entry.phase()==TrialJournal.Phase.READY)deliver(player,entry);
             else if(entry.phase()==TrialJournal.Phase.APPLYING || entry.phase()==TrialJournal.Phase.REVIEW)verify(player,entry);
         }}catch(Exception e){player.sendSystemMessage(Component.literal("Premio conservado pendiente o en revisión: "+e.getMessage()));ZianRCT.LOGGER.warn("Legendary claim deferred for {}",player.getUUID(),e);}
@@ -205,14 +212,14 @@ public final class LegendaryTrials {
     public static void notifyPending(ServerPlayer player){
         if(journal==null || !RctPermissions.allows(player.createCommandSourceStack(),"legendary.claim",false))return;
         try{
-            long count=journal.all().stream().filter(e->e.player().equals(player.getUUID()))
+            long count=journal.forPlayer(player.getUUID()).stream()
                 .filter(e->e.phase()==TrialJournal.Phase.READY || e.phase()==TrialJournal.Phase.APPLYING || e.phase()==TrialJournal.Phase.REVIEW).count();
             if(count>0)player.sendSystemMessage(Component.literal("Tienes entregas legendarias pendientes o en revisión. Consulta /zianrct legendary status."));
         }catch(Exception error){ZianRCT.LOGGER.warn("Could not check pending legendary deliveries for {}",player.getUUID(),error);}
     }
     public static void status(ServerPlayer player){
         if(journal==null){player.sendSystemMessage(Component.literal("Registro de pruebas no disponible."));return;}
-        try{var own=journal.all().stream().filter(e->e.player().equals(player.getUUID())).toList();
+        try{var own=journal.forPlayer(player.getUUID()).stream().toList();
             if(own.isEmpty())player.sendSystemMessage(Component.literal("Aún no has desbloqueado pruebas legendarias."));
             for(var e:own){String state=switch(e.phase()){
                 case UNLOCKED->"Prueba superada; combate disponible";

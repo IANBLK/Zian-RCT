@@ -102,10 +102,24 @@ def run(pass_number):
     print(f"Standalone server pass {pass_number} completed")
 
 if __name__ == "__main__":
+    if os.environ.get("ZIAN_STORAGE_SHARDED_SMOKE") == "true" and GAME.exists():
+        import uuid
+        expected=(ROOT/"build/standalone-smoke").resolve()
+        if GAME.resolve()!=expected or not expected.is_relative_to((ROOT/"build").resolve()):
+            raise RuntimeError("Unexpected fixture path")
+        GAME.rename(ROOT/"build"/("standalone-smoke-previous-"+str(uuid.uuid4())))
     EVIDENCE.mkdir(parents=True, exist_ok=True)
     (GAME / "config").mkdir(parents=True, exist_ok=True)
     (GAME / "config/zianrct-custom-trainers.json").write_text((ROOT / "tools/standalone-fixture.json").read_text(encoding="utf-8"), encoding="utf-8")
     (GAME / "eula.txt").write_text("eula=true\n", encoding="utf-8")
     (GAME / "server.properties").write_text(f"server-ip=127.0.0.1\nserver-port=25586\nonline-mode=false\nenable-rcon=true\nrcon.password={PASSWORD}\nrcon.port=25587\nmax-players=4\nview-distance=2\nsimulation-distance=2\n", encoding="utf-8")
+    if os.environ.get("ZIAN_STORAGE_SHARDED_SMOKE") == "true":
+        import uuid
+        data=GAME/"world/data"
+        data.mkdir(parents=True,exist_ok=True)
+        for filename,version in [("zianrct-rewards.json",3),("zianrct-legendary-trials.json",2)]:
+            name=filename+".players-"+str(uuid.uuid4())
+            (data/name).mkdir()
+            (data/filename).write_text(json.dumps({"schemaVersion":version,"layout":"per-player-v1","directory":name,"cacheLimit":32}),encoding="utf-8")
     run(1)
     run(2)

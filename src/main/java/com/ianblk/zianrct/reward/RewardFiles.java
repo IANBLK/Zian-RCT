@@ -19,13 +19,17 @@ final class RewardFiles {
         } catch (RuntimeException error) { throw new IOException("JSON inválido: " + file, error); }
     }
     static void write(Path file, Object data) throws IOException {
+        writeEncoded(file,GSON.toJson(data));
+    }
+    static void writeEncoded(Path file,String encoded) throws IOException {
         Files.createDirectories(file.toAbsolutePath().getParent());
         Path temp = Files.createTempFile(file.toAbsolutePath().getParent(), "zianrct-reward-", ".tmp");
         try {
-            Files.writeString(temp, GSON.toJson(data), StandardCharsets.UTF_8);
+            Files.writeString(temp, encoded, StandardCharsets.UTF_8);
             try (var channel = FileChannel.open(temp, StandardOpenOption.WRITE)) { channel.force(true); }
             // Refuse a non-atomic replacement; no external mutation follows a failed journal write.
             Files.move(temp, file, StandardCopyOption.ATOMIC_MOVE, StandardCopyOption.REPLACE_EXISTING);
+            if(!System.getProperty("os.name").toLowerCase(java.util.Locale.ROOT).contains("windows"))try(var directory=FileChannel.open(file.toAbsolutePath().getParent(),StandardOpenOption.READ)){directory.force(true);}
         } finally { Files.deleteIfExists(temp); }
     }
 }

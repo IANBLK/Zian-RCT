@@ -201,7 +201,7 @@ public final class TrainerRewardService {
     }
     private void deliver(ServerPlayer player, UUID id) throws IOException {
         ready();
-        RewardClaim before=journal.get(id);
+        RewardClaim before=journal.get(player.getUUID(),id);
         if(before!=null && before.player().equals(player.getUUID()) && before.complete()){
             player.sendSystemMessage(Component.literal("Esta recompensa ya fue entregada. "+next(player,before.trainer())));return;
         }
@@ -235,7 +235,7 @@ public final class TrainerRewardService {
                 return RewardDelivery.Result.APPLIED;
             }
         });
-        RewardClaim result = journal.get(id);
+        RewardClaim result = journal.get(player.getUUID(),id);
         player.sendSystemMessage(Component.literal(result.complete() ? RewardMessages.delivered(name(result.trainer()),Math.max(0,result.nextEligibleAt()-System.currentTimeMillis()),result.cooldownMinutes()>0)
                 : result.review() ? "Recompensa " + id + " pendiente de revisión administrativa."
                 : "Recompensa " + id + " pendiente. Libera espacio o revisa la cartera y usa /zianrct reward claim " + id));

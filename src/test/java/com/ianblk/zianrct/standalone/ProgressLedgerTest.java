@@ -7,6 +7,7 @@ import static org.junit.jupiter.api.Assertions.*;
 
 class ProgressLedgerTest {
     @TempDir Path root;
+    @org.junit.jupiter.api.AfterEach void cleanup() throws Exception { com.ianblk.zianrct.reward.RewardTestFiles.cleanup(root); }
     @Test void victoryAndLossSurviveRestartAndDuplicateBattleCannotRepublish() throws Exception {
         Path path=root.resolve("player.json");UUID win=UUID.randomUUID(),loss=UUID.randomUUID();
         var ledger=ProgressLedger.open(path,Set.of("old_trainer"));
