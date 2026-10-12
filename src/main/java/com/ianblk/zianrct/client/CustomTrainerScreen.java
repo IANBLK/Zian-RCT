@@ -9,7 +9,7 @@ import net.minecraft.network.chat.Component;
 import net.neoforged.neoforge.network.PacketDistributor;
 import java.util.*;
 
-public final class CustomTrainerScreen extends Screen {
+public final class CustomTrainerScreen extends ResponsiveScreen {
     private final NpcEditorState state;
     private String id="zian_custom_reto",name="Guardia del reto",difficulty="NORMAL",format="GEN_9_SINGLES";
     private int skin,tab,scroll,x,y,w,h,contentHeight;
@@ -46,7 +46,7 @@ public final class CustomTrainerScreen extends Screen {
         System.arraycopy(p.species,0,species,0,6);System.arraycopy(p.levels,0,levels,0,6);System.arraycopy(p.moves,0,moves,0,6);
     }
     private void read(){reads.forEach(Runnable::run);}
-    @Override protected void init(){
+    @Override protected void init(){fitViewport(600,360);
         rows.clear();labels.clear();reads.clear();clearWidgets();
         w=Math.min(540,width-16);h=Math.min(320,height-16);x=(width-w)/2;y=(height-h)/2;
         int left=x+12,usable=w-24;
@@ -164,20 +164,20 @@ public final class CustomTrainerScreen extends Screen {
         scroll=Math.max(0,Math.min(scroll,Math.max(0,contentHeight-(h-68))));
         rows.forEach((widget,row)->{widget.setY(y+32+row-scroll);widget.visible=widget.getY()+widget.getHeight()>y+30 && widget.getY()<y+h-36;});
     }
-    @Override public void render(GuiGraphics g,int mx,int my,float p){
+    @Override protected void renderCanvas(GuiGraphics g,int mx,int my,float p){
         g.fill(0,0,width,height,0x90000000);g.fill(x,y,x+w,y+h,0xF0181818);g.fill(x,y,x+w,y+2,0xFFF2C14E);
         g.drawCenteredString(font,title,width/2,y+12,0xFFF2C14E);
-        g.enableScissor(x+6,y+30,x+w-6,y+h-36);
+        canvasScissor(g,x+6,y+30,x+w-6,y+h-36);
         for(var label:labels)g.drawString(font,font.plainSubstrByWidth(label.text,w-24),x+12,y+32+label.row-scroll,0xB8B8B8,false);
         for(var r:renderables)if(r!=save && r!=back)r.render(g,mx,my,p);
         g.disableScissor();save.render(g,mx,my,p);back.render(g,mx,my,p);
         if(!error.isBlank())g.drawString(font,font.plainSubstrByWidth(error,w-24),x+12,y+h-35,0xF2C14E,false);
     }
-    @Override public boolean mouseScrolled(double mx,double my,double horizontal,double vertical){scroll-=(int)(vertical*24);position();return true;}
-    @Override public boolean mouseClicked(double mx,double my,int button){
-        if(save.isMouseOver(mx,my)||back.isMouseOver(mx,my))return super.mouseClicked(mx,my,button);
+    @Override public boolean canvasMouseScrolled(double mx,double my,double horizontal,double vertical){scroll-=(int)(vertical*24);position();return true;}
+    @Override public boolean canvasMouseClicked(double mx,double my,int button){
+        if(save.isMouseOver(mx,my)||back.isMouseOver(mx,my))return super.canvasMouseClicked(mx,my,button);
         if(my<y+30||my>=y+h-36||mx<x||mx>=x+w)return false;
-        return super.mouseClicked(mx,my,button);
+        return super.canvasMouseClicked(mx,my,button);
     }
     @Override public boolean isPauseScreen(){return false;}
 }

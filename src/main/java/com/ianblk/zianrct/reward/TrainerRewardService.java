@@ -29,12 +29,12 @@ public final class TrainerRewardService {
         if(event.getEntity() instanceof ServerPlayer player && event.getTarget() instanceof com.ianblk.zianrct.creator.IndependentTrainerMob npc){
             if(player.isShiftKeyDown() && configured(npc.getTrainerId())){
                 event.setCanceled(true);event.setCancellationResult(net.minecraft.world.InteractionResult.SUCCESS);
-                player.sendSystemMessage(Component.literal("<Entrenador "+name(npc.getTrainerId())+"> "+next(player,npc.getTrainerId())));
+                player.sendSystemMessage(com.ianblk.zianrct.npc.NpcDialogueFormat.line(name(npc.getTrainerId()),next(player,npc.getTrainerId())));
                 return;
             }
             String reason=blocked(player,npc.getTrainerId());
             if(reason!=null){event.setCanceled(true);event.setCancellationResult(net.minecraft.world.InteractionResult.SUCCESS);
-                player.sendSystemMessage(Component.literal("<Entrenador "+name(npc.getTrainerId())+"> "+reason));}
+                player.sendSystemMessage(com.ianblk.zianrct.npc.NpcDialogueFormat.line(name(npc.getTrainerId()),reason));}
         }
     }
     public String blocked(ServerPlayer player,String trainer){

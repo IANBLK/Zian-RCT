@@ -81,9 +81,7 @@ public final class LeagueBattlePromptService {
         if (prerequisiteMessage != null) {
             pending.remove(player.getUUID());
             player.sendSystemMessage(
-                    Component.literal("<" + trainerName(trainer.getTrainerId()) + "> ")
-                            .withStyle(ChatFormatting.GOLD)
-                            .append(Component.literal(prerequisiteMessage).withStyle(ChatFormatting.WHITE))
+                    com.ianblk.zianrct.npc.NpcDialogueFormat.line(trainerName(trainer.getTrainerId()),prerequisiteMessage)
             );
             return;
         }
@@ -167,9 +165,7 @@ public final class LeagueBattlePromptService {
         String prerequisiteMessage = missingPrerequisiteMessage(player, trainer.getTrainerId());
         if (prerequisiteMessage != null) {
             player.sendSystemMessage(
-                    Component.literal("<" + trainerName(trainer.getTrainerId()) + "> ")
-                            .withStyle(ChatFormatting.GOLD)
-                            .append(Component.literal(prerequisiteMessage).withStyle(ChatFormatting.WHITE))
+                    com.ianblk.zianrct.npc.NpcDialogueFormat.line(trainerName(trainer.getTrainerId()),prerequisiteMessage)
             );
             return 0;
         }
@@ -217,9 +213,7 @@ public final class LeagueBattlePromptService {
                         .withClickEvent(new ClickEvent(ClickEvent.Action.RUN_COMMAND, "/zianrctbattle reject " + uuid))
                         .withHoverEvent(new HoverEvent(HoverEvent.Action.SHOW_TEXT, Component.literal("Rechazar el desafío"))));
 
-        Component line = Component.literal(trainerName(trainer.getTrainerId()) + ": ")
-                .withStyle(ChatFormatting.GOLD)
-                .append(Component.literal("¿Quieres comenzar este desafío?").withStyle(ChatFormatting.WHITE));
+        Component line = com.ianblk.zianrct.npc.NpcDialogueFormat.line(trainerName(trainer.getTrainerId()),"¿Quieres comenzar este desafío?");
         player.sendSystemMessage(line);
         player.sendSystemMessage(Component.empty().append(accept).append(Component.literal("  ")).append(reject));
         player.sendSystemMessage(Component.literal("[Ver disponibilidad de recompensa]").withStyle(style->style.withColor(ChatFormatting.GOLD)

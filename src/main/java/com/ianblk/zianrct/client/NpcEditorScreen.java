@@ -7,7 +7,7 @@ import net.minecraft.network.chat.Component;
 import net.neoforged.neoforge.network.PacketDistributor;
 import java.util.*;
 
-public final class NpcEditorScreen extends Screen {
+public final class NpcEditorScreen extends ResponsiveScreen {
     private final NpcEditorState state;
     private final Map<AbstractWidget,Integer> base = new LinkedHashMap<>();
     private final List<TextLine> labels = new ArrayList<>();
@@ -21,7 +21,7 @@ public final class NpcEditorScreen extends Screen {
     private record TextLine(String text, int row, int color, int maxWidth) {}
     public NpcEditorScreen(NpcEditorState state) { super(Component.literal("Zian RCT · Gestor de NPC")); this.state = state;
         repeatChoice=state.rewardMode().equals("REPEAT");if(state.mode()!=NpcEditorState.Mode.EDIT)lootTab=false; }
-    @Override protected void init() {
+    @Override protected void init() {fitViewport(600,360);
         base.clear(); labels.clear(); clearWidgets();
         w=Math.min(520,width-16);h=Math.min(290,height-16);x=(width-w)/2;y=(height-h)/2;
         int left=x+12,usable=w-24,row;
@@ -161,11 +161,11 @@ public final class NpcEditorScreen extends Screen {
         try{PacketDistributor.sendToServer(new NpcEditorAction(state.nonce(),action,value,extra));}
         catch(IllegalArgumentException e){if(minecraft.player!=null)minecraft.player.sendSystemMessage(Component.literal("Revisa el ID, la moneda y el importe."));}
     }
-    @Override public void render(GuiGraphics g,int mx,int my,float partial){
+    @Override protected void renderCanvas(GuiGraphics g,int mx,int my,float partial){
         g.fill(0,0,width,height,0x90000000);
         g.fill(x,y,x+w,y+h,0xF0181818);g.fill(x,y,x+w,y+2,0xFFF2C14E);
         g.drawCenteredString(font,title,width/2,y+12,0xFFF2C14E);
-        g.enableScissor(x+6,y+30,x+w-6,y+h-36);
+        canvasScissor(g,x+6,y+30,x+w-6,y+h-36);
         for(var label:labels)g.drawString(font,font.plainSubstrByWidth(label.text,label.maxWidth),x+12,y+32+label.row-scroll,label.color,false);
         for(var renderable:renderables)if(renderable!=close)renderable.render(g,mx,my,partial);
         g.disableScissor();
@@ -175,13 +175,13 @@ public final class NpcEditorScreen extends Screen {
         }
         if(contentHeight>h-66)g.drawString(font,"↕",x+w-12,y+h-50,0xF2C14E,false);
     }
-    @Override public boolean mouseScrolled(double mx,double my,double horizontal,double vertical){
+    @Override public boolean canvasMouseScrolled(double mx,double my,double horizontal,double vertical){
         scroll-=(int)(vertical*24);position();return true;
     }
-    @Override public boolean mouseClicked(double mx,double my,int button){
-        if(close.isMouseOver(mx,my))return super.mouseClicked(mx,my,button);
+    @Override public boolean canvasMouseClicked(double mx,double my,int button){
+        if(close.isMouseOver(mx,my))return super.canvasMouseClicked(mx,my,button);
         if(my<y+30||my>=y+h-36||mx<x||mx>=x+w)return false;
-        return super.mouseClicked(mx,my,button);
+        return super.canvasMouseClicked(mx,my,button);
     }
     @Override public boolean isPauseScreen(){return false;}
 }
