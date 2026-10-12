@@ -1,4 +1,5 @@
 package com.ianblk.zianrct.reward;
+import com.ianblk.zianrct.storage.StorageFiles;
 
 import com.google.gson.*;
 import java.io.*;
@@ -26,13 +27,13 @@ public final class RewardStorageMaintenance {
 
   static Result migrateOffline(Path path, Fault fault) throws IOException {
     path = path.toAbsolutePath().normalize();
-    if (Files.isSymbolicLink(path)) throw new IOException("Symlink ledger refused");
-    boolean existed = Files.exists(path);
-    if (existed && Files.size(path) > 16777216) throw new IOException("Oversized rewards ledger; original preserved");
-    byte[] before = existed ? Files.readAllBytes(path) : null;
+    if (StorageFiles.isSymbolicLink(path)) throw new IOException("Symlink ledger refused");
+    boolean existed = StorageFiles.exists(path);
+    if (existed && StorageFiles.size(path) > 16777216) throw new IOException("Oversized rewards ledger; original preserved");
+    byte[] before = existed ? StorageFiles.readAllBytes(path) : null;
     var original = RewardJournal.open(path);
     var claims = original.allForMaintenance(); // refuses migration of an already-sharded ledger
-    if (existed && !Arrays.equals(before, Files.readAllBytes(path)))
+    if (existed && !Arrays.equals(before, StorageFiles.readAllBytes(path)))
       throw new IOException("Ledger changed during validation");
     var model =
         existed
@@ -49,7 +50,7 @@ public final class RewardStorageMaintenance {
       groups.computeIfAbsent(owner, p -> new JsonArray()).add(entry.deepCopy());
     }
     Path parent = path.getParent();
-    Files.createDirectories(parent);
+    StorageFiles.createDirectories(parent);
     String token = UUID.randomUUID().toString();
     String name = path.getFileName() + ".players-" + token;
     Path stage = parent.resolve(name + ".staging"), directory = parent.resolve(name);
@@ -57,12 +58,12 @@ public final class RewardStorageMaintenance {
     Path marker = path.resolveSibling(path.getFileName() + ".maintenance");
     boolean ownsMarker = false;
     try {
-      Files.writeString(
+      StorageFiles.writeString(
           marker, "Offline rewards migration; directory=" + name, StandardOpenOption.CREATE_NEW);
       ownsMarker = true;
       forceFile(marker);
       forceDirectory(parent);
-      Files.createDirectory(stage);
+      StorageFiles.createDirectory(stage);
       for (var entry : groups.entrySet()) {
         var shard = new JsonObject();
         shard.addProperty("schemaVersion", 2);
@@ -75,17 +76,17 @@ public final class RewardStorageMaintenance {
       }
       forceDirectory(stage);
       if (existed) {
-        if (!Arrays.equals(before, Files.readAllBytes(path)))
+        if (!Arrays.equals(before, StorageFiles.readAllBytes(path)))
           throw new IOException("Ledger changed; server must be offline");
-        Files.write(archive, before, StandardOpenOption.CREATE_NEW);
+        StorageFiles.write(archive, before, StandardOpenOption.CREATE_NEW);
         forceFile(archive);
-        if (!Arrays.equals(before, Files.readAllBytes(archive)))
+        if (!Arrays.equals(before, StorageFiles.readAllBytes(archive)))
           throw new IOException("Backup verification failed");
-      } else if (Files.exists(path))
+      } else if (StorageFiles.exists(path))
         throw new IOException("Ledger appeared; server must be offline");
       forceDirectory(parent);
       fault.at(Point.SHARDS_PREPARED);
-      Files.move(stage, directory, StandardCopyOption.ATOMIC_MOVE);
+      StorageFiles.move(stage, directory, StandardCopyOption.ATOMIC_MOVE);
       forceDirectory(parent);
       var manifest = new JsonObject();
       manifest.addProperty("schemaVersion", 3);
@@ -97,7 +98,7 @@ public final class RewardStorageMaintenance {
     } finally {
       // Interrupted staging directories/backups are evidence, never deleted automatically.
       if (ownsMarker) {
-        Files.deleteIfExists(marker);
+        StorageFiles.deleteIfExists(marker);
         forceDirectory(parent);
       }
     }
@@ -105,14 +106,14 @@ public final class RewardStorageMaintenance {
   }
 
   private static void forceFile(Path path) throws IOException {
-    try (var file = FileChannel.open(path, StandardOpenOption.WRITE)) {
+    try (var file = StorageFiles.channel(path, StandardOpenOption.WRITE)) {
       file.force(true);
     }
   }
 
   private static void forceDirectory(Path path) throws IOException {
     if (!System.getProperty("os.name").toLowerCase(Locale.ROOT).contains("windows"))
-      try (var directory = FileChannel.open(path, StandardOpenOption.READ)) {
+      try (var directory = StorageFiles.channel(path, StandardOpenOption.READ)) {
         directory.force(true);
       }
   }

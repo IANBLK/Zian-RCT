@@ -1,4 +1,5 @@
 package com.ianblk.zianrct.standalone;
+import com.ianblk.zianrct.storage.StorageFiles;
 
 import com.ianblk.zianrct.ZianRCT;
 import com.ianblk.zianrct.creator.*;
@@ -38,7 +39,7 @@ public final class StandaloneSmoke {
                 try{Class.forName("com.gitlab.srcmc.rctmod.api.RCTMod");throw new IllegalStateException("RCTMod must be absent");}catch(ClassNotFoundException expected){}
                 if(runtime.retainedNpcTeams()!=0)throw new IllegalStateException("Trainer templates retained Pokemon teams");
                 Path marker=server.getWorldPath(LevelResource.ROOT).resolve("data/zianrct-standalone-smoke.marker");
-                boolean restart=Files.exists(marker);
+                boolean restart=StorageFiles.exists(marker);
                 doubles=npc(server,"00000000-0000-0000-0000-000000000101","zian_custom_ci",false,restart,0);
                 singles=npc(server,"00000000-0000-0000-0000-000000000102","zian_custom_ci_legendary",false,restart,3);
                 npc(server,"00000000-0000-0000-0000-000000000103","rassvet_leader_novato",true,restart,6);
@@ -50,20 +51,20 @@ public final class StandaloneSmoke {
                 @SuppressWarnings("unchecked") var players=(Map<UUID,ServerPlayer>)field.get(server.getPlayerList());
                 players.put(PLAYER,player);
                 Path old=server.getWorldPath(LevelResource.ROOT).resolve("data/rctmod.player."+PLAYER+".stat.dat");
-                if(!Files.exists(old)){
+                if(!StorageFiles.exists(old)){
                     var root=new CompoundTag();var data=new CompoundTag();var defeats=new ListTag();
                     defeats.add(StringTag.valueOf("rassvet_leader_novato"));defeats.add(StringTag.valueOf("rassvet_leader_ferrum"));data.put("progressDefeats",defeats);data.putString("currentSeries","rassvet");root.put("data",data);NbtIo.writeCompressed(root,old);
                 }
-                byte[] source=Files.readAllBytes(old);var progress=runtime.getData(player);
+                byte[] source=StorageFiles.readAllBytes(old);var progress=runtime.getData(player);
                 previousBoss=progress.getDefeatedTrainerIds().contains("zian_custom_ci");previousGuardian=progress.getDefeatedTrainerIds().contains("zian_custom_ci_legendary");
-                if(progress.getLevelCap()!=30 || !Arrays.equals(source,Files.readAllBytes(old)))throw new IllegalStateException("Legacy progress migration failed");
+                if(progress.getLevelCap()!=30 || !Arrays.equals(source,StorageFiles.readAllBytes(old)))throw new IllegalStateException("Legacy progress migration failed");
                 var party=Cobblemon.INSTANCE.getStorage().getParty(player);party.clearParty();
                 for(int i=0;i<3;i++)party.add(PokemonProperties.Companion.parse("mewtwo level=10 moves=psychic,shadowball,swift,recover").create(player));
                 if(!runtime.start(doubles,player))throw new IllegalStateException("Native doubles battle did not start");
                 battle=runtime.api().getBattleManager().getStates().iterator().next().getBattle().getBattleId();
                 if(!doubles.isInBattle())throw new IllegalStateException("NPC battle association missing");
                 ExperienceCapsSmoke.verify(server,runtime.api().getBattleManager().getState(battle).getBattle());
-                Files.writeString(marker,"Own NPC persistence and legacy migration fixture\n");
+                StorageFiles.writeString(marker,"Own NPC persistence and legacy migration fixture\n");
                 ZianRCT.LOGGER.info("Zian RCT standalone smoke: native doubles started; NPC {}",restart?"restart persistence verified":"NBT fixture created");
                 phase=1;ticks=0;
             }else if(phase==1 && ++ticks>40){runtime.api().getBattleManager().end(battle,true);phase=2;ticks=0;}

@@ -1,4 +1,5 @@
 package com.ianblk.zianrct.legendary;
+import com.ianblk.zianrct.storage.StorageFiles;
 
 import com.google.gson.*;
 import java.io.*;
@@ -16,16 +17,16 @@ final class ShardedTrialJournal extends TrialJournal {
     String name=model.get("directory").getAsString(),prefix=path.getFileName()+".players-";
     if(!name.startsWith(prefix) || !UUID.fromString(name.substring(prefix.length())).toString().equals(name.substring(prefix.length())))throw new IOException("Invalid trial directory");
     directory=manifest.getParent().resolve(name);limit=model.get("cacheLimit").getAsBigDecimal().intValueExact();
-    if(limit<1 || limit>64 || !Files.isDirectory(directory) || Files.isSymbolicLink(directory))throw new IOException("Invalid trial cache/directory");
+    if(limit<1 || limit>64 || !StorageFiles.isDirectory(directory) || StorageFiles.isSymbolicLink(directory))throw new IOException("Invalid trial cache/directory");
   }
   private TrialJournal owner(UUID player){
-    if(Files.exists(manifest.resolveSibling(manifest.getFileName()+".maintenance")))throw new IllegalStateException("Trial maintenance in progress");
+    if(StorageFiles.exists(manifest.resolveSibling(manifest.getFileName()+".maintenance")))throw new IllegalStateException("Trial maintenance in progress");
     var old=cache.get(player);if(old!=null)return old;
     try {
       Path file=directory.resolve(player+".json");
-      if(Files.isSymbolicLink(file))throw new IOException("Trial symlink refused");
-      if(Files.exists(file))try(var reader=Files.newBufferedReader(file)){
-        if(Files.size(file)>16777216 || JsonParser.parseReader(reader).getAsJsonObject().get("schemaVersion").getAsInt()!=1)throw new IOException("Invalid owner trial schema");
+      if(StorageFiles.isSymbolicLink(file))throw new IOException("Trial symlink refused");
+      if(StorageFiles.exists(file))try(var reader=StorageFiles.newBufferedReader(file)){
+        if(StorageFiles.size(file)>16777216 || JsonParser.parseReader(reader).getAsJsonObject().get("schemaVersion").getAsInt()!=1)throw new IOException("Invalid owner trial schema");
       }
       var loaded=TrialJournal.open(file);
       if(loaded.all().stream().anyMatch(e->!player.equals(e.player())))throw new IOException("Trial belongs to another player");
@@ -36,7 +37,7 @@ final class ShardedTrialJournal extends TrialJournal {
   @Override public synchronized List<Entry> forPlayer(UUID player){return owner(player).forPlayer(player);}
   @Override public synchronized List<Entry> all(){
     var result=new ArrayList<Entry>();
-    try(var files=Files.list(directory)){
+    try(var files=StorageFiles.list(directory)){
       for(var file:files.filter(p->p.getFileName().toString().endsWith(".json")).toList()){
         String name=file.getFileName().toString();UUID player=UUID.fromString(name.substring(0,name.length()-5));
         result.addAll(owner(player).forPlayer(player));

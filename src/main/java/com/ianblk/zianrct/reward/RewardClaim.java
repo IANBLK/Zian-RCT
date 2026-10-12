@@ -4,7 +4,8 @@ import java.util.List;
 import java.util.UUID;
 
 public record RewardClaim(UUID id, UUID player, String trainer, long created, List<Part> parts,
-                          long cycle, long cooldownMinutes, UUID battle) {
+                          long cycle, long cooldownMinutes, UUID battle, boolean retired) {
+    public RewardClaim(UUID id,UUID player,String trainer,long created,List<Part> parts,long cycle,long cooldownMinutes,UUID battle){this(id,player,trainer,created,parts,cycle,cooldownMinutes,battle,false);}
     public RewardClaim(UUID id,UUID player,String trainer,long created,List<Part> parts){this(id,player,trainer,created,parts,0,0,null);}
     public long nextEligibleAt(){return Math.addExact(created,Math.multiplyExact(cooldownMinutes,60000L));}
     public RewardClaim {
@@ -13,7 +14,7 @@ public record RewardClaim(UUID id, UUID player, String trainer, long created, Li
         if (id == null || player == null || created < 0 || cycle < 0 || cooldownMinutes < 0 || cooldownMinutes > 43200) throw new IllegalArgumentException("Reclamación inválida");
         TrainerRewardConfig.validId(trainer);
         parts = List.copyOf(parts);
-        if (parts.isEmpty() || parts.size() > 9) throw new IllegalArgumentException("Componentes inválidos");
+        if ((!retired && parts.isEmpty()) || parts.size() > 9 || retired && !parts.isEmpty()) throw new IllegalArgumentException("Componentes inválidos");
     }
     public boolean complete() { return parts.stream().allMatch(p -> p.phase() == Phase.DELIVERED); }
     public boolean review() { return parts.stream().anyMatch(p -> p.phase() == Phase.APPLYING || p.phase() == Phase.REVIEW_REQUIRED); }

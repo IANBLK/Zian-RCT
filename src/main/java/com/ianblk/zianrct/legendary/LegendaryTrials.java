@@ -166,9 +166,11 @@ public final class LegendaryTrials {
         if(!com.ianblk.zianrct.standalone.StandaloneRuntime.getInstance().getTrainerManager().isValidId(trainer))return;
         try{
             if(smokePlayer==null){
-                smokePlayer=new ServerPlayer(server,server.overworld(),new com.mojang.authlib.GameProfile(UUID.randomUUID(),"ZianTrialSmoke"),net.minecraft.server.level.ClientInformation.createDefault()){
-                    @Override public void sendSystemMessage(Component message){}
-                };
+                if(!"127.0.0.1".equals(server.getLocalIp()))throw new IllegalStateException("Smoke requires an isolated loopback server");
+                smokePlayer=net.neoforged.neoforge.common.util.FakePlayerFactory.get(server.overworld(),new com.mojang.authlib.GameProfile(UUID.randomUUID(),"ZianTrialSmoke"));
+                // Match native battle fixtures: Cobblemon resolves online owners through this lookup.
+                var field=net.minecraft.server.players.PlayerList.class.getDeclaredField("playersByUUID");field.setAccessible(true);
+                @SuppressWarnings("unchecked") var players=(Map<UUID,ServerPlayer>)field.get(server.getPlayerList());players.put(smokePlayer.getUUID(),smokePlayer);
                 won(smokePlayer,boss,UUID.randomUUID());won(smokePlayer,trainer,UUID.randomUUID());smokeBegan=System.currentTimeMillis();
             }
             var entry=journal.get(smokePlayer.getUUID(),trainer);

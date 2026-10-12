@@ -1,4 +1,5 @@
 package com.ianblk.zianrct.standalone;
+import com.ianblk.zianrct.storage.StorageFiles;
 
 import com.google.gson.*;
 import java.io.IOException;
@@ -22,12 +23,12 @@ public final class ProgressLedger {
         return open(path,imported,!imported.isEmpty());
     }
     public static ProgressLedger open(Path path,Set<String> imported,boolean active) throws IOException {
-        if(!Files.exists(path)){
+        if(!StorageFiles.exists(path)){
             var ledger=new ProgressLedger(path,imported,Map.of(),Set.of(),active);
             ledger.write(ledger.defeated,ledger.losses,ledger.battles,active,ledger.wins);return ledger;
         }
-        if(Files.size(path)>8*1024*1024)throw new IOException("Registro de progreso demasiado grande");
-        try(var reader=Files.newBufferedReader(path)){
+        if(StorageFiles.size(path)>8*1024*1024)throw new IOException("Registro de progreso demasiado grande");
+        try(var reader=StorageFiles.newBufferedReader(path)){
             var root=JsonParser.parseReader(reader).getAsJsonObject();
             if(root.get("schemaVersion").getAsInt()!=1)throw new IOException("Versión de progreso desconocida");
             Set<String> defeats=new LinkedHashSet<>();Map<String,Integer> losses=new LinkedHashMap<>();Set<UUID> battles=new LinkedHashSet<>();
@@ -65,12 +66,12 @@ public final class ProgressLedger {
     private void write(Set<String> defeats,Map<String,Integer> losses,Set<UUID> battles,boolean active,Map<String,Integer> wins) throws IOException {
         var root=new JsonObject();root.addProperty("schemaVersion",1);root.addProperty("leagueActive",active);root.add("defeated",GSON.toJsonTree(defeats));root.add("losses",GSON.toJsonTree(losses));root.add("wins",GSON.toJsonTree(wins));root.add("battles",GSON.toJsonTree(battles));
         String serialized=GSON.toJson(root);if(serialized.getBytes(java.nio.charset.StandardCharsets.UTF_8).length>8*1024*1024)throw new IOException("Registro de progreso demasiado grande");
-        Files.createDirectories(path.toAbsolutePath().getParent());
-        Path temporary=Files.createTempFile(path.toAbsolutePath().getParent(),"zian-progress-",".tmp");
+        StorageFiles.createDirectories(path.toAbsolutePath().getParent());
+        Path temporary=StorageFiles.createTempFile(path.toAbsolutePath().getParent(),"zian-progress-",".tmp");
         try{
-            Files.writeString(temporary,serialized);
-            try(var channel=FileChannel.open(temporary,StandardOpenOption.WRITE)){channel.force(true);}
-            Files.move(temporary,path,StandardCopyOption.ATOMIC_MOVE,StandardCopyOption.REPLACE_EXISTING);
-        }finally{Files.deleteIfExists(temporary);}
+            StorageFiles.writeString(temporary,serialized);
+            try(var channel=StorageFiles.channel(temporary,StandardOpenOption.WRITE)){channel.force(true);}
+            StorageFiles.move(temporary,path,StandardCopyOption.ATOMIC_MOVE,StandardCopyOption.REPLACE_EXISTING);
+        }finally{StorageFiles.deleteIfExists(temporary);}
     }
 }

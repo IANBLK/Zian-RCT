@@ -1,4 +1,5 @@
 package com.ianblk.zianrct.reward;
+import com.ianblk.zianrct.storage.StorageFiles;
 
 import com.google.gson.*;
 import java.io.IOException;
@@ -10,7 +11,7 @@ public final class TrainerRewardConfig {
     private Model model;
     private TrainerRewardConfig(Path path, Model model) { this.path = path; this.model = model; }
     public static TrainerRewardConfig open(Path path) throws IOException {
-        if (!Files.exists(path)) {
+        if (!StorageFiles.exists(path)) {
             Model initial = new Model(2, true, Map.of());
             RewardFiles.write(path, initial);
             return new TrainerRewardConfig(path, initial);

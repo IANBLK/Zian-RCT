@@ -1,4 +1,5 @@
 package com.ianblk.zianrct.reward;
+import com.ianblk.zianrct.storage.StorageFiles;
 
 import com.ianblk.zianrct.standalone.StandaloneRuntime;
 import com.ianblk.zianrct.ZianRCT;

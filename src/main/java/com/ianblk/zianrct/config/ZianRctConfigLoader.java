@@ -1,4 +1,5 @@
 package com.ianblk.zianrct.config;
+import com.ianblk.zianrct.storage.StorageFiles;
 
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
@@ -12,7 +13,7 @@ import java.io.IOException;
 import java.io.Reader;
 import java.io.Writer;
 import java.nio.file.AtomicMoveNotSupportedException;
-import java.nio.file.Files;
+
 import java.nio.file.Path;
 import java.nio.file.StandardCopyOption;
 import java.util.ArrayList;
@@ -45,7 +46,7 @@ public final class ZianRctConfigLoader {
     }
 
     public static ZianRctConfig loadOrCreate(Path configPath) throws IOException {
-        if (Files.notExists(configPath)) {
+        if (StorageFiles.notExists(configPath)) {
             ZianRctConfig defaults = ZianRctConfig.defaults();
             defaults.validateOrThrow();
             write(configPath, defaults);
@@ -55,11 +56,11 @@ public final class ZianRctConfigLoader {
     }
 
     public static ZianRctConfig readExisting(Path configPath) throws IOException {
-        if (Files.notExists(configPath)) {
+        if (StorageFiles.notExists(configPath)) {
             throw new IOException("El archivo de configuración no existe: " + configPath);
         }
 
-        try (Reader reader = Files.newBufferedReader(configPath)) {
+        try (Reader reader = StorageFiles.newBufferedReader(configPath)) {
             JsonElement element = JsonParser.parseReader(reader);
             if (element == null || element.isJsonNull()) {
                 throw new ConfigValidationException(List.of("El archivo de configuración está vacío"));
@@ -89,23 +90,23 @@ public final class ZianRctConfigLoader {
 
         Path parent = configPath.toAbsolutePath().getParent();
         if (parent != null) {
-            Files.createDirectories(parent);
+            StorageFiles.createDirectories(parent);
         }
 
         Path temporary = configPath.resolveSibling(configPath.getFileName() + ".tmp");
-        try (Writer writer = Files.newBufferedWriter(temporary)) {
+        try (Writer writer = StorageFiles.newBufferedWriter(temporary)) {
             GSON.toJson(config, writer);
         }
 
         try {
-            Files.move(
+            StorageFiles.move(
                     temporary,
                     configPath,
                     StandardCopyOption.REPLACE_EXISTING,
                     StandardCopyOption.ATOMIC_MOVE
             );
         } catch (AtomicMoveNotSupportedException exception) {
-            Files.move(temporary, configPath, StandardCopyOption.REPLACE_EXISTING);
+            StorageFiles.move(temporary, configPath, StandardCopyOption.REPLACE_EXISTING);
         }
     }
 

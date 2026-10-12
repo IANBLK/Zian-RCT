@@ -1,4 +1,5 @@
 package com.ianblk.zianrct.standalone;
+import com.ianblk.zianrct.storage.StorageFiles;
 
 import com.gitlab.srcmc.rctapi.api.RCTApi;
 import com.gitlab.srcmc.rctapi.api.battle.BattleState;
@@ -67,7 +68,7 @@ public final class StandaloneRuntime {
         return progress.computeIfAbsent(player.getUUID(),uuid->{
             Path path=server.getWorldPath(LevelResource.ROOT).resolve("data/zianrct-progress/"+uuid+".json");
             try{
-                Set<String> imported=Files.exists(path)?Set.of():legacyProgress(target);
+                Set<String> imported=StorageFiles.exists(path)?Set.of():legacyProgress(target);
                 boolean league=ConfigState.current().activeProfileConfig().chain().stream().anyMatch(e->imported.contains(e.trainer()));
                 return new PlayerProgress(ProgressLedger.open(path,imported,league));
             }
@@ -78,7 +79,7 @@ public final class StandaloneRuntime {
         Set<String> result=new LinkedHashSet<>();
         for(var level:server.getAllLevels()){
             Path file=net.minecraft.world.level.dimension.DimensionType.getStorageFolder(level.dimension(),server.getWorldPath(LevelResource.ROOT)).resolve("data/rctmod.player."+player.getUUID()+".stat.dat");
-            if(!Files.exists(file))continue;
+            if(!StorageFiles.exists(file))continue;
             var root=NbtIo.readCompressed(file,NbtAccounter.create(8L*1024*1024));
             if(!root.contains("data",Tag.TAG_COMPOUND) || !root.getCompound("data").contains("progressDefeats",Tag.TAG_LIST))
                 throw new java.io.IOException("El progreso anterior de RCT no tiene un formato reconocido");

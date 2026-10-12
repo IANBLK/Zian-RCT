@@ -1,4 +1,5 @@
 package com.ianblk.zianrct.medal;
+import com.ianblk.zianrct.storage.StorageFiles;
 
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
@@ -8,7 +9,7 @@ import java.io.IOException;
 import java.io.Reader;
 import java.io.Writer;
 import java.nio.file.AtomicMoveNotSupportedException;
-import java.nio.file.Files;
+
 import java.nio.file.Path;
 import java.nio.file.StandardCopyOption;
 import java.nio.file.StandardOpenOption;
@@ -35,11 +36,11 @@ public final class MedalStore {
     }
 
     public static MedalStore open(Path file) throws IOException {
-        if (Files.notExists(file)) {
+        if (StorageFiles.notExists(file)) {
             return new MedalStore(file, new MedalLedger());
         }
 
-        try (Reader reader = Files.newBufferedReader(file)) {
+        try (Reader reader = StorageFiles.newBufferedReader(file)) {
             FileModel model = GSON.fromJson(reader, FileModel.class);
             if (model == null) {
                 throw new IOException("El archivo de medallas está vacío: " + file);
@@ -117,7 +118,7 @@ public final class MedalStore {
     private void write(MedalLedger candidate) throws IOException {
         Path parent = file.toAbsolutePath().getParent();
         if (parent != null) {
-            Files.createDirectories(parent);
+            StorageFiles.createDirectories(parent);
         }
 
         List<PlayerModel> players = new ArrayList<>();
@@ -127,22 +128,22 @@ public final class MedalStore {
         FileModel model = new FileModel(SCHEMA_VERSION, players);
 
         Path temporary = file.resolveSibling(file.getFileName() + ".tmp");
-        try (Writer writer = Files.newBufferedWriter(temporary)) {
+        try (Writer writer = StorageFiles.newBufferedWriter(temporary)) {
             GSON.toJson(model, writer);
         }
-        try (FileChannel channel = FileChannel.open(temporary, StandardOpenOption.WRITE)) {
+        try (FileChannel channel = StorageFiles.channel(temporary, StandardOpenOption.WRITE)) {
             channel.force(true);
         }
 
         try {
-            Files.move(
+            StorageFiles.move(
                     temporary,
                     file,
                     StandardCopyOption.REPLACE_EXISTING,
                     StandardCopyOption.ATOMIC_MOVE
             );
         } catch (AtomicMoveNotSupportedException exception) {
-            Files.move(temporary, file, StandardCopyOption.REPLACE_EXISTING);
+            StorageFiles.move(temporary, file, StandardCopyOption.REPLACE_EXISTING);
         }
     }
 

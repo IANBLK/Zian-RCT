@@ -1,4 +1,5 @@
 package com.ianblk.zianrct.reward;
+import com.ianblk.zianrct.storage.StorageFiles;
 
 import com.google.gson.*;
 import java.io.*;
@@ -26,7 +27,7 @@ final class ShardedRewardJournal extends RewardJournal {
       throw new IOException("Invalid rewards directory");
     directory = manifest.getParent().resolve(name);
     limit = model.get("cacheLimit").getAsBigDecimal().intValueExact();
-    if (limit < 1 || limit > 64 || !Files.isDirectory(directory) || Files.isSymbolicLink(directory))
+    if (limit < 1 || limit > 64 || !StorageFiles.isDirectory(directory) || StorageFiles.isSymbolicLink(directory))
       throw new IOException("Invalid rewards cache/directory");
   }
 
@@ -36,8 +37,8 @@ final class ShardedRewardJournal extends RewardJournal {
       var existing = cache.get(player);
       if (existing != null) return existing;
       Path file = directory.resolve(player + ".json");
-      if (Files.isSymbolicLink(file)) throw new IOException("Symlink reward shard refused");
-      if (Files.exists(file)) {
+      if (StorageFiles.isSymbolicLink(file)) throw new IOException("Symlink reward shard refused");
+      if (StorageFiles.exists(file)) {
         var json = RewardFiles.read(file, 16777216).getAsJsonObject();
         int version = json.get("schemaVersion").getAsBigDecimal().intValueExact();
         if (version != 1 && version != 2)
@@ -87,7 +88,7 @@ final class ShardedRewardJournal extends RewardJournal {
 
   @Override
   synchronized void ensureHealthy() throws IOException {
-    if (Files.exists(manifest.resolveSibling(manifest.getFileName() + ".maintenance")))
+    if (StorageFiles.exists(manifest.resolveSibling(manifest.getFileName() + ".maintenance")))
       throw new IOException("Reward storage maintenance in progress");
   }
 

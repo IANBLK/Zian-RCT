@@ -46,7 +46,7 @@ def wait_for(process, log, text, timeout=240, offset=0):
     while time.monotonic() < deadline:
         content = log.read_text(encoding="utf-8", errors="replace") if log.exists() else ""
         tail = content[offset:]
-        if "standalone smoke FAILED" in tail or "Encountered an unexpected exception" in tail:
+        if "legendary storage smoke failed" in tail or "standalone smoke FAILED" in tail or "Encountered an unexpected exception" in tail:
             raise RuntimeError(tail[-12000:])
         if text in tail:
             return
@@ -102,7 +102,7 @@ def run(pass_number):
     print(f"Standalone server pass {pass_number} completed")
 
 if __name__ == "__main__":
-    if os.environ.get("ZIAN_STORAGE_SHARDED_SMOKE") == "true" and GAME.exists():
+    if (os.environ.get("ZIAN_STORAGE_SHARDED_SMOKE") == "true" or os.environ.get("ZIAN_STORAGE_SQLITE_SMOKE") == "true") and GAME.exists():
         import uuid
         expected=(ROOT/"build/standalone-smoke").resolve()
         if GAME.resolve()!=expected or not expected.is_relative_to((ROOT/"build").resolve()):
@@ -121,5 +121,11 @@ if __name__ == "__main__":
             name=filename+".players-"+str(uuid.uuid4())
             (data/name).mkdir()
             (data/filename).write_text(json.dumps({"schemaVersion":version,"layout":"per-player-v1","directory":name,"cacheLimit":32}),encoding="utf-8")
+    if os.environ.get("ZIAN_STORAGE_SQLITE_SMOKE") == "true":
+        world=GAME/"world"
+        world.mkdir(parents=True,exist_ok=True)
+        java=Path(os.environ["JAVA_HOME"])/"bin"/("java.exe" if os.name=="nt" else "java")
+        classpath=os.pathsep.join([str(ROOT/"build/classes/java/main"),str(ROOT/"build/resources/main")])
+        subprocess.run([str(java),"-cp",classpath,"com.ianblk.zianrct.storage.StorageMaintenance","migrate-offline",str(world)],check=True)
     run(1)
     run(2)

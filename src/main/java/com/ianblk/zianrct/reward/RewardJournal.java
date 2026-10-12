@@ -1,4 +1,5 @@
 package com.ianblk.zianrct.reward;
+import com.ianblk.zianrct.storage.StorageFiles;
 
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
@@ -10,6 +11,7 @@ public class RewardJournal {
   private final Path path;
   private final Map<UUID, RewardClaim> claims = new LinkedHashMap<>();
   private final Map<String, RewardClaim> latest = new HashMap<>();
+  private final Map<String, RewardClaim> retiredLatest = new HashMap<>();
   private final Map<UUID, List<RewardClaim>> byPlayer = new HashMap<>();
   private final Set<String> recordedBattles = new HashSet<>();
   private boolean healthy = true;
@@ -19,10 +21,10 @@ public class RewardJournal {
   }
 
   public static RewardJournal open(Path path) throws IOException {
-    if (Files.exists(path.resolveSibling(path.getFileName() + ".maintenance")))
+    if (StorageFiles.exists(path.resolveSibling(path.getFileName() + ".maintenance")))
       throw new IOException("Reward storage maintenance in progress");
     RewardJournal journal = new RewardJournal(path);
-    if (!Files.exists(path)) return journal;
+    if (!StorageFiles.exists(path)) return journal;
     try {
       var json = RewardFiles.read(path, 16777216).getAsJsonObject();
       int version = json.get("schemaVersion").getAsBigDecimal().intValueExact();
@@ -55,7 +57,7 @@ public class RewardJournal {
             && !claim.complete()) throw new IllegalArgumentException("Ciclo anterior sin resolver");
       for (var entry : journal.latest.entrySet()) {
         long count = counts.get(entry.getKey());
-        if (count != entry.getValue().cycle() + 1)
+        if (count + StorageFiles.retiredCycles(path,entry.getValue().player(),entry.getValue().trainer()) != journal.latest(entry.getValue().player(),entry.getValue().trainer()).cycle() + 1)
           throw new IllegalArgumentException("Historial de ciclos incompleto");
       }
       return journal;
@@ -92,7 +94,8 @@ public class RewardJournal {
   }
 
   public synchronized RewardClaim latest(UUID player, String trainer) {
-    return latest.get(key(player, trainer));
+    var active=latest.get(key(player,trainer));
+    try{String source=key(player,trainer);if(!retiredLatest.containsKey(source))retiredLatest.put(source,archived(StorageFiles.retiredReward(path,player,trainer,null)));var stored=retiredLatest.get(source);return stored!=null&&(active==null||stored.cycle()>active.cycle())?stored:active;}catch(IOException error){healthy=false;throw new java.io.UncheckedIOException(error);}
   }
 
   public synchronized long remaining(
@@ -117,7 +120,7 @@ public class RewardJournal {
     if (remaining(player, trainer, reward, now) != 0) return false;
     if (reward.mode() == RewardDefinition.Mode.REPEAT && battle == null)
       throw new IllegalArgumentException("Falta el identificador del combate");
-    if (battle != null && recordedBattles.contains(key(player, trainer) + ":" + battle))
+    if (battle != null && (recordedBattles.contains(key(player, trainer) + ":" + battle) || StorageFiles.retiredBattle(path,player,trainer,battle)))
       return false;
     long cycle = last == null ? 0 : Math.addExact(last.cycle(), 1);
     UUID id = id(player, trainer, cycle);
@@ -160,8 +163,15 @@ public class RewardJournal {
     return List.copyOf(claims.values());
   }
 
+  private static RewardClaim archived(StorageFiles.RewardReceipt receipt) {
+    if(receipt==null)return null;
+    if(!receipt.id().equals(id(receipt.player(),receipt.trainer(),receipt.cycle())))throw new IllegalArgumentException("Archived reward ID mismatch");
+    return new RewardClaim(receipt.id(),receipt.player(),receipt.trainer(),receipt.created(),List.of(),receipt.cycle(),receipt.cooldown(),receipt.battle(),true);
+  }
+
   public synchronized RewardClaim get(UUID id) {
-    return claims.get(id);
+    var active=claims.get(id);if(active!=null)return active;
+    try{return archived(StorageFiles.retiredReward(path,null,null,id));}catch(IOException error){healthy=false;throw new java.io.UncheckedIOException(error);}
   }
 
   public synchronized List<RewardClaim> forPlayer(UUID player) {
@@ -225,7 +235,7 @@ public class RewardJournal {
   }
 
   synchronized void ensureHealthy() throws IOException {
-    if (Files.exists(path.resolveSibling(path.getFileName() + ".maintenance")))
+    if (StorageFiles.exists(path.resolveSibling(path.getFileName() + ".maintenance")))
       throw new IOException("Reward storage maintenance in progress");
     if (!healthy)
       throw new IOException(

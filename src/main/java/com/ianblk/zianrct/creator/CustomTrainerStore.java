@@ -1,4 +1,5 @@
 package com.ianblk.zianrct.creator;
+import com.ianblk.zianrct.storage.StorageFiles;
 import com.google.gson.*;
 import java.nio.file.*;
 import java.io.IOException;
@@ -12,9 +13,9 @@ public final class CustomTrainerStore {
     public static void boot(Path configDir) throws IOException {
         Path candidatePath=configDir.resolve("zianrct-custom-trainers.json");
         Map<String,CustomTrainer> parsed=new LinkedHashMap<>();
-        if(Files.exists(candidatePath)){
-            if(Files.size(candidatePath)>1048576)throw new IOException("Archivo de entrenadores demasiado grande.");
-            try(var reader=Files.newBufferedReader(candidatePath)){
+        if(StorageFiles.exists(candidatePath)){
+            if(StorageFiles.size(candidatePath)>1048576)throw new IOException("Archivo de entrenadores demasiado grande.");
+            try(var reader=StorageFiles.newBufferedReader(candidatePath)){
                 var json=JsonParser.parseReader(reader).getAsJsonObject();
                 if(!json.keySet().equals(Set.of("schemaVersion","trainers")) || json.get("schemaVersion").getAsBigDecimal().intValueExact()!=1)
                     throw new IllegalArgumentException("Esquema inválido");
@@ -37,13 +38,13 @@ public final class CustomTrainerStore {
         var json=new JsonObject();json.addProperty("schemaVersion",1);json.add("trainers",GSON.toJsonTree(next.values()));
         String content=GSON.toJson(json);
         if(content.getBytes(java.nio.charset.StandardCharsets.UTF_8).length>1048576)throw new IOException("Archivo demasiado grande.");
-        Path temp=Files.createTempFile(path.getParent(),"zianrct-creator-",".tmp");
+        Path temp=StorageFiles.createTempFile(path.getParent(),"zianrct-creator-",".tmp");
         try{
-            Files.writeString(temp,content);
+            StorageFiles.writeString(temp,content);
             try(var channel=java.nio.channels.FileChannel.open(temp,StandardOpenOption.WRITE)){channel.force(true);}
-            Files.move(temp,path,StandardCopyOption.ATOMIC_MOVE,StandardCopyOption.REPLACE_EXISTING);
+            StorageFiles.move(temp,path,StandardCopyOption.ATOMIC_MOVE,StandardCopyOption.REPLACE_EXISTING);
             definitions=Map.copyOf(next);
-        }finally{Files.deleteIfExists(temp);}
+        }finally{StorageFiles.deleteIfExists(temp);}
     }
     public static CustomTrainer decode(String json){
         if(json==null || json.length()>16384)throw new IllegalArgumentException("Definición demasiado grande");
