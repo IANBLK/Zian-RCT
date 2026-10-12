@@ -112,7 +112,7 @@ public final class NpcEditorService {
         if (!allowed(player,"admin.npc.edit")) return;
         var session = sessions.take(player.getUUID(),UUID.fromString(action.nonce()),System.currentTimeMillis());
         if (session == null) {
-            player.sendSystemMessage(Component.literal("Sesión caducada o petición repetida. Abre /zianrct npc de nuevo."));
+            player.sendSystemMessage(com.ianblk.zianrct.Messages.format(Component.literal("Sesión caducada o petición repetida. Abre /zianrct npc de nuevo.")));
             return;
         }
         var mode = session.mode();

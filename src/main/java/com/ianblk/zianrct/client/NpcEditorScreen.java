@@ -149,7 +149,7 @@ public final class NpcEditorScreen extends ResponsiveScreen {
     private void destructive(String action){
         if(!confirm.equals(action)){
             confirm=action;
-            if(minecraft.player!=null)minecraft.player.sendSystemMessage(Component.literal("Pulsa de nuevo para confirmar. Los premios reservados se conservan."));
+            if(minecraft.player!=null)minecraft.player.sendSystemMessage(com.ianblk.zianrct.Messages.format(Component.literal("Pulsa de nuevo para confirmar. Los premios reservados se conservan.")));
             return;
         }
         send(action,"","");
@@ -159,7 +159,7 @@ public final class NpcEditorScreen extends ResponsiveScreen {
         if(now-lastSend<600_000_000L)return;
         lastSend=now;
         try{PacketDistributor.sendToServer(new NpcEditorAction(state.nonce(),action,value,extra));}
-        catch(IllegalArgumentException e){if(minecraft.player!=null)minecraft.player.sendSystemMessage(Component.literal("Revisa el ID, la moneda y el importe."));}
+        catch(IllegalArgumentException e){if(minecraft.player!=null)minecraft.player.sendSystemMessage(com.ianblk.zianrct.Messages.format(Component.literal("Revisa el ID, la moneda y el importe.")));}
     }
     @Override protected void renderCanvas(GuiGraphics g,int mx,int my,float partial){
         g.fill(0,0,width,height,0x90000000);

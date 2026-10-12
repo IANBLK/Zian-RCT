@@ -106,7 +106,7 @@ public final class IndependentTrainerMob extends PathfinderMob implements net.mi
         if(messages!=null && !messages.isEmpty()){
             var message=messages.get(random.nextInt(messages.size()));
             if(message.isJsonPrimitive())say(player,message.getAsString());
-            else{var text=message.getAsJsonObject();if(text.has("literal"))say(player,text.get("literal").getAsString());else if(text.has("translatable"))player.sendSystemMessage(com.ianblk.zianrct.npc.NpcDialogueFormat.line(getDisplayName(),Component.translatable(text.get("translatable").getAsString())));}
+            else{var text=message.getAsJsonObject();if(text.has("literal"))say(player,text.get("literal").getAsString());else if(text.has("translatable"))player.sendSystemMessage(com.ianblk.zianrct.Messages.format(com.ianblk.zianrct.npc.NpcDialogueFormat.line(getDisplayName(),Component.translatable(text.get("translatable").getAsString()))));}
         }else say(player,switch(context){
             case "trainer_busy"->"Estoy en otro combate. Espera a que termine.";
             case "player_busy"->"Termina tu combate actual antes de retarme.";
@@ -117,5 +117,5 @@ public final class IndependentTrainerMob extends PathfinderMob implements net.mi
             default->"No puedes iniciar este desafío en este momento.";
         });
     }
-    private void say(ServerPlayer player,String text){if(!text.isBlank()){entityData.set(SPEECH,text.substring(0,Math.min(512,text.length())));speechTicks=120;player.sendSystemMessage(com.ianblk.zianrct.npc.NpcDialogueFormat.line(getDisplayName(),Component.literal(text)));}}
+    private void say(ServerPlayer player,String text){if(!text.isBlank()){entityData.set(SPEECH,text.substring(0,Math.min(512,text.length())));speechTicks=120;player.sendSystemMessage(com.ianblk.zianrct.Messages.format(com.ianblk.zianrct.npc.NpcDialogueFormat.line(getDisplayName(),Component.literal(text))));}}
 }

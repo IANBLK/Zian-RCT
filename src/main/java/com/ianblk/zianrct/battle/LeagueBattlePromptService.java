@@ -73,16 +73,16 @@ public final class LeagueBattlePromptService {
         event.setCancellationResult(InteractionResult.SUCCESS);
         if (!RctPermissions.allows(player.createCommandSourceStack(), "battle", false)) {
             pending.remove(player.getUUID());
-            player.sendSystemMessage(Component.literal("No tienes permiso para iniciar este desafío.").withStyle(ChatFormatting.RED));
+            player.sendSystemMessage(com.ianblk.zianrct.Messages.format(Component.literal("No tienes permiso para iniciar este desafío.").withStyle(ChatFormatting.RED)));
             return;
         }
 
         String prerequisiteMessage = missingPrerequisiteMessage(player, trainer.getTrainerId());
         if (prerequisiteMessage != null) {
             pending.remove(player.getUUID());
-            player.sendSystemMessage(
+            player.sendSystemMessage(com.ianblk.zianrct.Messages.format(
                     com.ianblk.zianrct.npc.NpcDialogueFormat.line(trainerName(trainer.getTrainerId()),prerequisiteMessage)
-            );
+            ));
             return;
         }
 
@@ -131,11 +131,11 @@ public final class LeagueBattlePromptService {
 
         PendingInvite invite = pending.remove(player.getUUID());
         if (invite == null) {
-            player.sendSystemMessage(Component.literal("La invitación de combate ya no está disponible.").withStyle(ChatFormatting.RED));
+            player.sendSystemMessage(com.ianblk.zianrct.Messages.format(Component.literal("La invitación de combate ya no está disponible.").withStyle(ChatFormatting.RED)));
             return 0;
         }
         if (invite.expiresAtMillis() < System.currentTimeMillis()) {
-            player.sendSystemMessage(Component.literal("La invitación de combate ha caducado.").withStyle(ChatFormatting.RED));
+            player.sendSystemMessage(com.ianblk.zianrct.Messages.format(Component.literal("La invitación de combate ha caducado.").withStyle(ChatFormatting.RED)));
             return 0;
         }
 
@@ -146,7 +146,7 @@ public final class LeagueBattlePromptService {
             return 0;
         }
         if (!invite.trainerUuid().equals(requestedTrainer)) {
-            player.sendSystemMessage(Component.literal("Esta invitación ya no corresponde al entrenador seleccionado.").withStyle(ChatFormatting.RED));
+            player.sendSystemMessage(com.ianblk.zianrct.Messages.format(Component.literal("Esta invitación ya no corresponde al entrenador seleccionado.").withStyle(ChatFormatting.RED)));
             return 0;
         }
 
@@ -154,19 +154,19 @@ public final class LeagueBattlePromptService {
         if (!(entity instanceof IndependentTrainerMob trainer)
                 || !invite.trainerId().equals(trainer.getTrainerId())
                 || !isRassvetTrainer(trainer.getTrainerId())) {
-            player.sendSystemMessage(Component.literal("El entrenador ya no está disponible.").withStyle(ChatFormatting.RED));
+            player.sendSystemMessage(com.ianblk.zianrct.Messages.format(Component.literal("El entrenador ya no está disponible.").withStyle(ChatFormatting.RED)));
             return 0;
         }
         if (player.distanceToSqr(trainer) > MAX_ACCEPT_DISTANCE_SQR) {
-            player.sendSystemMessage(Component.literal("Te alejaste demasiado del entrenador. Interactúa con él otra vez.").withStyle(ChatFormatting.RED));
+            player.sendSystemMessage(com.ianblk.zianrct.Messages.format(Component.literal("Te alejaste demasiado del entrenador. Interactúa con él otra vez.").withStyle(ChatFormatting.RED)));
             return 0;
         }
 
         String prerequisiteMessage = missingPrerequisiteMessage(player, trainer.getTrainerId());
         if (prerequisiteMessage != null) {
-            player.sendSystemMessage(
+            player.sendSystemMessage(com.ianblk.zianrct.Messages.format(
                     com.ianblk.zianrct.npc.NpcDialogueFormat.line(trainerName(trainer.getTrainerId()),prerequisiteMessage)
-            );
+            ));
             return 0;
         }
 
@@ -175,7 +175,7 @@ public final class LeagueBattlePromptService {
             return 0;
         }
 
-        player.sendSystemMessage(Component.literal("Desafío aceptado. ¡Prepárate para combatir!").withStyle(ChatFormatting.GREEN));
+        player.sendSystemMessage(com.ianblk.zianrct.Messages.format(Component.literal("Desafío aceptado. ¡Prepárate para combatir!").withStyle(ChatFormatting.GREEN)));
         trainer.startBattleWith(player);
         return 1;
     }
@@ -194,7 +194,7 @@ public final class LeagueBattlePromptService {
         }
 
         pending.remove(player.getUUID());
-        player.sendSystemMessage(Component.literal("Has rechazado el desafío. Regresa cuando estés preparado.").withStyle(ChatFormatting.GRAY));
+        player.sendSystemMessage(com.ianblk.zianrct.Messages.format(Component.literal("Has rechazado el desafío. Regresa cuando estés preparado.").withStyle(ChatFormatting.GRAY)));
         return 1;
     }
 
@@ -214,11 +214,11 @@ public final class LeagueBattlePromptService {
                         .withHoverEvent(new HoverEvent(HoverEvent.Action.SHOW_TEXT, Component.literal("Rechazar el desafío"))));
 
         Component line = com.ianblk.zianrct.npc.NpcDialogueFormat.line(trainerName(trainer.getTrainerId()),"¿Quieres comenzar este desafío?");
-        player.sendSystemMessage(line);
-        player.sendSystemMessage(Component.empty().append(accept).append(Component.literal("  ")).append(reject));
-        player.sendSystemMessage(Component.literal("[Ver disponibilidad de recompensa]").withStyle(style->style.withColor(ChatFormatting.GOLD)
-                .withClickEvent(new ClickEvent(ClickEvent.Action.RUN_COMMAND,"/zianrct reward next "+trainer.getTrainerId()))));
-        player.sendSystemMessage(Component.literal("La invitación caduca en 15 segundos.").withStyle(ChatFormatting.DARK_GRAY));
+        player.sendSystemMessage(com.ianblk.zianrct.Messages.format(line));
+        player.sendSystemMessage(com.ianblk.zianrct.Messages.format(Component.empty().append(accept).append(Component.literal("  ")).append(reject)));
+        player.sendSystemMessage(com.ianblk.zianrct.Messages.format(Component.literal("[Ver disponibilidad de recompensa]").withStyle(style->style.withColor(ChatFormatting.GOLD)
+                .withClickEvent(new ClickEvent(ClickEvent.Action.RUN_COMMAND,"/zianrct reward next "+trainer.getTrainerId())))));
+        player.sendSystemMessage(com.ianblk.zianrct.Messages.format(Component.literal("La invitación caduca en 15 segundos.").withStyle(ChatFormatting.DARK_GRAY)));
     }
 
     private static String missingPrerequisiteMessage(ServerPlayer player, String trainerId) {

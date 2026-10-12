@@ -15,7 +15,7 @@ public final class ExperienceCaps {
                     int allowed=ExperienceCapPolicy.allowed(pokemon.getLevel(),cap,pokemon.getExperience(),pokemon.getExperienceGroup().getExperience(cap),event.getExperienceYield());
                     if(pokemon.getLevel()>=cap){
                         event.cancel();
-                        player.sendSystemMessage(net.minecraft.network.chat.Component.literal(cap>=100?"Has alcanzado el nivel máximo de 100.":"Tu tope actual es nivel "+cap+". Supera el siguiente entrenador de la Liga para aumentarlo."));
+                        player.sendSystemMessage(com.ianblk.zianrct.Messages.format(net.minecraft.network.chat.Component.literal(cap>=100?"Has alcanzado el nivel máximo de 100.":"Tu tope actual es nivel "+cap+". Supera el siguiente entrenador de la Liga para aumentarlo.")));
                     }else event.setExperienceYield(allowed);
                 }catch(RuntimeException error){event.cancel();}
             });

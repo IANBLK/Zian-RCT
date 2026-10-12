@@ -29,12 +29,12 @@ public final class TrainerRewardService {
         if(event.getEntity() instanceof ServerPlayer player && event.getTarget() instanceof com.ianblk.zianrct.creator.IndependentTrainerMob npc){
             if(player.isShiftKeyDown() && configured(npc.getTrainerId())){
                 event.setCanceled(true);event.setCancellationResult(net.minecraft.world.InteractionResult.SUCCESS);
-                player.sendSystemMessage(com.ianblk.zianrct.npc.NpcDialogueFormat.line(name(npc.getTrainerId()),next(player,npc.getTrainerId())));
+                player.sendSystemMessage(com.ianblk.zianrct.Messages.format(com.ianblk.zianrct.npc.NpcDialogueFormat.line(name(npc.getTrainerId()),next(player,npc.getTrainerId()))));
                 return;
             }
             String reason=blocked(player,npc.getTrainerId());
             if(reason!=null){event.setCanceled(true);event.setCancellationResult(net.minecraft.world.InteractionResult.SUCCESS);
-                player.sendSystemMessage(com.ianblk.zianrct.npc.NpcDialogueFormat.line(name(npc.getTrainerId()),reason));}
+                player.sendSystemMessage(com.ianblk.zianrct.Messages.format(com.ianblk.zianrct.npc.NpcDialogueFormat.line(name(npc.getTrainerId()),reason)));}
         }
     }
     public String blocked(ServerPlayer player,String trainer){
@@ -117,7 +117,7 @@ public final class TrainerRewardService {
             if (definition == null || definition.empty()) return;
             // Reserve independently from medals; historical reconciliation and admin medal grants never call this.
             if (!journal.reserveAt(player.getUUID(), trainer, definition,System.currentTimeMillis(),battle)) {
-                if(definition.mode()==RewardDefinition.Mode.REPEAT)player.sendSystemMessage(Component.literal(next(player,trainer)));
+                if(definition.mode()==RewardDefinition.Mode.REPEAT)player.sendSystemMessage(com.ianblk.zianrct.Messages.format(Component.literal(next(player,trainer))));
                 return;
             }
             RewardClaim claim=journal.latest(player.getUUID(),trainer);
@@ -126,14 +126,14 @@ public final class TrainerRewardService {
             deliver(player, claim.id());
         } catch (Exception error) {
             ZianRCT.LOGGER.error("Trainer reward could not be completed for {} / {}", player.getUUID(), trainer, error);
-            player.sendSystemMessage(Component.literal("La recompensa del entrenador necesita revisión. No repitas pagos manualmente sin revisar el registro."));
+            player.sendSystemMessage(com.ianblk.zianrct.Messages.format(Component.literal("La recompensa del entrenador necesita revisión. No repitas pagos manualmente sin revisar el registro.")));
         }
     }
     public List<RewardClaim> claims(UUID player) { ready(); return journal.forPlayer(player); }
     public void notifyPending(ServerPlayer player) {
         if (journal == null) return;
         long count = journal.forPlayer(player.getUUID()).stream().filter(c -> !c.complete()).count();
-        if (count > 0) player.sendSystemMessage(Component.literal("Tienes " + count + " recompensa(s) de entrenadores pendiente(s). Usa /zianrct reward pending."));
+        if (count > 0) player.sendSystemMessage(com.ianblk.zianrct.Messages.format(Component.literal("Tienes " + count + " recompensa(s) de entrenadores pendiente(s). Usa /zianrct reward pending.")));
     }
     public Map<String, RewardDefinition> definitions() { ready(); return config.definitions(); }
     public String next(ServerPlayer player,String trainer){
@@ -204,7 +204,7 @@ public final class TrainerRewardService {
         ready();
         RewardClaim before=journal.get(player.getUUID(),id);
         if(before!=null && before.player().equals(player.getUUID()) && before.complete()){
-            player.sendSystemMessage(Component.literal("Esta recompensa ya fue entregada. "+next(player,before.trainer())));return;
+            player.sendSystemMessage(com.ianblk.zianrct.Messages.format(Component.literal("Esta recompensa ya fue entregada. "+next(player,before.trainer()))));return;
         }
         RewardDelivery.deliver(journal, player.getUUID(), id, new RewardDelivery.Port() {
             public String unavailable(RewardClaim.Part part) {
@@ -237,9 +237,9 @@ public final class TrainerRewardService {
             }
         });
         RewardClaim result = journal.get(player.getUUID(),id);
-        player.sendSystemMessage(Component.literal(result.complete() ? RewardMessages.delivered(name(result.trainer()),Math.max(0,result.nextEligibleAt()-System.currentTimeMillis()),result.cooldownMinutes()>0)
+        player.sendSystemMessage(com.ianblk.zianrct.Messages.format(Component.literal(result.complete() ? RewardMessages.delivered(name(result.trainer()),Math.max(0,result.nextEligibleAt()-System.currentTimeMillis()),result.cooldownMinutes()>0)
                 : result.review() ? "Recompensa " + id + " pendiente de revisión administrativa."
-                : "Recompensa " + id + " pendiente. Libera espacio o revisa la cartera y usa /zianrct reward claim " + id));
+                : "Recompensa " + id + " pendiente. Libera espacio o revisa la cartera y usa /zianrct reward claim " + id)));
         ZianRCT.LOGGER.info("[ZIAN-AUDIT] action=trainer_reward_claim playerUuid={} trainer={} operation={} result={}",
                 player.getUUID(), result.trainer(), id, result.complete() ? "DELIVERED" : result.review() ? "REVIEW" : "PENDING");
     }

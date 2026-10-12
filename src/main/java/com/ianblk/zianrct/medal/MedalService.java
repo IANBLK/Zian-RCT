@@ -95,7 +95,7 @@ public final class MedalService {
             if (origin == MedalOrigin.BATTLE || origin == MedalOrigin.COMMAND) {
                 String template = ConfigState.current().messages().medalObtained();
                 String message = template.replace("{medal}", definition.get().name());
-                player.sendSystemMessage(Component.literal(message));
+                player.sendSystemMessage(com.ianblk.zianrct.Messages.format(Component.literal(message)));
             }
 
             if (syncClient) {
