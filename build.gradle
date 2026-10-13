@@ -84,6 +84,8 @@ tasks.named('test', Test).configure {
     useJUnitPlatform()
 }
 
+tasks.named('jar') { from('LICENSE') { into 'META-INF' } }
+
 // Private resource: never exposes a duplicate sqlite module to NeoForge/Youer.
 configurations { sqliteBundled { transitive = false } }
 dependencies { sqliteBundled 'org.xerial:sqlite-jdbc:3.53.4.0' }
