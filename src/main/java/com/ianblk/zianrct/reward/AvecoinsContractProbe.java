@@ -11,7 +11,7 @@ import java.util.UUID;
 
 /** Read-only compatibility check; it never reads or changes a player wallet. */
 public final class AvecoinsContractProbe {
-    private static final Set<String> SUPPORTED_VERSIONS = Set.of("2.3", "2.4");
+    private static final Set<String> SUPPORTED_VERSIONS = Set.of("2.3", "2.4", "2.5");
     private AvecoinsContractProbe() {
     }
 
@@ -19,11 +19,11 @@ public final class AvecoinsContractProbe {
         try {
             var mod = ModList.get().getModContainerById("avecoins");
             if (mod.isEmpty()) {
-                return new ProbeResult(false, "AVECOINS no está instalado", List.of());
+                return new ProbeResult(false, "AVECOINS no estÃ¡ instalado", List.of());
             }
             String version = mod.get().getModInfo().getVersion().toString();
-            if (!supportedVersion(version)) {
-                return new ProbeResult(false, "AVECOINS " + version + "; se requiere 2.3 o 2.4", List.of());
+            if (!supportedVersion(version) && !AvecoinsContractFingerprint.matchesInspectedContract()) {
+                return new ProbeResult(false, "AVECOINS " + version + "; se requiere 2.3, 2.4 o 2.5", List.of());
             }
 
             Class<?> crafting = Class.forName("net.sundggs.avecoins.config.CraftingConfig");
@@ -50,7 +50,7 @@ public final class AvecoinsContractProbe {
         throws ReflectiveOperationException {
             Field managedField = crafting.getField("MANAGED_RESULTS");
             if (!Modifier.isStatic(managedField.getModifiers())) {
-                return incompatible("MANAGED_RESULTS no es estático");
+                return incompatible("MANAGED_RESULTS no es estÃ¡tico");
             }
             Object managedValue = managedField.get(null);
             if (!(managedValue instanceof Set<?> managed)

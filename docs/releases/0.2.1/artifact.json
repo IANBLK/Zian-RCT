@@ -1,0 +1,17 @@
+{
+  "name": "Zian RCT",
+  "version": "0.2.1",
+  "jar": "zianrct-0.2.1.jar",
+  "sha256": "d12ef4a94468fb24cf484421ae68260fb303f18e5e42d55acd126af251b04a9d",
+  "bytes": 14363916,
+  "tests": {
+    "tests": 135,
+    "failures": 0,
+    "errors": 0,
+    "skipped": 0
+  },
+  "validation": "Uses the already-tested release artifact; this repository sync changes documentation only in addition to the previously validated pending code fixes.",
+  "clientAndServer": true,
+  "minecraft": "1.21.1",
+  "java": 21
+}

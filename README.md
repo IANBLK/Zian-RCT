@@ -4,7 +4,7 @@ Entrenadores propios, NPC, progresión, medallas y recompensas sobre RCTAPI para
 
 ## Estado
 
-Beta 0.2.0-beta.1 independiente de RCTMod. Antes de actualizar un mundo existente, consulta [la migración y las condiciones de licencia](docs/RCTAPI-STANDALONE.md). Usa el mismo JAR en cliente y servidor. La beta 0.1.0-beta.15 permanece en su rama anterior.
+**0.2.1 Release**, implementación independiente de RCTMod. Antes de actualizar un mundo existente, consulta [la migración y las condiciones de licencia](docs/RCTAPI-STANDALONE.md). Usa el mismo JAR en cliente y servidor. La beta 0.1.0-beta.15 permanece en su rama anterior.
 
 Incluye configuración validada, NPC/editor propios, equipos automáticos, combates individuales y dobles, progresión y medallas persistentes, loot único/repetible y pruebas legendarias con entrega registrada.
 
@@ -12,11 +12,15 @@ Incluye configuración validada, NPC/editor propios, equipos automáticos, comba
 
 - Minecraft 1.21.1
 - NeoForge 21.1.x
-- Cobblemon 1.8.1
+- Cobblemon 1.8.2
 - RCTMod debe estar ausente en esta rama.
-- Radical Cobblemon Trainers API 0.16.1-beta (`rctapi`)
+- Radical Cobblemon Trainers API 0.16.2-beta (`rctapi`)
 - Architectury 13.0.11
 - Kotlin for Forge 5.12.0
+
+AVECOINS 2.3, 2.4 y 2.5 son opcionales para recompensas económicas. AVECOINS 2.3, 2.4 y 2.5 están inspeccionados. Una versión posterior solo se admite si las tres clases económicas verificadas conservan exactamente sus huellas revisadas y pasan las comprobaciones de métodos y capacidad. Un cambio real de contrato requiere revisión; no se promete compatibilidad automática con cualquier actualización. Consulta [compatibilidad económica](docs/AVECOINS25_COMPATIBILITY.md).
+
+Descarga el JAR en [Releases](https://github.com/IANBLK/Zian-RCT/releases/latest) y usa la misma versión en cliente y servidor.
 
 ## Comandos
 
