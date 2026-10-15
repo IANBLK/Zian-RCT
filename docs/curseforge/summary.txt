@@ -1,1 +1,1 @@
-Create custom Cobblemon trainers, manage persistent NPCs, collect medals, configure loot, and unlock unique legendary rewards through in-game editors.
+Create Cobblemon trainers with in-game NPC editors, level caps, medals, repeatable loot and unique legendary trials, powered by RCTAPI.

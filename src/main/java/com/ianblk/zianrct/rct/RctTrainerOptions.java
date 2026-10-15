@@ -1,4 +1,5 @@
 package com.ianblk.zianrct.rct;
+import com.ianblk.zianrct.storage.StorageFiles;
 import com.ianblk.zianrct.reward.*;
 import com.google.gson.*;
 import java.nio.file.*;
@@ -15,9 +16,9 @@ public final class RctTrainerOptions {
     public static void boot(Path configDir) throws IOException {
         path=configDir.resolve("zianrct-trainer-options.json");
         Map<String,String> loaded=new LinkedHashMap<>();
-        if(Files.exists(path)){
-            if(Files.size(path)>1048576)throw new IOException("Opciones de entrenador demasiado grandes");
-            try(var reader=Files.newBufferedReader(path)){
+        if(StorageFiles.exists(path)){
+            if(StorageFiles.size(path)>1048576)throw new IOException("Opciones de entrenador demasiado grandes");
+            try(var reader=StorageFiles.newBufferedReader(path)){
                 var json=JsonParser.parseReader(reader).getAsJsonObject();
                 if(!json.keySet().equals(Set.of("schemaVersion","formats")) || json.get("schemaVersion").getAsBigDecimal().intValueExact()!=1)
                     throw new IllegalArgumentException("Opciones inválidas");
@@ -48,12 +49,12 @@ public final class RctTrainerOptions {
         Map<String,String> candidate=new LinkedHashMap<>(formats);candidate.put(trainer,format);
         if(candidate.size()>256)throw new IOException("Máximo 256 formatos personalizados");
         var json=new JsonObject();json.addProperty("schemaVersion",1);json.add("formats",GSON.toJsonTree(candidate));
-        Path temp=Files.createTempFile(path.getParent(),"zianrct-options-",".tmp");
+        Path temp=StorageFiles.createTempFile(path.getParent(),"zianrct-options-",".tmp");
         try{
-            Files.writeString(temp,GSON.toJson(json));
+            StorageFiles.writeString(temp,GSON.toJson(json));
             try(var channel=java.nio.channels.FileChannel.open(temp,StandardOpenOption.WRITE)){channel.force(true);}
-            Files.move(temp,path,StandardCopyOption.ATOMIC_MOVE,StandardCopyOption.REPLACE_EXISTING);
+            StorageFiles.move(temp,path,StandardCopyOption.ATOMIC_MOVE,StandardCopyOption.REPLACE_EXISTING);
             formats=Map.copyOf(candidate);
-        }finally{Files.deleteIfExists(temp);}
+        }finally{StorageFiles.deleteIfExists(temp);}
     }
 }

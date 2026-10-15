@@ -1,7 +1,7 @@
 package com.ianblk.zianrct.rct;
 
-import com.gitlab.srcmc.rctmod.api.RCTMod;
-import com.gitlab.srcmc.rctmod.api.data.save.TrainerPlayerData;
+import com.ianblk.zianrct.standalone.StandaloneRuntime;
+import com.ianblk.zianrct.standalone.PlayerProgress;
 import com.ianblk.zianrct.config.ZianRctConfig;
 import net.minecraft.server.level.ServerPlayer;
 
@@ -23,7 +23,7 @@ public final class RctProgressService {
             int targetCap
     ) {
         List<String> desiredPrefix = RctProgressPlanner.desiredDefeatedPrefix(profile, targetCap);
-        TrainerPlayerData playerData = playerData(player);
+        PlayerProgress playerData = playerData(player);
         Set<String> before = new LinkedHashSet<>(playerData.getDefeatedTrainerIds());
         int beforeCap = playerData.getLevelCap();
         Set<String> chainIds = profile.chain().stream()
@@ -63,7 +63,7 @@ public final class RctProgressService {
     }
 
     public static ProgressView progress(ServerPlayer player, ZianRctConfig.Profile profile) {
-        TrainerPlayerData data = playerData(player);
+        PlayerProgress data = playerData(player);
         Set<String> defeated = new LinkedHashSet<>(data.getDefeatedTrainerIds());
         List<String> configuredDefeats = RctProgressPlanner.configuredDefeatsInOrder(profile, defeated);
         String nextTrainer = null;
@@ -82,24 +82,15 @@ public final class RctProgressService {
     }
 
     private static void applyChainState(
-            TrainerPlayerData playerData,
+            PlayerProgress playerData,
             Set<String> chainIds,
             Set<String> desired
     ) {
-        Set<String> current = new LinkedHashSet<>(playerData.getDefeatedTrainerIds());
-        for (String id : chainIds) {
-            boolean has = current.contains(id);
-            boolean shouldHave = desired.contains(id);
-            if (shouldHave && !has) {
-                playerData.addProgressDefeat(id);
-            } else if (!shouldHave && has) {
-                playerData.removeProgressDefeat(id);
-            }
-        }
+        playerData.replaceChain(chainIds,desired);
     }
 
     private static void restoreAndVerify(
-            TrainerPlayerData playerData,
+            PlayerProgress playerData,
             Set<String> chainIds,
             Set<String> before,
             int beforeCap
@@ -123,8 +114,8 @@ public final class RctProgressService {
         }
     }
 
-    private static TrainerPlayerData playerData(ServerPlayer player) {
-        return RCTMod.getInstance().getTrainerManager().getData(player);
+    private static PlayerProgress playerData(ServerPlayer player) {
+        return StandaloneRuntime.getInstance().getTrainerManager().getData(player);
     }
 
     public record SetCapResult(

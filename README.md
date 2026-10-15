@@ -1,20 +1,26 @@
 # Zian-RCT
 
-Tope de nivel, progresión administrativa y sistema de medallas sobre Radical Cobblemon Trainers para Minecraft 1.21.1 / NeoForge.
+Entrenadores propios, NPC, progresión, medallas y recompensas sobre RCTAPI para Minecraft 1.21.1 / NeoForge.
 
 ## Estado
 
-Proyecto en desarrollo por fases. Las fases actuales ya incluyen configuración validada, integración de progresión RCT, persistencia de medallas, sincronización/GUI de cliente y comandos administrativos.
+**0.2.1 Release**, implementación independiente de RCTMod. Antes de actualizar un mundo existente, consulta [la migración y las condiciones de licencia](docs/RCTAPI-STANDALONE.md). Usa el mismo JAR en cliente y servidor. La beta 0.1.0-beta.15 permanece en su rama anterior.
+
+Incluye configuración validada, NPC/editor propios, equipos automáticos, combates individuales y dobles, progresión y medallas persistentes, loot único/repetible y pruebas legendarias con entrega registrada.
 
 ## Dependencias objetivo
 
 - Minecraft 1.21.1
 - NeoForge 21.1.x
-- Cobblemon 1.8.1
-- Radical Cobblemon Trainers 0.19.2-beta (`rctmod`)
-- Radical Cobblemon Trainers API 0.16.1-beta (`rctapi`)
+- Cobblemon 1.8.2
+- RCTMod debe estar ausente en esta rama.
+- Radical Cobblemon Trainers API 0.16.2-beta (`rctapi`)
 - Architectury 13.0.11
 - Kotlin for Forge 5.12.0
+
+AVECOINS 2.3, 2.4 y 2.5 son opcionales para recompensas económicas. AVECOINS 2.3, 2.4 y 2.5 están inspeccionados. Una versión posterior solo se admite si las tres clases económicas verificadas conservan exactamente sus huellas revisadas y pasan las comprobaciones de métodos y capacidad. Un cambio real de contrato requiere revisión; no se promete compatibilidad automática con cualquier actualización. Consulta [compatibilidad económica](docs/AVECOINS25_COMPATIBILITY.md).
+
+Descarga el JAR en [Releases](https://github.com/IANBLK/Zian-RCT/releases/latest) y usa la misma versión en cliente y servidor.
 
 ## Comandos
 
@@ -35,7 +41,7 @@ de NeoForge o plugin de Bukkit en Youer, y no se incluye en el JAR.
 - `/zianrct progress <jugador>`
 - `/zianrct reload`
 
-## Permisos (Beta 2)
+## Permisos
 
 - `zianrct.medals`: abrir `/medals` (todos por defecto).
 - `zianrct.battle`: interactuar y aceptar desafíos de la cadena configurada (todos por defecto).
@@ -56,31 +62,26 @@ Reconecta después de cambiar permisos para actualizar el autocompletado.
 
 `/zianrct reload` vuelve a leer `config/zianrct.json`, rechaza la recarga si la configuración es inválida, regenera el pack virtual de progresión y vuelve a enviar el snapshot de medallas a todos los jugadores conectados.
 
-## Recompensas únicas por entrenador (Beta 4)
+## Entrenadores y recompensas
 
-**Beta 13:** crea un jefe con loot y un segundo NPC que custodia un legendario. En la pestaña **Prueba**, vincula el ID del jefe. Solo quienes lo derroten acceden al segundo combate; al ganar reciben el Pokémon en el PC, con IV de 25–30 y posibilidad de shiny. El registro impide repetir el premio. Consulta [configuración, permisos y pruebas](docs/LEGENDARY-TRIALS-BETA13.md).
+- Crea entrenadores propios desde **Crear NPC → Definir entrenador desde cero**, con equipos, niveles, dificultad, skins y diálogos.
+- El editor permite buscar Pokémon y ataques, seleccionar hasta cuatro movimientos y usar movimientos automáticos al guardar. El modo manual conserva los equipos existentes.
+- Configura combates individuales o dobles y recompensas únicas o repetibles con espera por jugador. Mayús + clic derecho muestra la espera del entrenador.
+- Usa el gestor de NPC para crear, editar, eliminar con confirmación o mover un NPC a la posición del administrador.
+- Las pruebas legendarias vinculan una victoria de jefe a un desafío posterior. Los premios se reservan y registran antes de entregarse al PC para impedir repeticiones.
+- Los premios económicos usan AVECOINS mediante un contrato comprobado. Las entregas inciertas permanecen en revisión; no se reintentan a ciegas.
 
-**Beta 12:** al crear un entrenador, el modo **Movimientos automáticos** permite elegir solo Pokémon, nivel y dificultad. Los ataques se preparan al guardar; IV y objetos siguen el preset de dificultad. El modo manual conserva los selectores y los equipos anteriores. Incluye la corrección del crash de diálogos de beta 11. Instala beta 12 en servidor y clientes.
+`/zianrct reward pending` muestra operaciones pendientes y `/zianrct reward claim <operationId>` permite reclamarlas cuando su estado lo permite. Tab sugiere los IDs propios reclamables; los premios ya pagados o bloqueados no se ofrecen.
 
-**Beta 11:** corrige el crash de los entrenadores independientes al iniciar o terminar un combate con burbujas de diálogo activadas. Los diálogos guardados se regeneran automáticamente; no hace falta recrear los NPC. Se conserva el contenido de beta 10. Instala la misma beta en servidor y clientes.
+Guías: [creador de equipos](docs/CREATOR-BETA10.md), [repetición y combates dobles](docs/REPEAT-AND-DOUBLES-BETA8.md), [gestor de NPC](docs/NPC-MANAGER-BETA6.md), [recompensas y recuperación](docs/TRAINER-REWARDS-BETA4.md) y [pruebas legendarias](docs/LEGENDARY-TRIALS-BETA13.md). Los nombres beta de estos documentos indican cuándo se introdujeron las funciones; instala la versión actual **0.2.1** en cliente y servidor.
 
-**Beta 10:** el editor de equipo incluye **Pokémon…** y **Ataques…**, con búsqueda, páginas y selección de hasta cuatro movimientos de la especie. Se incluyen las seis skins entregadas por el administrador. Difícil y Jefe tienen IV perfectos y objetos equipados automáticos. Instala la misma beta en servidor y clientes. Consulta [los cambios y pruebas](docs/CREATOR-BETA10.md).
+## Combinaciones externas
 
-**Beta 9:** consulta la espera con Mayús + clic derecho en el entrenador. Los pagos repetibles muestran su nombre y cuándo volver. Crea definiciones independientes desde **Crear NPC → Definir entrenador desde cero**, con Pokémon, niveles, movimientos, dificultad, skins instaladas y diálogos. No se añaden a la cadena de medallas Rassvet. Consulta [el creador y sus límites](docs/CREATOR-BETA9.md).
-
-**Beta 8:** el editor permite premios únicos o repetibles con espera por jugador, y cambiar el formato entre Individual y Doble. Consulta [repetición, migración y pruebas](docs/REPEAT-AND-DOUBLES-BETA8.md). Se conservan premios ya pagados y registros anteriores; el creador de equipos nuevos, skins y diálogos será una etapa posterior.
-
-**Beta 6:** `/zianrct npc` abre una lista de NPC cargados en tu dimensión, con coordenadas y UUID para distinguir duplicados. Desde ella puedes crear, modificar o eliminar un NPC con confirmación, y mover el seleccionado al bloque y dirección del administrador. El editor conserva permanencia, movimiento y loot. Consulta [la guía del gestor](docs/NPC-MANAGER-BETA6.md). Instala beta.6 tanto en clientes como servidor.
-
-Configura objetos con `/zianrct reward add-item <trainerId>` teniendo el stack en la mano, y monedas con `/zianrct reward set-money <trainerId> avecoins:coppercoin 5`. Cada premio es único por jugador y entrenador, conserva los componentes del objeto y sobrevive a reinicios. Los premios pendientes se consultan con `/zianrct reward pending` y se reclaman con `/zianrct reward claim <operationId>`.
-
-La configuración inicial está vacía. Los pagos inciertos requieren revisión y no se repiten automáticamente. Los nuevos permisos administrativos, configuración y pruebas se explican en [la guía de recompensas](docs/TRAINER-REWARDS-BETA4.md). Los premios repetibles con espera y la creación de equipos nuevos son etapas posteriores.
-
-**Beta 7:** `/zianrct reward claim ` autocompleta con Tab los IDs pendientes propios que pueden reclamarse. `/zianrct reward pending` también ofrece un botón **[Reclamar]** en el chat. Los premios pagados o bloqueados por revisión no se ofrecen para autocompletar.
+La validación con Legendary Monuments 8.2 detectó callbacks de victoria que asumen entidades NPC nativas. El servidor de pruebas usa una protección local para esa combinación; no está incluida en Zian RCT. Consulta la compatibilidad de esa versión externa antes de combinarla. Esto no cambia la persistencia de medallas ni las reglas de recompensas de Zian RCT.
 
 ## Medallero
 
-**Beta 3:** las diez medallas predeterminadas muestran el render aprobado mediante una imagen original integrada, sin volver a generar los diseños. El medallero es compacto, tiene botón Cerrar y paginación según el espacio disponible. Conserva los identificadores, el progreso y el protocolo 2. Consulta [el arte y la validación](docs/MEDALS-BETA3.md).
+Las diez medallas predeterminadas muestran el render aprobado mediante una imagen original integrada, sin volver a generar los diseños. El medallero es compacto, tiene botón Cerrar y paginación según el espacio disponible. Conserva los identificadores, el progreso y el protocolo 2. Consulta [el arte y la validación](docs/MEDALS-BETA3.md).
 
 Zian-RCT incluye arte original para las diez medallas del perfil Rassvet en `assets/zianrct/textures/gui/medals/`, junto con fondos de tarjeta para estados obtenida/bloqueada, overlay de hover y candado. La configuración por defecto ya apunta a `zianrct:textures/gui/medals/<id>.png`, por lo que no requiere un resource pack adicional para usar el arte incluido.
 
@@ -94,7 +95,7 @@ Los cambios del payload del medallero requieren que cliente y servidor ejecuten 
 
 El código y los recursos originales de Zian-RCT se publican bajo la licencia MIT.
 
-RCT y RCTAPI son dependencias externas. Zian-RCT no incluye, copia, decompila ni adapta código o recursos de esos proyectos; la integración usa únicamente sus APIs y formatos públicos.
+RCTAPI es una dependencia externa obligatoria. RCTMod debe permanecer ausente en esta versión independiente. Zian-RCT no incluye, copia, decompila ni adapta código o recursos de esos proyectos; la integración usa únicamente sus APIs y formatos públicos.
 
 La información de licencia publicada para RCT/RCTAPI no ha sido completamente uniforme entre todos los metadatos históricos: se han observado referencias GNU-LGPL-3 en artefactos/metadatos anteriores, mientras que las páginas y fuentes actuales usan MCOML/Custom License. Antes de redistribuir RCT o RCTAPI, consulta siempre la licencia de sus proyectos oficiales. Esta licencia externa no cambia la licencia MIT del código propio de Zian-RCT.
 

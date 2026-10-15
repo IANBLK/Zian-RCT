@@ -69,6 +69,7 @@ class TrainerWalletTest {
     @Test void futureWalletVersionsAreNotAutomaticallyAccepted() {
         assertTrue(AvecoinsContractProbe.supportedVersion("2.3"));
         assertTrue(AvecoinsContractProbe.supportedVersion("2.4"));
-        assertFalse(AvecoinsContractProbe.supportedVersion("2.5"));
+        assertTrue(AvecoinsContractProbe.supportedVersion("2.5"));
+        assertFalse(AvecoinsContractProbe.supportedVersion("2.6"));
     }
 }

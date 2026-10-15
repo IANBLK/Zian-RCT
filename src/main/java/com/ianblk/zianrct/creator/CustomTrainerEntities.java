@@ -10,9 +10,17 @@ public final class CustomTrainerEntities {
     public static final DeferredHolder<EntityType<?>,EntityType<IndependentTrainerMob>> TYPE=TYPES.register("independent_trainer",
             ()->EntityType.Builder.<IndependentTrainerMob>of(IndependentTrainerMob::new,MobCategory.MISC)
                     .sized(0.6f,1.8f).clientTrackingRange(10).build("zianrct:independent_trainer"));
+    // Compatibility entity ID only; no upstream code/assets are incorporated.
+    private static final DeferredRegister<EntityType<?>> LEGACY=DeferredRegister.create(Registries.ENTITY_TYPE,"rctmod");
+    public static final DeferredHolder<EntityType<?>,EntityType<IndependentTrainerMob>> LEGACY_TYPE=LEGACY.register("trainer",
+            ()->EntityType.Builder.<IndependentTrainerMob>of(IndependentTrainerMob::new,MobCategory.MISC)
+                    .sized(0.6f,1.8f).clientTrackingRange(10).build("rctmod:trainer"));
     private CustomTrainerEntities() {}
     public static void register(IEventBus bus){
-        TYPES.register(bus);
-        bus.addListener((EntityAttributeCreationEvent event)->event.put(TYPE.get(),com.gitlab.srcmc.rctmod.world.entities.TrainerMob.createAttributes().build()));
+        TYPES.register(bus);LEGACY.register(bus);
+        bus.addListener((EntityAttributeCreationEvent event)->{
+            event.put(TYPE.get(),IndependentTrainerMob.createAttributes().build());
+            event.put(LEGACY_TYPE.get(),IndependentTrainerMob.createAttributes().build());
+        });
     }
 }

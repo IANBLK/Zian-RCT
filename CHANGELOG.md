@@ -1,5 +1,27 @@
 # Changelog
 
+## 0.2.1
+
+- Accept the inspected AVECOINS 2.5 wallet contract.
+- Keep method and capacity validation; later version numbers require all reviewed class fingerprints to match.
+- Preserve balances, currencies, durable receipts and interrupted-operation recovery. No automatic data migration.
+- Refresh installation requirements and current documentation for Cobblemon 1.8.2.
+
+## Español
+
+- Compatibilidad revisada con AVECOINS 2.5, conservando los controles de contrato y recuperación.
+- Las versiones posteriores solo se admiten si mantienen las clases económicas verificadas sin cambios.
+- Conserva saldos y datos. Instala la misma versión en cliente y servidor.
+
+
+## 0.2.0-beta.2 — candidata de almacenamiento
+
+- Índices de recompensas y migración offline opcional de recibos y pruebas legendarias por jugador.
+- Conserva evidencia de victoria, UUID, IV, shiny y fases inciertas; protege entregas ante expulsión de caché.
+- El tick consulta jugadores conectados y participantes con verificación en curso, sin recorrer el historial completo.
+- 131 pruebas aprobadas, incluyendo 22.000 recibos, y dos arranques dedicados con entrega al PC, bloqueo de repetición, reload y reinicio.
+- RCT API sigue como dependencia externa; no se incorpora código upstream ni cambia Cobblemon en producción.
+
 ## 0.1.0-beta.15
 
 - Generate replies for independent trainer interaction contexts: busy trainer/player, cooldown, missing Pokémon, level cap, unavailable encounter and fallback requirements. Keep every speech lookup non-null.

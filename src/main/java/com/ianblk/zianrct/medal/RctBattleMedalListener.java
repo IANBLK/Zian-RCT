@@ -5,7 +5,7 @@ import com.gitlab.srcmc.rctapi.api.battle.BattleState;
 import com.gitlab.srcmc.rctapi.api.events.Event;
 import com.gitlab.srcmc.rctapi.api.events.EventListener;
 import com.gitlab.srcmc.rctapi.api.events.Events;
-import com.gitlab.srcmc.rctmod.world.entities.TrainerMob;
+import com.ianblk.zianrct.creator.IndependentTrainerMob;
 import com.ianblk.zianrct.ZianRCT;
 import com.ianblk.zianrct.config.ConfigState;
 import com.ianblk.zianrct.config.ZianRctConfig;
@@ -18,7 +18,7 @@ import java.util.Map;
 import java.util.Set;
 
 public final class RctBattleMedalListener {
-    private static final String RCT_INSTANCE_ID = "rctmod";
+    private static final String RCT_INSTANCE_ID = "zianrct";
 
     private final MedalService medalService;
     private final com.ianblk.zianrct.reward.TrainerRewardService rewardService;
@@ -91,8 +91,8 @@ public final class RctBattleMedalListener {
         Set<String> defeatedTrainerIds = new LinkedHashSet<>();
         List<ZianRctConfig.ChainEntry> chain = ConfigState.current().activeProfileConfig().chain();
         state.getLosers().forEach(trainer -> {
-            if (trainer.getEntity() instanceof TrainerMob trainerMob) {
-                String trainerId = configuredTrainerId(trainerMob.getTrainerId(), chain);
+            if (trainer.getEntity() instanceof IndependentTrainerMob trainerMob) {
+                String trainerId = ConfiguredTrainerIds.configuredTrainerId(trainerMob.getTrainerId(), chain);
                 if (trainerId == null && rewardService.interested(trainerMob.getTrainerId())) trainerId = trainerMob.getTrainerId();
                 if (trainerId != null) {
                     defeatedTrainerIds.add(trainerId);
@@ -106,6 +106,9 @@ public final class RctBattleMedalListener {
         for (ServerPlayer winner : winners) {
             MinecraftServer server = winner.serverLevel().getServer();
             Runnable grant = () -> defeatedTrainerIds.forEach(trainerId -> {
+                try {
+                    if(state.getBattle()==null || !com.ianblk.zianrct.standalone.StandaloneRuntime.getInstance().getData(winner).ledger().record(state.getBattle().getBattleId(),trainerId,true,chain.stream().anyMatch(e->e.trainer().equals(trainerId))))return;
+                } catch(Exception error) { ZianRCT.LOGGER.error("Victory progress not saved; awards blocked",error); return; }
                     medalService.medalForTrainer(trainerId).ifPresent(medal ->
                             medalService.grantIfAbsent(winner, medal.id(), MedalOrigin.BATTLE)
                     );
@@ -119,15 +122,4 @@ public final class RctBattleMedalListener {
         }
     }
 
-    static String configuredTrainerId(String trainerId, List<ZianRctConfig.ChainEntry> chain) {
-        if (trainerId == null || trainerId.isBlank() || chain == null) {
-            return null;
-        }
-        for (ZianRctConfig.ChainEntry entry : chain) {
-            if (entry != null && trainerId.equals(entry.trainer())) {
-                return trainerId;
-            }
-        }
-        return null;
-    }
 }

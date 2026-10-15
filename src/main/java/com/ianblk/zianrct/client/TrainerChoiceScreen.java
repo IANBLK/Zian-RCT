@@ -9,7 +9,7 @@ import java.util.*;
 import java.util.function.Consumer;
 
 /** Local registry browser. Only the creator's final Save sends changes to the server. */
-public final class TrainerChoiceScreen extends Screen {
+public final class TrainerChoiceScreen extends ResponsiveScreen {
     public record Choice(String id,String name,String detail) {}
     private final Screen parent;
     private final List<Choice> choices;
@@ -24,7 +24,7 @@ public final class TrainerChoiceScreen extends Screen {
         super(Component.literal(title));this.parent=parent;this.choices=List.copyOf(choices);
         this.selected=new LinkedHashSet<>(selected);this.limit=limit;this.accept=accept;
     }
-    @Override protected void init(){
+    @Override protected void init(){fitViewport(600,360);
         entries.clear();w=Math.min(500,width-16);h=Math.min(320,height-16);x=(width-w)/2;y=(height-h)/2;
         pageSize=Math.max(1,(h-116)/24);
         var search=addRenderableWidget(new EditBox(font,x+12,y+32,w-24,18,Component.literal("Buscar por nombre o ID")));
@@ -60,14 +60,14 @@ public final class TrainerChoiceScreen extends Screen {
             }
         };
     }
-    @Override public void render(GuiGraphics g,int mx,int my,float partial){
+    @Override protected void renderCanvas(GuiGraphics g,int mx,int my,float partial){
         g.fill(0,0,width,height,0x90000000);g.fill(x,y,x+w,y+h,0xF0181818);g.fill(x,y,x+w,y+2,0xFFF2C14E);
         g.drawCenteredString(font,title,width/2,y+12,0xFFF2C14E);
         for(var widget:renderables)widget.render(g,mx,my,partial);
         g.drawCenteredString(font,notice.isEmpty()?"Página "+(page+1)+" / "+Math.max(1,(filtered.size()+pageSize-1)/pageSize)+" · Selección: "+selected.size():notice,width/2,y+h-43,0xFFF7E2AC);
         for(int i=0;i<entries.size();i++)if(entries.get(i).visible && entries.get(i).isMouseOver(mx,my)){
             String detail=filtered.get(page*pageSize+i).detail();
-            if(!detail.isBlank())g.renderTooltip(font,Component.literal(detail),mx,my);
+            if(!detail.isBlank())queueTooltip(java.util.List.of(Component.literal(detail)));
         }
     }
     @Override public void onClose(){minecraft.setScreen(parent);}

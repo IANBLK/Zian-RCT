@@ -1,6 +1,7 @@
 package com.ianblk.zianrct.medal;
+import com.ianblk.zianrct.storage.StorageFiles;
 
-import com.gitlab.srcmc.rctmod.api.RCTMod;
+import com.ianblk.zianrct.standalone.StandaloneRuntime;
 import com.ianblk.zianrct.ZianRCT;
 import com.ianblk.zianrct.config.ConfigState;
 import com.ianblk.zianrct.config.ZianRctConfig;
@@ -12,7 +13,7 @@ import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.level.storage.LevelResource;
 
 import java.io.IOException;
-import java.nio.file.Files;
+
 import java.nio.file.Path;
 import java.nio.file.StandardCopyOption;
 import java.time.Instant;
@@ -94,7 +95,7 @@ public final class MedalService {
             if (origin == MedalOrigin.BATTLE || origin == MedalOrigin.COMMAND) {
                 String template = ConfigState.current().messages().medalObtained();
                 String message = template.replace("{medal}", definition.get().name());
-                player.sendSystemMessage(Component.literal(message));
+                player.sendSystemMessage(com.ianblk.zianrct.Messages.format(Component.literal(message)));
             }
 
             if (syncClient) {
@@ -166,7 +167,7 @@ public final class MedalService {
         }
 
         MinecraftServer server = player.serverLevel().getServer();
-        var trainerManager = RCTMod.getInstance().getTrainerManager();
+        var trainerManager = StandaloneRuntime.getInstance().getTrainerManager();
         for (ZianRctConfig.MedalDefinition medal : ConfigState.current().activeProfileConfig().medals()) {
             if (medal == null
                     || active.has(player.getUUID(), medal.id())
@@ -203,12 +204,12 @@ public final class MedalService {
     }
 
     private static void backupCorrupt(Path path) {
-        if (Files.notExists(path)) {
+        if (StorageFiles.notExists(path)) {
             return;
         }
         Path backup = path.resolveSibling(path.getFileName() + ".corrupt");
         try {
-            Files.copy(path, backup, StandardCopyOption.REPLACE_EXISTING);
+            StorageFiles.copy(path, backup, StandardCopyOption.REPLACE_EXISTING);
             ZianRCT.LOGGER.error("Copied unreadable medal persistence to {} before disabling medal grants.", backup);
         } catch (IOException backupException) {
             ZianRCT.LOGGER.error("Could not create corrupt medal persistence backup for {}.", path, backupException);

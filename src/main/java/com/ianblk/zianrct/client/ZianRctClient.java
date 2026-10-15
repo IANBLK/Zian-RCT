@@ -27,8 +27,8 @@ public final class ZianRctClient {
 
     public static void init(IEventBus modBus) {
         modBus.addListener(net.neoforged.bus.api.EventPriority.LOWEST,(net.neoforged.neoforge.client.event.EntityRenderersEvent.RegisterRenderers event)->{
-                event.registerEntityRenderer(com.gitlab.srcmc.rctmod.world.entities.TrainerMob.getEntityType(),CustomTrainerRenderer::new);
                 event.registerEntityRenderer(com.ianblk.zianrct.creator.CustomTrainerEntities.TYPE.get(),CustomTrainerRenderer::new);
+                event.registerEntityRenderer(com.ianblk.zianrct.creator.CustomTrainerEntities.LEGACY_TYPE.get(),CustomTrainerRenderer::new);
         });
         modBus.addListener((RegisterKeyMappingsEvent event) -> event.register(OPEN_MEDALS_KEY));
         NeoForge.EVENT_BUS.addListener(ZianRctClient::onClientTick);

@@ -1,0 +1,11 @@
+{
+  "name": "Zian RCT",
+  "version": "0.2.0",
+  "previousBeta": "0.2.0-beta.6",
+  "sha256": "7fc545a79dcc406183a203a8297a5a14e0794dea0c00b29d4db83556c10bd7e6",
+  "bytes": 14361720,
+  "tests": 135,
+  "failures": 0,
+  "jar": "zianrct-0.2.0.jar",
+  "validation": "Archive contents match the tested Beta byte-for-byte except version metadata. No gameplay code changed."
+}

@@ -1,6 +1,7 @@
 package com.ianblk.zianrct.reward;
+import com.ianblk.zianrct.storage.StorageFiles;
 
-import com.gitlab.srcmc.rctmod.api.RCTMod;
+import com.ianblk.zianrct.standalone.StandaloneRuntime;
 import com.ianblk.zianrct.ZianRCT;
 import net.minecraft.nbt.TagParser;
 import net.minecraft.nbt.CompoundTag;
@@ -15,31 +16,35 @@ import java.util.*;
 import java.nio.file.Path;
 
 public final class TrainerRewardService {
+    private static TrainerRewardService instance;
+    public static String battleBlock(ServerPlayer player,String trainer){return instance==null?"Premios aún no disponibles":instance.blocked(player,trainer);}
     private com.ianblk.zianrct.rct.RctPackController packs;
     public void attach(com.ianblk.zianrct.rct.RctPackController packs){this.packs=packs;}
     public TrainerRewardService(){
+        instance=this;
         new com.ianblk.zianrct.legendary.LegendaryTrials();
         net.neoforged.neoforge.common.NeoForge.EVENT_BUS.addListener(net.neoforged.bus.api.EventPriority.HIGHEST,this::onInteract);
     }
     private void onInteract(net.neoforged.neoforge.event.entity.player.PlayerInteractEvent.EntityInteract event){
-        if(event.getEntity() instanceof ServerPlayer player && event.getTarget() instanceof com.gitlab.srcmc.rctmod.world.entities.TrainerMob npc){
+        if(event.getEntity() instanceof ServerPlayer player && event.getTarget() instanceof com.ianblk.zianrct.creator.IndependentTrainerMob npc){
             if(player.isShiftKeyDown() && configured(npc.getTrainerId())){
                 event.setCanceled(true);event.setCancellationResult(net.minecraft.world.InteractionResult.SUCCESS);
-                player.sendSystemMessage(Component.literal("<Entrenador "+name(npc.getTrainerId())+"> "+next(player,npc.getTrainerId())));
+                player.sendSystemMessage(com.ianblk.zianrct.Messages.format(com.ianblk.zianrct.npc.NpcDialogueFormat.line(name(npc.getTrainerId()),next(player,npc.getTrainerId()))));
                 return;
             }
             String reason=blocked(player,npc.getTrainerId());
             if(reason!=null){event.setCanceled(true);event.setCancellationResult(net.minecraft.world.InteractionResult.SUCCESS);
-                player.sendSystemMessage(Component.literal("<Entrenador "+name(npc.getTrainerId())+"> "+reason));}
+                player.sendSystemMessage(com.ianblk.zianrct.Messages.format(com.ianblk.zianrct.npc.NpcDialogueFormat.line(name(npc.getTrainerId()),reason)));}
         }
     }
     public String blocked(ServerPlayer player,String trainer){
+        if(!StandaloneRuntime.getInstance().isCurrent(trainer))return "La definición no coincide con el equipo cargado. Consulta al administrador y recarga los entrenadores.";
         String trialBlocked=com.ianblk.zianrct.legendary.LegendaryTrials.blocked(player,trainer);
         if(trialBlocked!=null)return trialBlocked;
         if(packs!=null && packs.isBusy())return "Se está recargando la configuración de entrenadores. Espera un momento.";
         String requested=com.ianblk.zianrct.rct.RctTrainerOptions.formats().get(trainer);
         try{
-            if(requested!=null && !requested.equals(RCTMod.getInstance().getTrainerManager().getData(trainer).getTrainerTeam().getBattleFormat().name()))
+            if(requested!=null && !requested.equals(StandaloneRuntime.getInstance().getTrainerManager().getData(trainer).getTrainerTeam().getBattleFormat().name()))
                 return "El formato de este entrenador aún no se ha verificado. Consulta al administrador.";
             if(config==null || !config.enabled())return null;
             var definition=config.definition(trainer);
@@ -47,8 +52,8 @@ public final class TrainerRewardService {
             if(journal==null)return "El registro de premios no está disponible. Consulta al administrador.";
             journal.ensureHealthy();
             if(definition.mode()!=RewardDefinition.Mode.REPEAT)return null;
-            if(RCTMod.getInstance().getTrainerManager().getData(trainer).getMaxTrainerDefeats()!=-1
-                    || RCTMod.getInstance().getTrainerManager().getData(trainer).getMaxTrainerWins()!=-1)
+            if(StandaloneRuntime.getInstance().getTrainerManager().getData(trainer).getMaxTrainerDefeats()!=-1
+                    || StandaloneRuntime.getInstance().getTrainerManager().getData(trainer).getMaxTrainerWins()!=-1)
                 return "La revancha aún no se ha verificado. Consulta al administrador.";
             long remaining=journal.remaining(player.getUUID(),trainer,definition,System.currentTimeMillis());
             if(remaining==-2)return "Reclama o resuelve el premio anterior antes de repetir este desafío. /zianrct reward pending";
@@ -61,7 +66,7 @@ public final class TrainerRewardService {
     }
     public static String name(String trainer){
         try{
-            var text=RCTMod.getInstance().getTrainerManager().getData(trainer).getTrainerTeam().getName();
+            var text=StandaloneRuntime.getInstance().getTrainerManager().getData(trainer).getTrainerTeam().getName();
             String value=text.getComponent().getString();
             if(!value.isBlank())return value.toLowerCase(Locale.ROOT).startsWith("líder ")?value.substring(6):value;
         }catch(RuntimeException ignored){}
@@ -112,7 +117,7 @@ public final class TrainerRewardService {
             if (definition == null || definition.empty()) return;
             // Reserve independently from medals; historical reconciliation and admin medal grants never call this.
             if (!journal.reserveAt(player.getUUID(), trainer, definition,System.currentTimeMillis(),battle)) {
-                if(definition.mode()==RewardDefinition.Mode.REPEAT)player.sendSystemMessage(Component.literal(next(player,trainer)));
+                if(definition.mode()==RewardDefinition.Mode.REPEAT)player.sendSystemMessage(com.ianblk.zianrct.Messages.format(Component.literal(next(player,trainer))));
                 return;
             }
             RewardClaim claim=journal.latest(player.getUUID(),trainer);
@@ -121,14 +126,14 @@ public final class TrainerRewardService {
             deliver(player, claim.id());
         } catch (Exception error) {
             ZianRCT.LOGGER.error("Trainer reward could not be completed for {} / {}", player.getUUID(), trainer, error);
-            player.sendSystemMessage(Component.literal("La recompensa del entrenador necesita revisión. No repitas pagos manualmente sin revisar el registro."));
+            player.sendSystemMessage(com.ianblk.zianrct.Messages.format(Component.literal("La recompensa del entrenador necesita revisión. No repitas pagos manualmente sin revisar el registro.")));
         }
     }
     public List<RewardClaim> claims(UUID player) { ready(); return journal.forPlayer(player); }
     public void notifyPending(ServerPlayer player) {
         if (journal == null) return;
         long count = journal.forPlayer(player.getUUID()).stream().filter(c -> !c.complete()).count();
-        if (count > 0) player.sendSystemMessage(Component.literal("Tienes " + count + " recompensa(s) de entrenadores pendiente(s). Usa /zianrct reward pending."));
+        if (count > 0) player.sendSystemMessage(com.ianblk.zianrct.Messages.format(Component.literal("Tienes " + count + " recompensa(s) de entrenadores pendiente(s). Usa /zianrct reward pending.")));
     }
     public Map<String, RewardDefinition> definitions() { ready(); return config.definitions(); }
     public String next(ServerPlayer player,String trainer){
@@ -141,7 +146,7 @@ public final class TrainerRewardService {
         return remaining==0?"Premio disponible al ganar.":"Próximo premio en "+waitText(remaining)+".";
     }
     private void noBattle(String trainer){
-        if(RCTMod.getInstance().getTrainerSpawner().getSpawns().stream().anyMatch(n->trainer.equals(n.getTrainerId()) && n.isInBattle()))
+        if(StandaloneRuntime.getInstance().getTrainerSpawner().getSpawns().stream().anyMatch(n->trainer.equals(n.getTrainerId()) && n.isInBattle()))
             throw new IllegalStateException("Espera a que terminen los combates contra este entrenador.");
         if(packs==null || packs.isBusy())throw new IllegalStateException("Ya hay una recarga de entrenadores en curso.");
     }
@@ -167,7 +172,7 @@ public final class TrainerRewardService {
         if(own!=null)return own.format();
         String configured=com.ianblk.zianrct.rct.RctTrainerOptions.formats().get(trainer);
         if(configured!=null)return configured;
-        try{return RCTMod.getInstance().getTrainerManager().getData(trainer).getTrainerTeam().getBattleFormat().name();}
+        try{return StandaloneRuntime.getInstance().getTrainerManager().getData(trainer).getTrainerTeam().getBattleFormat().name();}
         catch(RuntimeException error){return "GEN_9_SINGLES";}
     }
     public String status() { return config == null ? "Recompensas desactivadas por error" : "enabled=" + config.enabled() + "; " + walletStatus; }
@@ -197,9 +202,9 @@ public final class TrainerRewardService {
     }
     private void deliver(ServerPlayer player, UUID id) throws IOException {
         ready();
-        RewardClaim before=journal.get(id);
+        RewardClaim before=journal.get(player.getUUID(),id);
         if(before!=null && before.player().equals(player.getUUID()) && before.complete()){
-            player.sendSystemMessage(Component.literal("Esta recompensa ya fue entregada. "+next(player,before.trainer())));return;
+            player.sendSystemMessage(com.ianblk.zianrct.Messages.format(Component.literal("Esta recompensa ya fue entregada. "+next(player,before.trainer()))));return;
         }
         RewardDelivery.deliver(journal, player.getUUID(), id, new RewardDelivery.Port() {
             public String unavailable(RewardClaim.Part part) {
@@ -231,10 +236,10 @@ public final class TrainerRewardService {
                 return RewardDelivery.Result.APPLIED;
             }
         });
-        RewardClaim result = journal.get(id);
-        player.sendSystemMessage(Component.literal(result.complete() ? RewardMessages.delivered(name(result.trainer()),Math.max(0,result.nextEligibleAt()-System.currentTimeMillis()),result.cooldownMinutes()>0)
+        RewardClaim result = journal.get(player.getUUID(),id);
+        player.sendSystemMessage(com.ianblk.zianrct.Messages.format(Component.literal(result.complete() ? RewardMessages.delivered(name(result.trainer()),Math.max(0,result.nextEligibleAt()-System.currentTimeMillis()),result.cooldownMinutes()>0)
                 : result.review() ? "Recompensa " + id + " pendiente de revisión administrativa."
-                : "Recompensa " + id + " pendiente. Libera espacio o revisa la cartera y usa /zianrct reward claim " + id));
+                : "Recompensa " + id + " pendiente. Libera espacio o revisa la cartera y usa /zianrct reward claim " + id)));
         ZianRCT.LOGGER.info("[ZIAN-AUDIT] action=trainer_reward_claim playerUuid={} trainer={} operation={} result={}",
                 player.getUUID(), result.trainer(), id, result.complete() ? "DELIVERED" : result.review() ? "REVIEW" : "PENDING");
     }
@@ -254,7 +259,7 @@ public final class TrainerRewardService {
     }
     private void trainer(String trainer) {
         ready(); TrainerRewardConfig.validId(trainer);
-        if (!RCTMod.getInstance().getTrainerManager().isValidId(trainer)) throw new IllegalArgumentException("Entrenador RCT inexistente: " + trainer);
+        if (!StandaloneRuntime.getInstance().getTrainerManager().isValidId(trainer)) throw new IllegalArgumentException("Entrenador RCT inexistente: " + trainer);
     }
     public void coins(String trainer, String currency, long amount) throws IOException {
         trainer(trainer);
@@ -283,7 +288,7 @@ public final class TrainerRewardService {
         com.ianblk.zianrct.rct.RctTrainerOptions.rewardConfig(config.definitions());packs.regenerate(server,"reward removed"); }
     public void enabled(boolean enabled) throws IOException { ready(); config.enabled(enabled); }
     public void reload() throws IOException { ready();if(packs.isBusy())throw new IOException("Recarga en curso");
-        if(RCTMod.getInstance().getTrainerSpawner().getSpawns().stream().anyMatch(n->n.isInBattle()))throw new IOException("Espera a que terminen los combates");
+        if(StandaloneRuntime.getInstance().getTrainerSpawner().getSpawns().stream().anyMatch(n->n.isInBattle()))throw new IOException("Espera a que terminen los combates");
         config.reload();bindWallet();com.ianblk.zianrct.rct.RctTrainerOptions.rewardConfig(config.definitions());packs.regenerate(server,"reward config reload"); }
     public void resolve(UUID player, UUID id, int component, UUID admin, String decision, String evidence) throws IOException {
         ready(); journal.resolve(player, id, component, admin, decision, evidence);

@@ -20,7 +20,7 @@ import java.util.Locale;
 import java.util.Map;
 import java.util.Optional;
 
-public final class MedalCaseScreen extends Screen {
+public final class MedalCaseScreen extends ResponsiveScreen {
     private static final int CARD_WIDTH = MedalCaseLayout.CARD_WIDTH;
     private static final int CARD_HEIGHT = MedalCaseLayout.CARD_HEIGHT;
     private static final int GAP = MedalCaseLayout.GAP;
@@ -42,7 +42,7 @@ public final class MedalCaseScreen extends Screen {
     }
 
     @Override
-    protected void init() {
+    protected void init() {fitViewport(600,360);
         super.init();
         textureAvailability.clear();
         layout = null;
@@ -105,9 +105,9 @@ public final class MedalCaseScreen extends Screen {
     }
 
     @Override
-    public void render(GuiGraphics graphics, int mouseX, int mouseY, float partialTick) {
+    protected void renderCanvas(GuiGraphics graphics, int mouseX, int mouseY, float partialTick) {
         updateLayout();
-        super.render(graphics, mouseX, mouseY, partialTick);
+        renderWidgets(graphics, mouseX, mouseY, partialTick);
         graphics.drawCenteredString(font, title, width / 2, layout.y() + 12, 0xFFF2C14E);
 
         Optional<MedalClientSnapshot> optionalSnapshot = ClientMedalState.current();
@@ -165,7 +165,7 @@ public final class MedalCaseScreen extends Screen {
         );
 
         if (hovered != null) {
-            graphics.renderTooltip(font, tooltipFor(hovered, hoveredOwned), Optional.empty(), mouseX, mouseY);
+            queueTooltip(tooltipFor(hovered, hoveredOwned));
         }
     }
 
