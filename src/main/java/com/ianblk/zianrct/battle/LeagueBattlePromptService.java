@@ -5,7 +5,6 @@ import com.ianblk.zianrct.ZianRCT;
 import com.ianblk.zianrct.config.ConfigState;
 import com.ianblk.zianrct.config.ZianRctConfig;
 import com.ianblk.zianrct.rct.RctProgressService;
-import com.ianblk.zianrct.permission.RctPermissions;
 import com.mojang.brigadier.CommandDispatcher;
 import com.mojang.brigadier.arguments.StringArgumentType;
 import net.minecraft.ChatFormatting;
@@ -71,11 +70,6 @@ public final class LeagueBattlePromptService {
 
         event.setCanceled(true);
         event.setCancellationResult(InteractionResult.SUCCESS);
-        if (!RctPermissions.allows(player.createCommandSourceStack(), "battle", false)) {
-            pending.remove(player.getUUID());
-            player.sendSystemMessage(com.ianblk.zianrct.Messages.format(Component.literal("No tienes permiso para iniciar este desafío.").withStyle(ChatFormatting.RED)));
-            return;
-        }
 
         String prerequisiteMessage = missingPrerequisiteMessage(player, trainer.getTrainerId());
         if (prerequisiteMessage != null) {
@@ -108,7 +102,6 @@ public final class LeagueBattlePromptService {
     private void registerCommands(CommandDispatcher<CommandSourceStack> dispatcher) {
         dispatcher.register(
                 Commands.literal("zianrctbattle")
-                        .requires(source -> RctPermissions.allows(source, "battle", false))
                         .then(Commands.literal("accept")
                                 .then(Commands.argument("trainer", StringArgumentType.word())
                                         .executes(context -> accept(

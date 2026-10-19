@@ -60,8 +60,8 @@ public final class ZianRctClient {
             SystemToast.add(
                     minecraft.getToasts(),
                     SystemToast.SystemToastId.PERIODIC_NOTIFICATION,
-                    Component.literal("Zian RCT"),
-                    Component.literal("Aún no se han sincronizado las medallas del servidor.")
+                    Component.translatableWithFallback("ui.zianrct.ad2aaddfd9bd", "Zian RCT"),
+                    Component.translatableWithFallback("ui.zianrct.4b45bc3e0265", "Aún no se han sincronizado las medallas del servidor.")
             );
         }
     }
@@ -82,7 +82,7 @@ public final class ZianRctClient {
         SystemToast.add(
                 minecraft.getToasts(),
                 SystemToast.SystemToastId.PERIODIC_NOTIFICATION,
-                Component.literal("¡Nueva medalla!"),
+                Component.translatableWithFallback("ui.zianrct.356602711548", "¡Nueva medalla!"),
                 Component.literal(definition.name())
         );
         if (minecraft.player != null) {

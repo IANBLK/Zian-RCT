@@ -93,7 +93,7 @@ public final class TrainerRewardService {
             ZianRCT.LOGGER.error("Trainer rewards disabled; invalid configuration/journal preserved", error);
         }
     }
-    public void stop() { com.ianblk.zianrct.legendary.LegendaryTrials.stop();config = null; journal = null; wallet = null; server = null; lastClaim.clear(); }
+    public void stop() { references=null; com.ianblk.zianrct.legendary.LegendaryTrials.stop();config = null; journal = null; wallet = null; server = null; lastClaim.clear(); }
     private void bindWallet() {
         wallet = null;
         try { wallet = AvecoinsWallet.bind(); walletStatus = "AVECOINS compatible"; }
@@ -129,6 +129,10 @@ public final class TrainerRewardService {
             player.sendSystemMessage(com.ianblk.zianrct.Messages.format(Component.literal("La recompensa del entrenador necesita revisión. No repitas pagos manualmente sin revisar el registro.")));
         }
     }
+    private HumanReferences references;
+    private HumanReferences references(){ready();if(references==null)try{references=new HumanReferences(server.getWorldPath(LevelResource.ROOT).resolve("data/zianrct-references.json"),"RCT");}catch(IOException e){throw new IllegalStateException(e);}return references;}
+    public String reference(UUID owner,UUID id){return references().reference(id,owner,server.getProfileCache().get(owner).map(com.mojang.authlib.GameProfile::getName).orElse("JUGADOR"));}
+    public UUID resolveReference(UUID owner,String value){return references().resolve(value,owner);}
     public List<RewardClaim> claims(UUID player) { ready(); return journal.forPlayer(player); }
     public void notifyPending(ServerPlayer player) {
         if (journal == null) return;

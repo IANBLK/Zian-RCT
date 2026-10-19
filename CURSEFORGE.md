@@ -1,11 +1,11 @@
-# Zian RCT 0.2.1
+# Zian RCT 0.2.4
 
-- File type: **Release**.
-- Minecraft **1.21.1**, loader **NeoForge**, Java **21**. Install the same JAR on client and server.
-- Main file: `zianrct-0.2.1.jar`. Upload the JAR, not a documentation ZIP.
-- Current description: [description.md](docs/releases/0.2.1/description.md).
-- Current changes: [changelog.md](docs/releases/0.2.1/changelog.md).
-- Current requirements and commands: [README](README.md).
-- Artifact checksum and validation: [artifact.json](docs/releases/0.2.1/artifact.json).
+Minecraft 1.21.1 / NeoForge / Java 21. Client and server.
 
-External dependencies are listed in the README; do not bundle them in the uploaded file. Updating this GitHub documentation does not change an existing CurseForge listing automatically.
+Upload `zianrct-0.2.4.jar` (the JAR, not the documentation ZIP).
+
+- [Description](docs/releases/0.2.4/description.md)
+- [Changelog](docs/releases/0.2.4/changelog.md)
+- [Artifact and dependencies](docs/releases/0.2.4/artifact.json)
+
+Web submission status is recorded separately; this document does not confirm an upload.

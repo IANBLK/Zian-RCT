@@ -19,7 +19,7 @@ public final class NpcEditorScreen extends ResponsiveScreen {
     private long lastSend;
     private String confirm = "";
     private record TextLine(String text, int row, int color, int maxWidth) {}
-    public NpcEditorScreen(NpcEditorState state) { super(Component.literal("Zian RCT · Gestor de NPC")); this.state = state;
+    public NpcEditorScreen(NpcEditorState state) { super(Component.translatableWithFallback("ui.zianrct.ff1abce411eb", "Zian RCT · Gestor de NPC")); this.state = state;
         repeatChoice=state.rewardMode().equals("REPEAT");if(state.mode()!=NpcEditorState.Mode.EDIT)lootTab=false; }
     @Override protected void init() {fitViewport(600,360);
         base.clear(); labels.clear(); clearWidgets();
@@ -105,7 +105,7 @@ public final class NpcEditorScreen extends ResponsiveScreen {
                 }
             }
         }
-        close=addRenderableWidget(new Button(width/2-45,y+h-25,90,18,Component.literal("Cerrar"),b->onClose(),s->s.get()){
+        close=addRenderableWidget(new Button(width/2-45,y+h-25,90,18,Component.translatableWithFallback("ui.zianrct.4b0816bbd5e9", "Cerrar"),b->onClose(),s->s.get()){
             @Override protected void renderWidget(GuiGraphics g,int mx,int my,float p){drawButton(this,g);}
         });
         position();
@@ -124,7 +124,7 @@ public final class NpcEditorScreen extends ResponsiveScreen {
         return row;
     }
     private EditBox field(int left,int row,int size,String value){
-        EditBox box=new EditBox(font,left,y+32+row,size,18,Component.literal("Dato del entrenador"));
+        EditBox box=new EditBox(font,left,y+32+row,size,18,Component.translatableWithFallback("ui.zianrct.f6a1062a638b", "Dato del entrenador"));
         box.setMaxLength(128);box.setValue(value);addRenderableWidget(box);base.put(box,row);return box;
     }
     private Button button(int left,int row,int size,String text,Runnable action){
@@ -149,7 +149,7 @@ public final class NpcEditorScreen extends ResponsiveScreen {
     private void destructive(String action){
         if(!confirm.equals(action)){
             confirm=action;
-            if(minecraft.player!=null)minecraft.player.sendSystemMessage(com.ianblk.zianrct.Messages.format(Component.literal("Pulsa de nuevo para confirmar. Los premios reservados se conservan.")));
+            if(minecraft.player!=null)minecraft.player.sendSystemMessage(com.ianblk.zianrct.Messages.format(Component.translatableWithFallback("ui.zianrct.e6e18767d0fb", "Pulsa de nuevo para confirmar. Los premios reservados se conservan.")));
             return;
         }
         send(action,"","");
@@ -159,7 +159,7 @@ public final class NpcEditorScreen extends ResponsiveScreen {
         if(now-lastSend<600_000_000L)return;
         lastSend=now;
         try{PacketDistributor.sendToServer(new NpcEditorAction(state.nonce(),action,value,extra));}
-        catch(IllegalArgumentException e){if(minecraft.player!=null)minecraft.player.sendSystemMessage(com.ianblk.zianrct.Messages.format(Component.literal("Revisa el ID, la moneda y el importe.")));}
+        catch(IllegalArgumentException e){if(minecraft.player!=null)minecraft.player.sendSystemMessage(com.ianblk.zianrct.Messages.format(Component.translatableWithFallback("ui.zianrct.757a90001ed3", "Revisa el ID, la moneda y el importe.")));}
     }
     @Override protected void renderCanvas(GuiGraphics g,int mx,int my,float partial){
         g.fill(0,0,width,height,0x90000000);

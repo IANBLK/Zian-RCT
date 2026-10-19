@@ -27,13 +27,13 @@ public final class TrainerChoiceScreen extends ResponsiveScreen {
     @Override protected void init(){fitViewport(600,360);
         entries.clear();w=Math.min(500,width-16);h=Math.min(320,height-16);x=(width-w)/2;y=(height-h)/2;
         pageSize=Math.max(1,(h-116)/24);
-        var search=addRenderableWidget(new EditBox(font,x+12,y+32,w-24,18,Component.literal("Buscar por nombre o ID")));
+        var search=addRenderableWidget(new EditBox(font,x+12,y+32,w-24,18,Component.translatableWithFallback("ui.zianrct.c518cc7b7f45", "Buscar por nombre o ID")));
         search.setMaxLength(96);search.setValue(query);search.setResponder(text->{query=text;page=0;refresh();});
         for(int i=0;i<pageSize;i++){int row=i;entries.add(addRenderableWidget(button(x+12,y+59+i*24,w-24,"",()->choose(row))));}
         addRenderableWidget(button(x+12,y+h-50,60,"<",()->{page=Math.max(0,page-1);refresh();}));
         addRenderableWidget(button(x+w-72,y+h-50,60,">",()->{page=Math.min(Math.max(0,(filtered.size()-1)/pageSize),page+1);refresh();}));
         addRenderableWidget(button(x+12,y+h-26,100,"Cancelar",this::onClose));
-        addRenderableWidget(button(x+w-122,y+h-26,110,"Aplicar",()->{accept.accept(List.copyOf(selected));minecraft.setScreen(parent);}));
+        addRenderableWidget(button(x+w-122,y+h-26,110,"Usar selección",()->{accept.accept(List.copyOf(selected));minecraft.setScreen(parent);}));
         refresh();
     }
     private void refresh(){

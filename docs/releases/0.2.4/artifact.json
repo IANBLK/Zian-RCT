@@ -1,0 +1,74 @@
+{
+  "name": "Zian RCT",
+  "projectId": 1722083,
+  "version": "0.2.4",
+  "jar": "zianrct-0.2.4.jar",
+  "sha256": "0c3d3b09271cb92e727704f074c94735b4d6bb45238e08289c6e27730599ebd7",
+  "dependencies": {
+    "zianrct": [
+      {
+        "modId": "avecoins",
+        "type": "optional",
+        "versionRange": "[0,)",
+        "ordering": "AFTER",
+        "side": "BOTH"
+      },
+      {
+        "modId": "neoforge",
+        "type": "required",
+        "versionRange": "[21.1,)",
+        "ordering": "NONE",
+        "side": "BOTH"
+      },
+      {
+        "modId": "minecraft",
+        "type": "required",
+        "versionRange": "[1.21.1]",
+        "ordering": "NONE",
+        "side": "BOTH"
+      },
+      {
+        "modId": "cobblemon",
+        "type": "required",
+        "versionRange": "[1.8.2,1.9.0)",
+        "ordering": "AFTER",
+        "side": "BOTH"
+      },
+      {
+        "modId": "rctapi",
+        "type": "required",
+        "versionRange": "[0.16.2-beta,0.17.0)",
+        "ordering": "AFTER",
+        "side": "BOTH"
+      },
+      {
+        "modId": "rctmod",
+        "type": "incompatible",
+        "versionRange": "[0,)",
+        "ordering": "AFTER",
+        "side": "BOTH"
+      },
+      {
+        "modId": "architectury",
+        "type": "required",
+        "versionRange": "[13.0.11,14.0.0)",
+        "ordering": "AFTER",
+        "side": "BOTH"
+      },
+      {
+        "modId": "kotlinforforge",
+        "type": "required",
+        "versionRange": "[5.12.0,6.0.0)",
+        "ordering": "AFTER",
+        "side": "BOTH"
+      }
+    ]
+  },
+  "license": "MIT (code); third-party skins retain separate rights - see META-INF/ARTWORK-NOTICE.txt",
+  "uploaded": true,
+  "descriptionVerified": true,
+  "fileId": 9252559,
+  "authorFileUrl": "https://authors.curseforge.com/#/projects/1722083/files/9252559",
+  "status": "Processing",
+  "verifiedAt": "2026-10-19T05:23:22.329982+00:00"
+}

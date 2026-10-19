@@ -1,0 +1,9 @@
+Original Zian RCT program code is licensed under MIT. Imported skins are not
+relicensed under MIT and retain the rights of their respective creators.
+
+The maintainer identifies https://es.namemc.com/ as the source of the 27 skins
+supplied on 18 October 2026 and states that they are publicly distributed.
+This notice records the maintainer's source and statement; it does not claim
+authorship by NameMC or Zian, independently verify individual redistribution
+terms, or grant a standalone artwork license. Individual creator names and
+skin page links were not supplied.

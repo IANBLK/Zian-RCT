@@ -1,1 +1,0 @@
-Custom trainers, NPCs, progression, medals and durable rewards powered by RCT API. Minecraft 1.21.1 / NeoForge; independent of RCTMod.

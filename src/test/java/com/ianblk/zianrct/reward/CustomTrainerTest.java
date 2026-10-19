@@ -84,7 +84,7 @@ class CustomTrainerTest {
         }
     }
     @Test void everyNamedCatalogSkinIsABundled64PixelMinecraftTexture() throws Exception{
-        assertEquals(6,CustomTrainer.SKINS.size());assertEquals(CustomTrainer.SKINS.size(),CustomTrainer.SKIN_NAMES.size());
+        assertEquals(33,CustomTrainer.SKINS.size());assertEquals(CustomTrainer.SKINS.size(),CustomTrainer.SKIN_NAMES.size());
         for(String path:CustomTrainer.SKINS){
             try(var stream=getClass().getResourceAsStream("/assets/zianrct/"+path.substring("zianrct:".length()))){
                 assertNotNull(stream,path);var image=javax.imageio.ImageIO.read(stream);

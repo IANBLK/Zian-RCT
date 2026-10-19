@@ -164,6 +164,9 @@ public final class MedalCaseScreen extends ResponsiveScreen {
                 0xB8B8B8
         );
 
+        var nextMedal=snapshot.definitions().stream().filter(d->!owned.containsKey(d.id())).min(java.util.Comparator.comparingInt(MedalClientSnapshot.MedalDefinitionView::order));
+        String goal=nextMedal.map(d->"Por obtener: "+d.trainerName()).orElse("Colección completada");
+        graphics.drawCenteredString(font,font.plainSubstrByWidth(goal,layout.width()-24),width/2,layout.y()+layout.height()-56,0xFF99D6E8);
         if (hovered != null) {
             queueTooltip(tooltipFor(hovered, hoveredOwned));
         }
@@ -316,4 +319,6 @@ public final class MedalCaseScreen extends ResponsiveScreen {
     public boolean isPauseScreen() {
         return false;
     }
+
+ @Override public void onClose(){if(!GuiReturn.returnToMenu())super.onClose();}
 }

@@ -7,10 +7,13 @@ import net.minecraft.client.renderer.entity.layers.*;
 import net.minecraft.resources.ResourceLocation;
 
 public final class CustomTrainerRenderer extends MobRenderer<IndependentTrainerMob,PlayerModel<IndependentTrainerMob>> {
+    private final PlayerModel<IndependentTrainerMob> classic,slim;
     public CustomTrainerRenderer(EntityRendererProvider.Context context){
         super(context,new PlayerModel<>(context.bakeLayer(ModelLayers.PLAYER),false),0.5f);
+        classic=model;slim=new PlayerModel<>(context.bakeLayer(ModelLayers.PLAYER_SLIM),true);
         addLayer(new ItemInHandLayer<>(this,context.getItemInHandRenderer()));
     }
+    @Override public void render(IndependentTrainerMob trainer,float yaw,float partial,com.mojang.blaze3d.vertex.PoseStack pose,net.minecraft.client.renderer.MultiBufferSource buffers,int light){model=com.ianblk.zianrct.creator.CustomTrainer.slim(getTextureLocation(trainer).toString())?slim:classic;super.render(trainer,yaw,partial,pose,buffers,light);}
     @Override protected void renderNameTag(IndependentTrainerMob trainer,net.minecraft.network.chat.Component title,
             com.mojang.blaze3d.vertex.PoseStack pose,net.minecraft.client.renderer.MultiBufferSource buffers,int light,float partialTick){
         super.renderNameTag(trainer,trainer.getSpeech().isBlank()?title:net.minecraft.network.chat.Component.literal(trainer.getSpeech()),pose,buffers,light,partialTick);

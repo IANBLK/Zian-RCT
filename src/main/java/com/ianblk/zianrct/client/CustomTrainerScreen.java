@@ -25,7 +25,7 @@ public final class CustomTrainerScreen extends ResponsiveScreen {
     private String trialBoss="",shinyDenominator="512";
     private record Label(String text,int row){}
     public CustomTrainerScreen(NpcEditorState state){
-        super(Component.literal("Zian RCT · Definir entrenador"));this.state=state;
+        super(Component.translatableWithFallback("ui.zianrct.58de124576e5", "Zian RCT · Definir entrenador"));this.state=state;
         Arrays.fill(species,"");Arrays.fill(levels,"25");Arrays.fill(moves,"tackle");
         species[0]="pikachu";moves[0]="tackle,thunderbolt";
         if(!state.customDraft().isBlank())load(CustomTrainerStore.decode(state.customDraft()));
@@ -57,7 +57,7 @@ public final class CustomTrainerScreen extends ResponsiveScreen {
             label("Nombre visible:",64);EditBox n=field(left,78,usable,64,name);reads.add(()->name=n.getValue());
             button(left,102,usable,"Dificultad: "+difficulty,()->{read();var all=List.of("FACIL","NORMAL","DIFICIL","JEFE");difficulty=all.get((all.indexOf(difficulty)+1)%4);init();});
             button(left,126,usable,"Batalla: "+(format.equals("GEN_9_DOUBLES")?"Doble":"Individual"),()->{read();format=format.equals("GEN_9_DOUBLES")?"GEN_9_SINGLES":"GEN_9_DOUBLES";init();});
-            button(left,150,usable,"Skin: "+CustomTrainer.SKIN_NAMES.get(skin),()->{read();skin=(skin+1)%CustomTrainer.SKINS.size();init();});
+            button(left,150,usable,"Skin: "+CustomTrainer.SKIN_NAMES.get(skin),()->{read();var options=new java.util.ArrayList<TrainerChoiceScreen.Choice>();for(int at=0;at<CustomTrainer.SKINS.size();at++){String texture=CustomTrainer.SKINS.get(at);options.add(new TrainerChoiceScreen.Choice(""+at,CustomTrainer.SKIN_NAMES.get(at),CustomTrainer.slim(texture)?"Brazos delgados":"Brazos gruesos"));}minecraft.setScreen(new TrainerChoiceScreen(this,"Apariencia del entrenador",options,List.of(""+skin),1,chosen->{if(!chosen.isEmpty())skin=Integer.parseInt(chosen.getFirst());minecraft.setScreen(this);}));});
             label("No exige medallas de Rassvet ni otorga nuevas medallas.",180);
             label("Dificultad ajusta IV/EV e IA; los niveles se editan aparte.",196);
             label("El loot se configura después en Modificar > Loot.",212);
@@ -65,7 +65,7 @@ public final class CustomTrainerScreen extends ResponsiveScreen {
         }else if(tab==1){
             label("Especie / nivel (1–100). Vacío = no usar esa plaza.",26);
             button(left,42,usable,"Movimientos: "+(autoMoves?"Automáticos por dificultad":"Manuales")+" (cambiar)",()->{read();autoMoves=!autoMoves;init();});
-            label(autoMoves?"El servidor prepara los ataques al guardar; no necesitas elegirlos.":"Usa los selectores o escribe tus ataques.",66);
+            label(autoMoves?"Los cambios se aplican al pulsar Guardar entrenador.":"Usa los selectores o escribe tus ataques.",66);
             int row=84;
             for(int i=0;i<6;i++){
                 int slot=i;
@@ -96,7 +96,7 @@ public final class CustomTrainerScreen extends ResponsiveScreen {
             label("Crea primero el jefe; su loot se configura por separado.",199);
             contentHeight=226;
         }
-        save=addRenderableWidget(gold(x+12,y+h-25,160,"Guardar definición",()->submit()));
+        save=addRenderableWidget(gold(x+12,y+h-25,160,"Guardar entrenador",()->submit()));
         back=addRenderableWidget(gold(x+w-112,y+h-25,100,"Volver a lista",()->PacketDistributor.sendToServer(new NpcEditorAction(state.nonce(),"list","",""))));
         position();
     }
@@ -146,7 +146,7 @@ public final class CustomTrainerScreen extends ResponsiveScreen {
         }));
     }
     private EditBox field(int left,int row,int size,int max,String value){
-        var box=new EditBox(font,left,y+32+row,size,18,Component.literal("Dato del entrenador"));box.setMaxLength(max);box.setValue(value);
+        var box=new EditBox(font,left,y+32+row,size,18,Component.translatableWithFallback("ui.zianrct.f6a1062a638b", "Dato del entrenador"));box.setMaxLength(max);box.setValue(value);
         addRenderableWidget(box);rows.put(box,row);return box;
     }
     private void label(String text,int row){labels.add(new Label(text,row));}

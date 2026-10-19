@@ -12,7 +12,7 @@ public final class YouerPermissionBridge {
             Class<?> managers = Class.forName("org.bukkit.plugin.PluginManager");
             Class<?> permissions = Class.forName("org.bukkit.permissions.Permission");
             Class<?> defaults = Class.forName("org.bukkit.permissions.PermissionDefault");
-            for (String command : List.of("zianrct", "medals", "zianrctbattle")) {
+            for (String command : List.of("zianrct", "medals", "medallas", "zianrctbattle")) {
                 String node = "minecraft.command." + command;
                 if (managers.getMethod("getPermission", String.class).invoke(manager, node) != null) continue;
                 Object permission = permissions.getConstructor(String.class, String.class, defaults)

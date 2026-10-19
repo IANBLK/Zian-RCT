@@ -1,1 +1,0 @@
-Create Cobblemon trainers with in-game NPC editors, level caps, medals, repeatable loot and unique legendary trials, powered by RCTAPI.

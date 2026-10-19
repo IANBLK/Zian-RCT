@@ -39,8 +39,9 @@ public final class ZianRctCommands {
                         .executes(context -> openMedals(context.getSource(), medalService))
         );
 
+        if(dispatcher.getRoot().getChild("medallas")==null)dispatcher.register(Commands.literal("medallas").requires(s->RctPermissions.allows(s,"medals",false)).executes(c->openMedals(c.getSource(),medalService)));
         dispatcher.register(
-                Commands.literal("zianrct")
+                Commands.literal("zianrct").requires(s->true)
                         .then(Commands.literal("medal")
                                 .then(Commands.literal("give")
                                         .requires(source -> RctPermissions.allows(source, "admin.medal.give", true))
