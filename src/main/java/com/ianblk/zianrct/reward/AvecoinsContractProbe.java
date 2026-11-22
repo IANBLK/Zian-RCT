@@ -11,7 +11,6 @@ import java.util.UUID;
 
 /** Read-only compatibility check; it never reads or changes a player wallet. */
 public final class AvecoinsContractProbe {
-    private static final Set<String> SUPPORTED_VERSIONS = Set.of("2.3", "2.4", "2.5");
     private AvecoinsContractProbe() {
     }
 
@@ -22,28 +21,20 @@ public final class AvecoinsContractProbe {
                 return new ProbeResult(false, "AVECOINS no estÃ¡ instalado", List.of());
             }
             String version = mod.get().getModInfo().getVersion().toString();
-            if (!supportedVersion(version) && !AvecoinsContractFingerprint.matchesInspectedContract()) {
-                return new ProbeResult(false, "AVECOINS " + version + "; se requiere 2.3, 2.4 o 2.5", List.of());
-            }
-
             Class<?> crafting = Class.forName("net.sundggs.avecoins.config.CraftingConfig");
             Class<?> store = Class.forName("net.sundggs.avecoins.shop.WalletStore");
             Class<?> data = Class.forName("net.sundggs.avecoins.shop.WalletData");
             ProbeResult layout = inspectLayout(crafting, store, data);
             return layout.compatible()
                 ? new ProbeResult(true, "AVECOINS " + version + " compatible", layout.currencies())
-                : layout;
+                : new ProbeResult(false, "AVECOINS " + version + ": " + layout.detail(), List.of());
         } catch (ReflectiveOperationException | LinkageError | RuntimeException error) {
             return new ProbeResult(
                 false,
-                "contrato AVECOINS incompatible: " + error.getClass().getSimpleName(),
+                "contrato AVECOINS incompatible: " + error.getClass().getSimpleName() + " " + error.getMessage(),
                 List.of()
             );
         }
-    }
-
-    static boolean supportedVersion(String version) {
-        return SUPPORTED_VERSIONS.contains(version);
     }
 
     static ProbeResult inspectLayout(Class<?> crafting, Class<?> store, Class<?> data)
@@ -65,9 +56,10 @@ public final class AvecoinsContractProbe {
             var copy = data.getMethod("copy");
             var balance = data.getMethod("balance", UUID.class, String.class);
             var balances = data.getMethod("balances", UUID.class);
-            data.getMethod("credit", UUID.class, String.class, long.class);
+            var credit = data.getMethod("credit", UUID.class, String.class, long.class);
             var debit = data.getMethod("debit", UUID.class, String.class, long.class);
-            if (!Modifier.isStatic(get.getModifiers())
+            if (credit.getReturnType() != void.class
+                || !Modifier.isStatic(get.getModifiers())
                 || !data.isAssignableFrom(get.getReturnType())
                 || !Modifier.isStatic(save.getModifiers())
                 || !booleanType(save.getReturnType())
