@@ -66,10 +66,30 @@ class TrainerWalletTest {
         assertEquals(1, Store.credits.get());
         assertTrue(journal.get(RewardJournal.id(player, "trainer")).review());
     }
-    @Test void futureWalletVersionsAreNotAutomaticallyAccepted() {
-        assertTrue(AvecoinsContractProbe.supportedVersion("2.3"));
-        assertTrue(AvecoinsContractProbe.supportedVersion("2.4"));
-        assertTrue(AvecoinsContractProbe.supportedVersion("2.5"));
-        assertFalse(AvecoinsContractProbe.supportedVersion("2.6"));
+    // La compatibilidad ya no depende del numero de version (2.5, 3.0, 4.1...) sino de las firmas usadas.
+    public static class NoDebit { public static final int SLOT_COUNT = 27, STACK_SIZE = 64;
+        public NoDebit copy() { return this; } public long balance(UUID p, String c) { return 0; }
+        public Map<String, Long> balances(UUID p) { return Map.of(); } public void credit(UUID p, String c, long a) { } }
+    public static class NoDebitStore { public static NoDebit get() { return null; } public static boolean save(NoDebit d) { return true; } }
+    public static class WrongBalance { public static final int SLOT_COUNT = 27, STACK_SIZE = 64;
+        public WrongBalance copy() { return this; } public int balance(UUID p, String c) { return 0; }
+        public Map<String, Long> balances(UUID p) { return Map.of(); } public void credit(UUID p, String c, long a) { }
+        public boolean debit(UUID p, String c, long a) { return false; } }
+    public static class WrongStore { public static WrongBalance get() { return null; } public static boolean save(WrongBalance d) { return true; } }
+    @Test void anyVersionWithTheFullContractIsAccepted() throws Exception {
+        var probe = AvecoinsContractProbe.inspectLayout(Crafting.class, Store.class, Data.class);
+        assertTrue(probe.compatible());
+        assertEquals(List.of("avecoins:coppercoin", "avecoins:goldticket"), probe.currencies());
+    }
+    @Test void missingMethodIsRejectedNamingIt() throws Exception {
+        var probe = AvecoinsContractProbe.inspectLayout(Crafting.class, NoDebitStore.class, NoDebit.class);
+        assertFalse(probe.compatible());
+        assertTrue(probe.detail().contains("debit"));
+        assertThrows(IllegalStateException.class, () -> new ReflectiveAvecoinsWallet(Crafting.class, NoDebitStore.class, NoDebit.class));
+    }
+    @Test void changedSignatureIsRejected() throws Exception {
+        // balance(UUID,String) devuelve int en vez de long: puede ser un contrato distinto.
+        var probe = AvecoinsContractProbe.inspectLayout(Crafting.class, WrongStore.class, WrongBalance.class);
+        assertFalse(probe.compatible());
     }
 }

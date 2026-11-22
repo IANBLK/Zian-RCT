@@ -22,10 +22,6 @@ public final class AvecoinsContractProbe {
                 return new ProbeResult(false, "AVECOINS no estÃ¡ instalado", List.of());
             }
             String version = mod.get().getModInfo().getVersion().toString();
-            if (!supportedVersion(version) && !AvecoinsContractFingerprint.matchesInspectedContract()) {
-                return new ProbeResult(false, "AVECOINS " + version + "; se requiere 2.3, 2.4 o 2.5", List.of());
-            }
-
             Class<?> crafting = Class.forName("net.sundggs.avecoins.config.CraftingConfig");
             Class<?> store = Class.forName("net.sundggs.avecoins.shop.WalletStore");
             Class<?> data = Class.forName("net.sundggs.avecoins.shop.WalletData");
@@ -42,11 +38,17 @@ public final class AvecoinsContractProbe {
         }
     }
 
-    static boolean supportedVersion(String version) {
-        return SUPPORTED_VERSIONS.contains(version);
+    /** Any version is accepted when the used signatures exist; a missing piece fails closed with its name. */
+    static ProbeResult inspectLayout(Class<?> crafting, Class<?> store, Class<?> data)
+        throws ReflectiveOperationException {
+        try {
+            return checkLayout(crafting, store, data);
+        } catch (NoSuchMethodException | NoSuchFieldException error) {
+            return incompatible("AVECOINS: falta " + error.getMessage());
+        }
     }
 
-    static ProbeResult inspectLayout(Class<?> crafting, Class<?> store, Class<?> data)
+    private static ProbeResult checkLayout(Class<?> crafting, Class<?> store, Class<?> data)
         throws ReflectiveOperationException {
             Field managedField = crafting.getField("MANAGED_RESULTS");
             if (!Modifier.isStatic(managedField.getModifiers())) {
