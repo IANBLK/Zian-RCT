@@ -41,6 +41,24 @@ class TrainerWalletTest {
         assertEquals(AvecoinsWallet.Mutation.WALLET_FULL, wallet.credit(player, "avecoins:coppercoin", 1728));
         assertEquals(1, Store.credits.get());
     }
+    public static class SameCopy extends Data { @Override public Data copy() { return this; } }
+    public static class Clipping extends Data {
+        @Override public Data copy() { var result = new Clipping(); users.forEach((u, b) -> result.users.put(u, new HashMap<>(b))); return result; }
+        @Override public void credit(UUID player, String currency, long amount) { super.credit(player, currency, amount - 1); }
+    }
+    @Test void creditFailsWithoutSavingWhenCopyIsNotACopy() throws Exception {
+        var wallet = reset(); UUID player = UUID.randomUUID();
+        Store.data = new SameCopy();
+        assertThrows(IllegalStateException.class, () -> wallet.credit(player, "avecoins:coppercoin", 5));
+        assertTrue(Store.data instanceof SameCopy);
+    }
+    @Test void creditFailsWithoutSavingWhenWalletClipsSilently() throws Exception {
+        var wallet = reset(); UUID player = UUID.randomUUID();
+        Store.data = new Clipping();
+        assertThrows(IllegalStateException.class, () -> wallet.credit(player, "avecoins:coppercoin", 5));
+        assertEquals(0, Store.data.balance(player, "avecoins:coppercoin"));
+        assertTrue(Store.data instanceof Clipping);
+    }
     @Test void otherCurrencyStacksConsumeCapacity() throws Exception {
         var wallet = reset(); UUID player = UUID.randomUUID();
         Store.data.users.put(player, new HashMap<>(Map.of("avecoins:goldticket", 1728L)));
