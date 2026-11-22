@@ -99,10 +99,10 @@ class TrainerWalletTest {
         assertTrue(probe.compatible());
         assertEquals(List.of("avecoins:coppercoin", "avecoins:goldticket"), probe.currencies());
     }
-    @Test void missingMethodIsRejectedNamingIt() throws Exception {
-        var probe = AvecoinsContractProbe.inspectLayout(Crafting.class, NoDebitStore.class, NoDebit.class);
-        assertFalse(probe.compatible());
-        assertTrue(probe.detail().contains("debit"));
+    @Test void missingMethodFailsClosedNamingIt() throws Exception {
+        var error = assertThrows(NoSuchMethodException.class,
+            () -> AvecoinsContractProbe.inspectLayout(Crafting.class, NoDebitStore.class, NoDebit.class));
+        assertTrue(error.getMessage().contains("debit"));
         assertThrows(IllegalStateException.class, () -> new ReflectiveAvecoinsWallet(Crafting.class, NoDebitStore.class, NoDebit.class));
     }
     public static class BoolCredit { public static final int SLOT_COUNT = 27, STACK_SIZE = 64;

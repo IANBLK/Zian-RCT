@@ -37,17 +37,7 @@ public final class AvecoinsContractProbe {
         }
     }
 
-    /** Any version is accepted when the used signatures exist; a missing piece fails closed with its name. */
     static ProbeResult inspectLayout(Class<?> crafting, Class<?> store, Class<?> data)
-        throws ReflectiveOperationException {
-        try {
-            return checkLayout(crafting, store, data);
-        } catch (NoSuchMethodException | NoSuchFieldException error) {
-            return incompatible("AVECOINS: falta " + error.getMessage());
-        }
-    }
-
-    private static ProbeResult checkLayout(Class<?> crafting, Class<?> store, Class<?> data)
         throws ReflectiveOperationException {
             Field managedField = crafting.getField("MANAGED_RESULTS");
             if (!Modifier.isStatic(managedField.getModifiers())) {
