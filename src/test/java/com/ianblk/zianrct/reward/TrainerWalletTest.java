@@ -87,6 +87,16 @@ class TrainerWalletTest {
         assertTrue(probe.detail().contains("debit"));
         assertThrows(IllegalStateException.class, () -> new ReflectiveAvecoinsWallet(Crafting.class, NoDebitStore.class, NoDebit.class));
     }
+    public static class BoolCredit { public static final int SLOT_COUNT = 27, STACK_SIZE = 64;
+        public BoolCredit copy() { return this; } public long balance(UUID p, String c) { return 0; }
+        public Map<String, Long> balances(UUID p) { return Map.of(); } public boolean credit(UUID p, String c, long a) { return false; }
+        public boolean debit(UUID p, String c, long a) { return false; } }
+    public static class BoolCreditStore { public static BoolCredit get() { return null; } public static boolean save(BoolCredit d) { return true; } }
+    @Test void creditReturningAValueIsRejected() throws Exception {
+        // Si credit devolviera false = "no abonado", RCT lo ignoraría y daría la recompensa por pagada.
+        var probe = AvecoinsContractProbe.inspectLayout(Crafting.class, BoolCreditStore.class, BoolCredit.class);
+        assertFalse(probe.compatible());
+    }
     @Test void changedSignatureIsRejected() throws Exception {
         // balance(UUID,String) devuelve int en vez de long: puede ser un contrato distinto.
         var probe = AvecoinsContractProbe.inspectLayout(Crafting.class, WrongStore.class, WrongBalance.class);

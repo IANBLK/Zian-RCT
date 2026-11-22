@@ -11,7 +11,6 @@ import java.util.UUID;
 
 /** Read-only compatibility check; it never reads or changes a player wallet. */
 public final class AvecoinsContractProbe {
-    private static final Set<String> SUPPORTED_VERSIONS = Set.of("2.3", "2.4", "2.5");
     private AvecoinsContractProbe() {
     }
 
@@ -28,7 +27,7 @@ public final class AvecoinsContractProbe {
             ProbeResult layout = inspectLayout(crafting, store, data);
             return layout.compatible()
                 ? new ProbeResult(true, "AVECOINS " + version + " compatible", layout.currencies())
-                : layout;
+                : new ProbeResult(false, "AVECOINS " + version + ": " + layout.detail(), List.of());
         } catch (ReflectiveOperationException | LinkageError | RuntimeException error) {
             return new ProbeResult(
                 false,
@@ -67,9 +66,10 @@ public final class AvecoinsContractProbe {
             var copy = data.getMethod("copy");
             var balance = data.getMethod("balance", UUID.class, String.class);
             var balances = data.getMethod("balances", UUID.class);
-            data.getMethod("credit", UUID.class, String.class, long.class);
+            var credit = data.getMethod("credit", UUID.class, String.class, long.class);
             var debit = data.getMethod("debit", UUID.class, String.class, long.class);
-            if (!Modifier.isStatic(get.getModifiers())
+            if (credit.getReturnType() != void.class
+                || !Modifier.isStatic(get.getModifiers())
                 || !data.isAssignableFrom(get.getReturnType())
                 || !Modifier.isStatic(save.getModifiers())
                 || !booleanType(save.getReturnType())
