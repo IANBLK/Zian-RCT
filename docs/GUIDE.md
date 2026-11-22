@@ -4,7 +4,7 @@
 
 ## Required API, not RCTMod
 
-Install **RCT API separately; do not install RCTMod alongside Zian RCT**. Requirements: Minecraft 1.21.1, NeoForge, Java 21, Cobblemon 1.8.2, RCT API 0.16.2-beta, Architectury 13.x and Kotlin for Forge 5.12.x within the declared ranges. AVECOINS is optional for configured currency rewards. Zian supplies its own trainer implementation using the external API; it does not bundle every RCTMod spawner/catalog feature.
+Install **RCT API separately; do not install RCTMod alongside Zian RCT**. Requirements: Minecraft 1.21.1, NeoForge, Java 21, Cobblemon 1.8.4, RCT API 0.16.2-beta, Architectury 13.x and Kotlin for Forge 5.12.x within the declared ranges. AVECOINS is optional for configured currency rewards. Zian supplies its own trainer implementation using the external API; it does not bundle every RCTMod spawner/catalog feature.
 
 ## Players: battle and progress
 

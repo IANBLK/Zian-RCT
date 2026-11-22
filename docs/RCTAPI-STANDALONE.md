@@ -1,7 +1,7 @@
 # RCTAPI standalone migration — 0.2.4
 
 The standalone implementation introduced in 0.2.0 replaces RCTMod with original Zian implementations. RCTAPI
-0.16.2-beta, Cobblemon 1.8.2, NeoForge 1.21.1, Architectury and KotlinForForge remain
+0.16.2-beta, Cobblemon 1.8.4, NeoForge 1.21.1, Architectury and KotlinForForge remain
 separate required dependencies. Do not install RCTMod alongside this branch.
 
 ## Implementation
