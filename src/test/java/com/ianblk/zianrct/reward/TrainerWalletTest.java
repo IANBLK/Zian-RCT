@@ -41,6 +41,34 @@ class TrainerWalletTest {
         assertEquals(AvecoinsWallet.Mutation.WALLET_FULL, wallet.credit(player, "avecoins:coppercoin", 1728));
         assertEquals(1, Store.credits.get());
     }
+    public static class SameCopy extends Data { @Override public Data copy() { return this; } }
+    public static class Clipping extends Data {
+        @Override public Data copy() { var result = new Clipping(); users.forEach((u, b) -> result.users.put(u, new HashMap<>(b))); return result; }
+        @Override public void credit(UUID player, String currency, long amount) { super.credit(player, currency, amount - 1); }
+    }
+    @Test void creditFailsWithoutSavingWhenCopyIsNotACopy() throws Exception {
+        var wallet = reset(); UUID player = UUID.randomUUID();
+        Store.data = new SameCopy();
+        assertThrows(IllegalStateException.class, () -> wallet.credit(player, "avecoins:coppercoin", 5));
+        assertTrue(Store.data instanceof SameCopy);
+        assertEquals(0, Store.data.balance(player, "avecoins:coppercoin"));
+        assertEquals(0, Store.credits.get());
+    }
+    @Test void debitFailsWithoutSavingWhenCopyIsNotACopy() throws Exception {
+        var wallet = reset(); UUID player = UUID.randomUUID();
+        Store.data = new SameCopy();
+        Store.data.users.put(player, new HashMap<>(Map.of("avecoins:coppercoin", 10L)));
+        assertThrows(IllegalStateException.class, () -> wallet.debit(player, "avecoins:coppercoin", 5));
+        assertTrue(Store.data instanceof SameCopy);
+        assertEquals(10, Store.data.balance(player, "avecoins:coppercoin"));
+    }
+    @Test void creditFailsWithoutSavingWhenWalletClipsSilently() throws Exception {
+        var wallet = reset(); UUID player = UUID.randomUUID();
+        Store.data = new Clipping();
+        assertThrows(IllegalStateException.class, () -> wallet.credit(player, "avecoins:coppercoin", 5));
+        assertEquals(0, Store.data.balance(player, "avecoins:coppercoin"));
+        assertTrue(Store.data instanceof Clipping);
+    }
     @Test void otherCurrencyStacksConsumeCapacity() throws Exception {
         var wallet = reset(); UUID player = UUID.randomUUID();
         Store.data.users.put(player, new HashMap<>(Map.of("avecoins:goldticket", 1728L)));
@@ -66,10 +94,40 @@ class TrainerWalletTest {
         assertEquals(1, Store.credits.get());
         assertTrue(journal.get(RewardJournal.id(player, "trainer")).review());
     }
-    @Test void futureWalletVersionsAreNotAutomaticallyAccepted() {
-        assertTrue(AvecoinsContractProbe.supportedVersion("2.3"));
-        assertTrue(AvecoinsContractProbe.supportedVersion("2.4"));
-        assertTrue(AvecoinsContractProbe.supportedVersion("2.5"));
-        assertFalse(AvecoinsContractProbe.supportedVersion("2.6"));
+    // La compatibilidad ya no depende del numero de version (2.5, 3.0, 4.1...) sino de las firmas usadas.
+    public static class NoDebit { public static final int SLOT_COUNT = 27, STACK_SIZE = 64;
+        public NoDebit copy() { return this; } public long balance(UUID p, String c) { return 0; }
+        public Map<String, Long> balances(UUID p) { return Map.of(); } public void credit(UUID p, String c, long a) { } }
+    public static class NoDebitStore { public static NoDebit get() { return null; } public static boolean save(NoDebit d) { return true; } }
+    public static class WrongBalance { public static final int SLOT_COUNT = 27, STACK_SIZE = 64;
+        public WrongBalance copy() { return this; } public int balance(UUID p, String c) { return 0; }
+        public Map<String, Long> balances(UUID p) { return Map.of(); } public void credit(UUID p, String c, long a) { }
+        public boolean debit(UUID p, String c, long a) { return false; } }
+    public static class WrongStore { public static WrongBalance get() { return null; } public static boolean save(WrongBalance d) { return true; } }
+    @Test void anyVersionWithTheFullContractIsAccepted() throws Exception {
+        var probe = AvecoinsContractProbe.inspectLayout(Crafting.class, Store.class, Data.class);
+        assertTrue(probe.compatible());
+        assertEquals(List.of("avecoins:coppercoin", "avecoins:goldticket"), probe.currencies());
+    }
+    @Test void missingMethodFailsClosedNamingIt() throws Exception {
+        var error = assertThrows(NoSuchMethodException.class,
+            () -> AvecoinsContractProbe.inspectLayout(Crafting.class, NoDebitStore.class, NoDebit.class));
+        assertTrue(error.getMessage().contains("debit"));
+        assertThrows(IllegalStateException.class, () -> new ReflectiveAvecoinsWallet(Crafting.class, NoDebitStore.class, NoDebit.class));
+    }
+    public static class BoolCredit { public static final int SLOT_COUNT = 27, STACK_SIZE = 64;
+        public BoolCredit copy() { return this; } public long balance(UUID p, String c) { return 0; }
+        public Map<String, Long> balances(UUID p) { return Map.of(); } public boolean credit(UUID p, String c, long a) { return false; }
+        public boolean debit(UUID p, String c, long a) { return false; } }
+    public static class BoolCreditStore { public static BoolCredit get() { return null; } public static boolean save(BoolCredit d) { return true; } }
+    @Test void creditReturningAValueIsRejected() throws Exception {
+        // Si credit devolviera false = "no abonado", RCT lo ignoraría y daría la recompensa por pagada.
+        var probe = AvecoinsContractProbe.inspectLayout(Crafting.class, BoolCreditStore.class, BoolCredit.class);
+        assertFalse(probe.compatible());
+    }
+    @Test void changedSignatureIsRejected() throws Exception {
+        // balance(UUID,String) devuelve int en vez de long: puede ser un contrato distinto.
+        var probe = AvecoinsContractProbe.inspectLayout(Crafting.class, WrongStore.class, WrongBalance.class);
+        assertFalse(probe.compatible());
     }
 }

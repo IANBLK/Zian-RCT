@@ -21,3 +21,7 @@ gradle-app.setting
 .project
 # JDT-specific (Eclipse Java Development Tools)
 .classpath
+
+# Jars de publicación: salen de CI o de build/libs, no de git
+artifacts/*.jar
+artifacts/*.jar.sha256

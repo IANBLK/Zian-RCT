@@ -14,9 +14,9 @@ Supported settings include single/double battles, repeat conditions, cooldowns a
 
 The responsive medal case shows earned and locked medals with progression details. Trainer dialogue uses a consistent visual style.
 
-Install matching client/server versions with Minecraft 1.21.1, Java 21, NeoForge 21.1.x, Cobblemon 1.8.2, RCT API 0.16.2-beta, Architectury API 13.x and Kotlin for Forge 5.12.x. RCT API is a separate required dependency. Do not install RCTMod alongside this standalone trainer implementation.
+Install matching client/server versions with Minecraft 1.21.1, Java 21, NeoForge 21.1.x, Cobblemon 1.8.4, RCT API 0.16.2-beta, Architectury API 13.x and Kotlin for Forge 5.12.x. RCT API is a separate required dependency. Do not install RCTMod alongside this standalone trainer implementation.
 
-AVECOINS 2.3/2.4/2.5 is optional for currency rewards. LuckPerms is optional for permission management, including compatible Youer/Bukkit environments.
+AVECOINS (compatible by contract check with 3.0; other versions that keep the wallet API are accepted; checked by signatures, otherwise coin rewards stay disabled with a log) is optional for currency rewards. LuckPerms is optional for permission management, including compatible Youer/Bukkit environments.
 
 Compatibility note: Legendary Monuments 8.2 victory callbacks can fail when they assume native NPC entities. Our test server uses a local callback guard, which is not included in this mod. That combination needs the corresponding fix.
 
