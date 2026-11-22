@@ -78,6 +78,7 @@ final class ReflectiveAvecoinsWallet implements AvecoinsWallet.Access {
                 return AvecoinsWallet.Mutation.WALLET_FULL;
             }
             Object candidate = copy.invoke(current);
+            if (candidate == current) throw new IllegalStateException("AVECOINS copy() returned the current wallet; nothing saved");
             long before = (long) balance.invoke(current, playerId, currencyId);
             credit.invoke(candidate, playerId, currencyId, amount);
             verify(current, candidate, playerId, currencyId, before, before + amount);
@@ -94,6 +95,7 @@ final class ReflectiveAvecoinsWallet implements AvecoinsWallet.Access {
         synchronized (storeClass) {
             Object live = requireWallet();
             Object candidate = copy.invoke(live);
+            if (candidate == live) throw new IllegalStateException("AVECOINS copy() returned the live wallet; nothing saved");
             long before = (long) balance.invoke(live, playerId, currencyId);
             if (!Boolean.TRUE.equals(debit.invoke(candidate, playerId, currencyId, amount))) {
                 return AvecoinsWallet.Mutation.INSUFFICIENT_FUNDS;

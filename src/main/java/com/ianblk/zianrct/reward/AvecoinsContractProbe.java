@@ -31,7 +31,7 @@ public final class AvecoinsContractProbe {
         } catch (ReflectiveOperationException | LinkageError | RuntimeException error) {
             return new ProbeResult(
                 false,
-                "contrato AVECOINS incompatible: " + error.getClass().getSimpleName(),
+                "contrato AVECOINS incompatible: " + error.getClass().getSimpleName() + " " + error.getMessage(),
                 List.of()
             );
         }

@@ -51,6 +51,16 @@ class TrainerWalletTest {
         Store.data = new SameCopy();
         assertThrows(IllegalStateException.class, () -> wallet.credit(player, "avecoins:coppercoin", 5));
         assertTrue(Store.data instanceof SameCopy);
+        assertEquals(0, Store.data.balance(player, "avecoins:coppercoin"));
+        assertEquals(0, Store.credits.get());
+    }
+    @Test void debitFailsWithoutSavingWhenCopyIsNotACopy() throws Exception {
+        var wallet = reset(); UUID player = UUID.randomUUID();
+        Store.data = new SameCopy();
+        Store.data.users.put(player, new HashMap<>(Map.of("avecoins:coppercoin", 10L)));
+        assertThrows(IllegalStateException.class, () -> wallet.debit(player, "avecoins:coppercoin", 5));
+        assertTrue(Store.data instanceof SameCopy);
+        assertEquals(10, Store.data.balance(player, "avecoins:coppercoin"));
     }
     @Test void creditFailsWithoutSavingWhenWalletClipsSilently() throws Exception {
         var wallet = reset(); UUID player = UUID.randomUUID();
