@@ -17,7 +17,7 @@ public final class ExperienceCaps {
                         event.cancel();
                         player.sendSystemMessage(com.ianblk.zianrct.Messages.format(net.minecraft.network.chat.Component.literal(cap>=100?"Has alcanzado el nivel máximo de 100.":"Tu tope actual es nivel "+cap+". Supera el siguiente entrenador de la Liga para aumentarlo.")));
                     }else event.setExperienceYield(allowed);
-                }catch(RuntimeException error){event.cancel();}
+                }catch(RuntimeException error){event.cancel();com.ianblk.zianrct.ZianRCT.LOGGER.error("Candy XP blocked because progress for player {} could not be verified",player.getUUID(),error);}
             });
         CobblemonEvents.EXPERIENCE_GAINED_EVENT_PRE.subscribe(Priority.LOWEST,
             (java.util.function.Consumer<com.cobblemon.mod.common.api.events.pokemon.ExperienceGainedEvent.Pre>)event->{
