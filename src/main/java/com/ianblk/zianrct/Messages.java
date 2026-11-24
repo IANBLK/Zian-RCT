@@ -18,6 +18,8 @@ public final class Messages {
   }catch(Exception error){org.slf4j.LoggerFactory.getLogger("zianrct").warn("No se pudo leer messages.json; se conserva el último prefijo válido: {}",error.toString());}
   return prefix;
  }
+ /** Texto traducible con respaldo en español; para etiquetas de pantalla que reciben String. */
+ public static String t(String key,String fallback,Object... args){return Component.translatableWithFallback(key,fallback,args).getString();}
  public static Component format(Component original){
   String text=original.getString();if(text.isBlank()||text.startsWith("✦"))return original;
   var body=original.copy();if(body.getStyle().getColor()==null)body.withStyle(ChatFormatting.GRAY);
