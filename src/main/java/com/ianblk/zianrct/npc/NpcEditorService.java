@@ -67,7 +67,7 @@ public final class NpcEditorService {
     }
     private int command(net.minecraft.commands.CommandSourceStack source) {
         try { open(source.getPlayerOrException()); return 1; }
-        catch (Exception e) { source.sendFailure(Component.literal(e.getMessage())); return 0; }
+        catch (Exception e) { source.sendFailure(Component.translatableWithFallback("zianrct.cmd.error","%s",String.valueOf(e.getMessage()))); return 0; }
     }
     private void registerCommands(RegisterCommandsEvent event) {
         event.getDispatcher().register(Commands.literal("zianrct").requires(s -> true)
@@ -112,7 +112,7 @@ public final class NpcEditorService {
         if (!allowed(player,"admin.npc.edit")) return;
         var session = sessions.take(player.getUUID(),UUID.fromString(action.nonce()),System.currentTimeMillis());
         if (session == null) {
-            player.sendSystemMessage(com.ianblk.zianrct.Messages.format(Component.literal("Sesión caducada o petición repetida. Abre /zianrct npc de nuevo.")));
+            player.sendSystemMessage(com.ianblk.zianrct.Messages.format(Component.translatableWithFallback("zianrct.npc.session_expired","Sesión caducada o petición repetida. Abre /zianrct npc de nuevo.")));
             return;
         }
         var mode = session.mode();
@@ -288,7 +288,7 @@ public final class NpcEditorService {
         descriptions=descriptions.stream().map(s -> s.length()>256?s.substring(0,256):s).toList();
         if(notice.length()>256)notice=notice.substring(0,256);
         String next="";
-        if(mode==NpcEditorState.Mode.EDIT)try{next=rewards.next(player,trainer);}catch(RuntimeException error){next="Recompensas no disponibles.";}
+        if(mode==NpcEditorState.Mode.EDIT)try{next=com.ianblk.zianrct.Messages.plain(rewards.next(player,trainer));}catch(RuntimeException error){next="Recompensas no disponibles.";}
         String draft="";
         if(mode==NpcEditorState.Mode.DESIGN){
             var own=com.ianblk.zianrct.creator.CustomTrainerStore.get(trainer);

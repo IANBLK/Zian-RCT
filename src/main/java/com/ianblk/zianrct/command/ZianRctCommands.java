@@ -136,15 +136,15 @@ public final class ZianRctCommands {
 
     private static int openMedals(CommandSourceStack source, MedalService medalService) {
         if (!(source.getEntity() instanceof ServerPlayer player)) {
-            source.sendFailure(Component.literal("/medals solo puede ejecutarlo un jugador."));
+            source.sendFailure(Component.translatableWithFallback("zianrct.cmd.medals_player_only","/medals solo puede ejecutarlo un jugador."));
             return 0;
         }
         if (!ZianRctNetwork.sendSnapshot(player, medalService)) {
-            source.sendFailure(Component.literal("No se pudo sincronizar el medallero con el cliente."));
+            source.sendFailure(Component.translatableWithFallback("zianrct.cmd.medals_sync_failed","No se pudo sincronizar el medallero con el cliente."));
             return 0;
         }
         if (!ZianRctNetwork.sendOpen(player)) {
-            source.sendFailure(Component.literal("No se pudo abrir el medallero en el cliente."));
+            source.sendFailure(Component.translatableWithFallback("zianrct.cmd.medals_open_failed","No se pudo abrir el medallero en el cliente."));
             return 0;
         }
         return 1;
@@ -155,29 +155,29 @@ public final class ZianRctCommands {
         return switch (result) {
             case GRANTED -> {
                 source.sendSuccess(
-                        () -> Component.literal("Medalla '" + medalId + "' concedida a " + target.getGameProfile().getName() + "."),
+                        () -> Component.translatableWithFallback("zianrct.cmd.medal_granted","Medalla '%s' concedida a %s.",medalId,target.getGameProfile().getName()),
                         true
                 );
                 yield 1;
             }
             case ALREADY_PRESENT -> {
-                source.sendFailure(Component.literal("El jugador ya posee la medalla '" + medalId + "'."));
+                source.sendFailure(Component.translatableWithFallback("zianrct.cmd.medal_already_owned","El jugador ya posee la medalla '%s'.",medalId));
                 yield 0;
             }
             case UNKNOWN_MEDAL -> {
-                source.sendFailure(Component.literal("La medalla '" + medalId + "' no existe en el perfil activo."));
+                source.sendFailure(Component.translatableWithFallback("zianrct.cmd.medal_unknown","La medalla '%s' no existe en el perfil activo.",medalId));
                 yield 0;
             }
             case INACTIVE -> {
-                source.sendFailure(Component.literal("El servicio de medallas no está disponible."));
+                source.sendFailure(Component.translatableWithFallback("zianrct.cmd.medal_service_unavailable","El servicio de medallas no está disponible."));
                 yield 0;
             }
             case PERSISTENCE_ERROR -> {
-                source.sendFailure(Component.literal("No se pudo guardar la medalla en disco."));
+                source.sendFailure(Component.translatableWithFallback("zianrct.cmd.medal_save_failed","No se pudo guardar la medalla en disco."));
                 yield 0;
             }
             case REVOKED -> {
-                source.sendFailure(Component.literal("La medalla está revocada y no puede reconciliarse automáticamente."));
+                source.sendFailure(Component.translatableWithFallback("zianrct.cmd.medal_revoked","La medalla está revocada y no puede reconciliarse automáticamente."));
                 yield 0;
             }
         };
@@ -185,15 +185,15 @@ public final class ZianRctCommands {
 
     private static int revoke(CommandSourceStack source, MedalService medalService, ServerPlayer target, String medalId) {
         if (medalService.medalDefinition(medalId).isEmpty()) {
-            source.sendFailure(Component.literal("La medalla '" + medalId + "' no existe en el perfil activo."));
+            source.sendFailure(Component.translatableWithFallback("zianrct.cmd.medal_unknown","La medalla '%s' no existe en el perfil activo.",medalId));
             return 0;
         }
         if (!medalService.revoke(target, medalId)) {
-            source.sendFailure(Component.literal("No se pudo revocar la medalla '" + medalId + "' o no había cambios que guardar."));
+            source.sendFailure(Component.translatableWithFallback("zianrct.cmd.medal_revoke_failed","No se pudo revocar la medalla '%s' o no había cambios que guardar.",medalId));
             return 0;
         }
         source.sendSuccess(
-                () -> Component.literal("Medalla '" + medalId + "' revocada a " + target.getGameProfile().getName() + "."),
+                () -> Component.translatableWithFallback("zianrct.cmd.medal_revoked_from","Medalla '%s' revocada a %s.",medalId,target.getGameProfile().getName()),
                 true
         );
         return 1;
@@ -203,7 +203,7 @@ public final class ZianRctCommands {
         List<MedalRecord> medals = medalService.medals(target);
         if (medals.isEmpty()) {
             source.sendSuccess(
-                    () -> Component.literal(target.getGameProfile().getName() + " no tiene medallas registradas."),
+                    () -> Component.translatableWithFallback("zianrct.cmd.medals_none","%s no tiene medallas registradas.",target.getGameProfile().getName()),
                     false
             );
             return 1;
@@ -214,7 +214,7 @@ public final class ZianRctCommands {
                 .reduce((left, right) -> left + ", " + right)
                 .orElse("");
         source.sendSuccess(
-                () -> Component.literal("Medallas de " + target.getGameProfile().getName() + ": " + joined),
+                () -> Component.translatableWithFallback("zianrct.cmd.medals_of","Medallas de %s: %s",target.getGameProfile().getName(),joined),
                 false
         );
         return medals.size();
@@ -230,7 +230,7 @@ public final class ZianRctCommands {
             );
             return cap;
         } catch (RuntimeException exception) {
-            source.sendFailure(Component.literal("No se pudo leer el tope de RCT: " + exception.getMessage()));
+            source.sendFailure(Component.translatableWithFallback("zianrct.cmd.cap_read_failed","No se pudo leer el tope de RCT: %s",String.valueOf(exception.getMessage())));
             return 0;
         }
     }
@@ -265,26 +265,19 @@ public final class ZianRctCommands {
         try {
             RctProgressService.SetCapResult result = action.get();
             if (!result.success()) {
-                source.sendFailure(Component.literal(
-                        "RCT no confirmó el tope solicitado " + result.requestedCap()
-                                + "; observó " + result.observedCap() + ". Se restauró el progreso anterior."
-                ));
+                source.sendFailure(Component.translatableWithFallback("zianrct.cmd.cap_unconfirmed","RCT no confirmó el tope solicitado %s; observó %s. Se restauró el progreso anterior.",result.requestedCap(),result.observedCap()));
                 return 0;
             }
             source.sendSuccess(
-                    () -> Component.literal(
-                            "Tope de " + target.getGameProfile().getName()
-                                    + " establecido en " + result.observedCap()
-                                    + ". Entrenadores de cadena marcados: " + result.defeatedPrefix().size() + "."
-                    ),
+                    () -> Component.translatableWithFallback("zianrct.cmd.cap_set","Tope de %s establecido en %s. Entrenadores de cadena marcados: %s.",target.getGameProfile().getName(),result.observedCap(),result.defeatedPrefix().size()),
                     true
             );
             return 1;
         } catch (IllegalArgumentException exception) {
-            source.sendFailure(Component.literal(exception.getMessage()));
+            source.sendFailure(Component.translatableWithFallback("zianrct.cmd.error", "%s", String.valueOf(exception.getMessage())));
             return 0;
         } catch (RuntimeException exception) {
-            source.sendFailure(Component.literal("No se pudo modificar el progreso de RCT: " + exception.getMessage()));
+            source.sendFailure(Component.translatableWithFallback("zianrct.cmd.progress_modify_failed","No se pudo modificar el progreso de RCT: %s",String.valueOf(exception.getMessage())));
             return 0;
         }
     }
@@ -296,24 +289,17 @@ public final class ZianRctCommands {
                     target,
                     config.activeProfileConfig()
             );
-            String next = progress.nextTrainer() == null ? "completada" : progress.nextTrainer();
-            String defeated = progress.defeatedConfiguredTrainers().isEmpty()
-                    ? "ninguno"
-                    : String.join(", ", progress.defeatedConfiguredTrainers());
+            Component next = progress.nextTrainer() == null ? Component.translatableWithFallback("zianrct.cmd.progress.complete", "completada") : Component.literal(progress.nextTrainer());
+            Component defeated = progress.defeatedConfiguredTrainers().isEmpty()
+                    ? Component.translatableWithFallback("zianrct.cmd.progress.none", "ninguno")
+                    : Component.literal(String.join(", ", progress.defeatedConfiguredTrainers()));
             source.sendSuccess(
-                    () -> Component.literal(
-                            "Progreso de " + target.getGameProfile().getName()
-                                    + " | perfil=" + config.activeProfile()
-                                    + " | cap=" + progress.currentCap()
-                                    + " | derrotados=" + defeated
-                                    + " | siguiente=" + next
-                                    + " | caps=" + progress.reachableCaps()
-                    ),
+                    () -> Component.translatableWithFallback("zianrct.cmd.progress","Progreso de %s | perfil=%s | cap=%s | derrotados=%s | siguiente=%s | caps=%s",target.getGameProfile().getName(),String.valueOf(config.activeProfile()),progress.currentCap(),defeated,next,String.valueOf(progress.reachableCaps())),
                     false
             );
             return progress.currentCap();
         } catch (RuntimeException exception) {
-            source.sendFailure(Component.literal("No se pudo leer el progreso de RCT: " + exception.getMessage()));
+            source.sendFailure(Component.translatableWithFallback("zianrct.cmd.progress_read_failed","No se pudo leer el progreso de RCT: %s",String.valueOf(exception.getMessage())));
             return 0;
         }
     }
@@ -328,7 +314,7 @@ public final class ZianRctCommands {
         try {
             next = ZianRctConfigLoader.loadOrCreate(path);
         } catch (IOException | RuntimeException exception) {
-            source.sendFailure(Component.literal("No se recargó Zian RCT: " + exception.getMessage()));
+            source.sendFailure(Component.translatableWithFallback("zianrct.cmd.reload_failed","No se recargó Zian RCT: %s",String.valueOf(exception.getMessage())));
             return 0;
         }
 
@@ -336,19 +322,19 @@ public final class ZianRctCommands {
         if (completion.isDone()) {
             RctPackController.ConfigReloadResult immediate = completion.join();
             if (!immediate.success()) {
-                source.sendFailure(Component.literal(immediate.message()));
+                source.sendFailure(Component.translatableWithFallback("zianrct.cmd.error", "%s", immediate.message()));
                 return 0;
             }
         }
 
         source.sendSuccess(
-                () -> Component.literal("Recarga de Zian RCT iniciada; se aplicará solo si RCT verifica la progresión generada."),
+                () -> Component.translatableWithFallback("zianrct.cmd.reload_started","Recarga de Zian RCT iniciada; se aplicará solo si RCT verifica la progresión generada."),
                 false
         );
 
         completion.thenAccept(result -> {
             if (!result.success()) {
-                source.sendFailure(Component.literal("No se aplicó Zian RCT: " + result.message()));
+                source.sendFailure(Component.translatableWithFallback("zianrct.cmd.reload_not_applied","No se aplicó Zian RCT: %s",result.message()));
                 return;
             }
 
@@ -361,12 +347,9 @@ public final class ZianRctCommands {
 
             int finalSyncFailures = syncFailures;
             source.sendSuccess(
-                    () -> Component.literal(
-                            finalSyncFailures == 0
-                                    ? result.message()
-                                    : result.message() + " No se pudo reenviar el snapshot a "
-                                            + finalSyncFailures + " jugador(es)."
-                    ),
+                    () -> finalSyncFailures == 0
+                            ? Component.literal(result.message())
+                            : Component.translatableWithFallback("zianrct.cmd.reload_sync_failed", "%s No se pudo reenviar el snapshot a %s jugador(es).", result.message(), finalSyncFailures),
                     true
             );
         });

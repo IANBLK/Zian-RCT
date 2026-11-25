@@ -1,4 +1,5 @@
 package com.ianblk.zianrct.client;
+import static com.ianblk.zianrct.Messages.t;
 
 import net.minecraft.client.gui.GuiGraphics;
 import net.minecraft.client.gui.components.Button;
@@ -32,8 +33,8 @@ public final class TrainerChoiceScreen extends ResponsiveScreen {
         for(int i=0;i<pageSize;i++){int row=i;entries.add(addRenderableWidget(button(x+12,y+59+i*24,w-24,"",()->choose(row))));}
         addRenderableWidget(button(x+12,y+h-50,60,"<",()->{page=Math.max(0,page-1);refresh();}));
         addRenderableWidget(button(x+w-72,y+h-50,60,">",()->{page=Math.min(Math.max(0,(filtered.size()-1)/pageSize),page+1);refresh();}));
-        addRenderableWidget(button(x+12,y+h-26,100,"Cancelar",this::onClose));
-        addRenderableWidget(button(x+w-122,y+h-26,110,"Usar selección",()->{accept.accept(List.copyOf(selected));minecraft.setScreen(parent);}));
+        addRenderableWidget(button(x+12,y+h-26,100,t("zianrct.common.cancel","Cancelar"),this::onClose));
+        addRenderableWidget(button(x+w-122,y+h-26,110,t("zianrct.choice.use_selection","Usar selección"),()->{accept.accept(List.copyOf(selected));minecraft.setScreen(parent);}));
         refresh();
     }
     private void refresh(){
@@ -48,7 +49,7 @@ public final class TrainerChoiceScreen extends ResponsiveScreen {
         var c=filtered.get(page*pageSize+row);notice="";
         if(selected.remove(c.id())){refresh();return;}
         if(limit==1)selected.clear();
-        if(selected.size()>=limit){notice="Máximo "+limit+" movimientos. Desmarca uno primero.";return;}
+        if(selected.size()>=limit){notice=t("zianrct.choice.max_moves","Máximo %s movimientos. Desmarca uno primero.",limit);return;}
         selected.add(c.id());refresh();
     }
     private Button button(int bx,int by,int size,String label,Runnable action){
@@ -64,7 +65,7 @@ public final class TrainerChoiceScreen extends ResponsiveScreen {
         g.fill(0,0,width,height,0x90000000);g.fill(x,y,x+w,y+h,0xF0181818);g.fill(x,y,x+w,y+2,0xFFF2C14E);
         g.drawCenteredString(font,title,width/2,y+12,0xFFF2C14E);
         for(var widget:renderables)widget.render(g,mx,my,partial);
-        g.drawCenteredString(font,notice.isEmpty()?"Página "+(page+1)+" / "+Math.max(1,(filtered.size()+pageSize-1)/pageSize)+" · Selección: "+selected.size():notice,width/2,y+h-43,0xFFF7E2AC);
+        g.drawCenteredString(font,notice.isEmpty()?t("zianrct.choice.page_selection","Página %s / %s · Selección: %s",page+1,Math.max(1,(filtered.size()+pageSize-1)/pageSize),selected.size()):notice,width/2,y+h-43,0xFFF7E2AC);
         for(int i=0;i<entries.size();i++)if(entries.get(i).visible && entries.get(i).isMouseOver(mx,my)){
             String detail=filtered.get(page*pageSize+i).detail();
             if(!detail.isBlank())queueTooltip(java.util.List.of(Component.literal(detail)));

@@ -79,16 +79,20 @@ def run(pass_number):
                     invalid = json.loads(original)
                     invalid["activeProfile"] = "invalid_standalone_test_profile"
                     config.write_text(json.dumps(invalid), encoding="utf-8")
-                    assert "No se recargó Zian RCT" in rcon("zianrct reload")
+                    reply = rcon("zianrct reload")
+                    # El servidor responde en el idioma del servidor (en_us); el español es el respaldo.
+                    assert "No se recargó Zian RCT" in reply or "Zian RCT was not reloaded" in reply, reply
                 finally:
                     config.write_text(original, encoding="utf-8")
                 before = len(log.read_text(encoding="utf-8", errors="replace"))
-                assert "recarg" in rcon("zianrct reload").lower()
+                reply = rcon("zianrct reload").lower()
+                assert "recarg" in reply or "reload started" in reply, reply
                 wait_for(process, log, "standalone RCTAPI catalog ready", offset=before)
                 before = len(log.read_text(encoding="utf-8", errors="replace"))
                 rcon("reload")
                 wait_for(process, log, "standalone RCTAPI catalog ready", offset=before)
-                assert "solo puede ejecutarlo un jugador" in rcon("medals")
+                reply = rcon("medals")
+                assert "solo puede ejecutarlo un jugador" in reply or "can only be run by a player" in reply, reply
             rcon("stop")
             process.wait(timeout=60)
             if process.returncode != 0:

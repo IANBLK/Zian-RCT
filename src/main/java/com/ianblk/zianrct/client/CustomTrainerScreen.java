@@ -1,4 +1,5 @@
 package com.ianblk.zianrct.client;
+import static com.ianblk.zianrct.Messages.t;
 import com.ianblk.zianrct.npc.*;
 import com.ianblk.zianrct.creator.*;
 import com.google.gson.Gson;
@@ -50,54 +51,54 @@ public final class CustomTrainerScreen extends ResponsiveScreen {
         rows.clear();labels.clear();reads.clear();clearWidgets();
         w=Math.min(540,width-16);h=Math.min(320,height-16);x=(width-w)/2;y=(height-h)/2;
         int left=x+12,usable=w-24;
-        for(int i=0;i<4;i++){int selected=i;button(left+i*(usable/4),0,usable/4-4,List.of("Identidad","Equipo","Diálogos","Prueba").get(i),()->{read();tab=selected;scroll=0;init();});}
+        for(int i=0;i<4;i++){int selected=i;button(left+i*(usable/4),0,usable/4-4,List.of(t("zianrct.designer.tab.identity","Identidad"),t("zianrct.designer.tab.team","Equipo"),t("zianrct.designer.tab.dialogues","Diálogos"),t("zianrct.designer.tab.test","Prueba")).get(i),()->{read();tab=selected;scroll=0;init();});}
         if(tab==0){
-            label("ID propio (prefijo zian_custom_):",26);
+            label(t("zianrct.designer.own_id","ID propio (prefijo zian_custom_):"),26);
             EditBox idBox=field(left,40,usable,64,id);idBox.setEditable(state.trainer().isEmpty());reads.add(()->id=idBox.getValue());
-            label("Nombre visible:",64);EditBox n=field(left,78,usable,64,name);reads.add(()->name=n.getValue());
-            button(left,102,usable,"Dificultad: "+difficulty,()->{read();var all=List.of("FACIL","NORMAL","DIFICIL","JEFE");difficulty=all.get((all.indexOf(difficulty)+1)%4);init();});
-            button(left,126,usable,"Batalla: "+(format.equals("GEN_9_DOUBLES")?"Doble":"Individual"),()->{read();format=format.equals("GEN_9_DOUBLES")?"GEN_9_SINGLES":"GEN_9_DOUBLES";init();});
-            button(left,150,usable,"Skin: "+CustomTrainer.SKIN_NAMES.get(skin),()->{read();var options=new java.util.ArrayList<TrainerChoiceScreen.Choice>();for(int at=0;at<CustomTrainer.SKINS.size();at++){String texture=CustomTrainer.SKINS.get(at);options.add(new TrainerChoiceScreen.Choice(""+at,CustomTrainer.SKIN_NAMES.get(at),CustomTrainer.slim(texture)?"Brazos delgados":"Brazos gruesos"));}minecraft.setScreen(new TrainerChoiceScreen(this,"Apariencia del entrenador",options,List.of(""+skin),1,chosen->{if(!chosen.isEmpty())skin=Integer.parseInt(chosen.getFirst());minecraft.setScreen(this);}));});
-            label("No exige medallas de Rassvet ni otorga nuevas medallas.",180);
-            label("Dificultad ajusta IV/EV e IA; los niveles se editan aparte.",196);
-            label("El loot se configura después en Modificar > Loot.",212);
+            label(t("zianrct.designer.visible_name","Nombre visible:"),64);EditBox n=field(left,78,usable,64,name);reads.add(()->name=n.getValue());
+            button(left,102,usable,t("zianrct.designer.difficulty","Dificultad: %s",difficulty),()->{read();var all=List.of("FACIL","NORMAL","DIFICIL","JEFE");difficulty=all.get((all.indexOf(difficulty)+1)%4);init();});
+            button(left,126,usable,t("zianrct.designer.battle","Batalla: %s",format.equals("GEN_9_DOUBLES")?t("zianrct.designer.double","Doble"):t("zianrct.designer.single","Individual")),()->{read();format=format.equals("GEN_9_DOUBLES")?"GEN_9_SINGLES":"GEN_9_DOUBLES";init();});
+            button(left,150,usable,t("zianrct.designer.skin","Skin: %s",skinName(skin)),()->{read();var options=new java.util.ArrayList<TrainerChoiceScreen.Choice>();for(int at=0;at<CustomTrainer.SKINS.size();at++){String texture=CustomTrainer.SKINS.get(at);options.add(new TrainerChoiceScreen.Choice(""+at,skinName(at),CustomTrainer.slim(texture)?t("zianrct.designer.arms.slim","Brazos delgados"):t("zianrct.designer.arms.wide","Brazos gruesos")));}minecraft.setScreen(new TrainerChoiceScreen(this,t("zianrct.designer.appearance","Apariencia del entrenador"),options,List.of(""+skin),1,chosen->{if(!chosen.isEmpty())skin=Integer.parseInt(chosen.getFirst());minecraft.setScreen(this);}));});
+            label(t("zianrct.designer.no_medals","No exige medallas de Rassvet ni otorga nuevas medallas."),180);
+            label(t("zianrct.designer.difficulty_hint","Dificultad ajusta IV/EV e IA; los niveles se editan aparte."),196);
+            label(t("zianrct.designer.loot_hint","El loot se configura después en Modificar > Loot."),212);
             contentHeight=236;
         }else if(tab==1){
-            label("Especie / nivel (1–100). Vacío = no usar esa plaza.",26);
-            button(left,42,usable,"Movimientos: "+(autoMoves?"Automáticos por dificultad":"Manuales")+" (cambiar)",()->{read();autoMoves=!autoMoves;init();});
-            label(autoMoves?"Los cambios se aplican al pulsar Guardar entrenador.":"Usa los selectores o escribe tus ataques.",66);
+            label(t("zianrct.designer.species_level","Especie / nivel (1–100). Vacío = no usar esa plaza."),26);
+            button(left,42,usable,t("zianrct.designer.moves_mode","Movimientos: %s (cambiar)",autoMoves?t("zianrct.designer.auto_moves","Automáticos por dificultad"):t("zianrct.designer.manual_moves","Manuales")),()->{read();autoMoves=!autoMoves;init();});
+            label(autoMoves?t("zianrct.designer.changes_on_save","Los cambios se aplican al pulsar Guardar entrenador."):t("zianrct.designer.use_selectors","Usa los selectores o escribe tus ataques."),66);
             int row=84;
             for(int i=0;i<6;i++){
                 int slot=i;
                 EditBox s=field(left,row,usable-162,96,species[i]);EditBox l=field(left+usable-62,row,62,3,levels[i]);
-                button(left+usable-156,row,88,"Pokémon...",()->selectSpecies(slot));
+                button(left+usable-156,row,88,t("zianrct.designer.pokemon_btn","Pokémon..."),()->selectSpecies(slot));
                 reads.add(()->{species[slot]=s.getValue();levels[slot]=l.getValue();});
-                label(autoMoves?"Vista anterior; los ataques se recalculan al guardar.":"Movimientos (1–4, separados por coma):",row+22);
+                label(autoMoves?t("zianrct.designer.preview_moves","Vista anterior; los ataques se recalculan al guardar."):t("zianrct.designer.moves_list","Movimientos (1–4, separados por coma):"),row+22);
                 EditBox m=field(left,row+36,usable-94,200,moves[i]);reads.add(()->moves[slot]=m.getValue());
                 m.setEditable(!autoMoves);
-                if(!autoMoves)button(left+usable-88,row+36,88,"Ataques...",()->selectMoves(slot));
+                if(!autoMoves)button(left+usable-88,row+36,88,t("zianrct.designer.moves_btn","Ataques..."),()->selectMoves(slot));
                 row+=64;
             }
             contentHeight=row;
         }else if(tab==2){
-            label("Al iniciar el combate:",26);EditBox s=field(left,42,usable,256,start);reads.add(()->start=s.getValue());
-            label("Cuando gana el jugador:",68);EditBox a=field(left,84,usable,256,win);reads.add(()->win=a.getValue());
-            label("Cuando pierde el jugador:",110);EditBox b=field(left,126,usable,256,loss);reads.add(()->loss=b.getValue());
-            label("Se guardan como diálogos propios de este ID.",154);contentHeight=180;
+            label(t("zianrct.designer.on_start","Al iniciar el combate:"),26);EditBox s=field(left,42,usable,256,start);reads.add(()->start=s.getValue());
+            label(t("zianrct.designer.on_win","Cuando gana el jugador:"),68);EditBox a=field(left,84,usable,256,win);reads.add(()->win=a.getValue());
+            label(t("zianrct.designer.on_loss","Cuando pierde el jugador:"),110);EditBox b=field(left,126,usable,256,loss);reads.add(()->loss=b.getValue());
+            label(t("zianrct.designer.saved_as_dialogues","Se guardan como diálogos propios de este ID."),154);contentHeight=180;
         }else{
-            button(left,28,usable,"Prueba legendaria: "+(trialEnabled?"Activada":"Desactivada")+" (cambiar)",()->{read();trialEnabled=!trialEnabled;init();});
-            label("ID del jefe que desbloquea este NPC (dificultad JEFE):",56);
+            button(left,28,usable,t("zianrct.designer.trial","Prueba legendaria: %s (cambiar)",trialEnabled?t("zianrct.designer.on","Activada"):t("zianrct.designer.off","Desactivada")),()->{read();trialEnabled=!trialEnabled;init();});
+            label(t("zianrct.designer.boss_id","ID del jefe que desbloquea este NPC (dificultad JEFE):"),56);
             EditBox boss=field(left,72,usable,64,trialBoss);reads.add(()->trialBoss=boss.getValue());
-            label("Probabilidad shiny: 1 entre (512 por defecto):",100);
+            label(t("zianrct.designer.shiny","Probabilidad shiny: 1 entre (512 por defecto):"),100);
             EditBox chance=field(left,116,usable,7,shinyDenominator);reads.add(()->shinyDenominator=chance.getValue());
-            label("Equipo: un legendario/singular, batalla Individual.",145);
-            label("Al vencer: Pokémon al PC, IV aleatorios de 25 a 30.",163);
-            label("Único por jugador. Perder permite volver a intentar.",181);
-            label("Crea primero el jefe; su loot se configura por separado.",199);
+            label(t("zianrct.designer.trial_team","Equipo: un legendario/singular, batalla Individual."),145);
+            label(t("zianrct.designer.trial_reward","Al vencer: Pokémon al PC, IV aleatorios de 25 a 30."),163);
+            label(t("zianrct.designer.trial_unique","Único por jugador. Perder permite volver a intentar."),181);
+            label(t("zianrct.designer.trial_boss_first","Crea primero el jefe; su loot se configura por separado."),199);
             contentHeight=226;
         }
-        save=addRenderableWidget(gold(x+12,y+h-25,160,"Guardar entrenador",()->submit()));
-        back=addRenderableWidget(gold(x+w-112,y+h-25,100,"Volver a lista",()->PacketDistributor.sendToServer(new NpcEditorAction(state.nonce(),"list","",""))));
+        save=addRenderableWidget(gold(x+12,y+h-25,160,t("zianrct.designer.save","Guardar entrenador"),()->submit()));
+        back=addRenderableWidget(gold(x+w-112,y+h-25,100,t("zianrct.designer.back","Volver a lista"),()->PacketDistributor.sendToServer(new NpcEditorAction(state.nonce(),"list","",""))));
         position();
     }
     private void submit(){
@@ -110,15 +111,15 @@ public final class CustomTrainerScreen extends ResponsiveScreen {
             var d=new CustomTrainer(id.trim(),name.trim(),difficulty,format,skin,team,start,win,loss,autoMoves,trial);
             d=AutomaticTrainerMoves.prepare(d);
             PacketDistributor.sendToServer(new CustomTrainerSave(state.nonce(),new Gson().toJson(d)));
-        }catch(RuntimeException e){error=e.getMessage()==null?"Revisa la definición":e.getMessage();}
+        }catch(RuntimeException e){error=e.getMessage()==null?t("zianrct.designer.check_definition","Revisa la definición"):e.getMessage();}
     }
     private void selectSpecies(int slot){
         read();
         var choices=com.cobblemon.mod.common.api.pokemon.PokemonSpecies.getImplemented().stream()
-            .map(s->new TrainerChoiceScreen.Choice(s.getResourceIdentifier().toString(),s.getTranslatedName().getString(),"Pokédex #"+s.getNationalPokedexNumber()))
+            .map(s->new TrainerChoiceScreen.Choice(s.getResourceIdentifier().toString(),s.getTranslatedName().getString(),t("zianrct.designer.dex","Pokédex #%s",s.getNationalPokedexNumber())))
             .sorted(Comparator.comparing(TrainerChoiceScreen.Choice::name)).toList();
         String current=species[slot].contains(":")?species[slot]:"cobblemon:"+species[slot];
-        minecraft.setScreen(new TrainerChoiceScreen(this,"Seleccionar Pokémon · plaza "+(slot+1),choices,List.of(current),1,ids->{
+        minecraft.setScreen(new TrainerChoiceScreen(this,t("zianrct.designer.select_pokemon","Seleccionar Pokémon · plaza %s",slot+1),choices,List.of(current),1,ids->{
             if(ids.isEmpty()){species[slot]="";return;}
             String chosen=ids.getFirst();
             if(!chosen.equals(current)){
@@ -134,14 +135,14 @@ public final class CustomTrainerScreen extends ResponsiveScreen {
         read();
         var id=net.minecraft.resources.ResourceLocation.tryParse(species[slot].contains(":")?species[slot]:"cobblemon:"+species[slot]);
         var s=id==null?null:com.cobblemon.mod.common.api.pokemon.PokemonSpecies.getByIdentifier(id);
-        if(s==null){error="Selecciona un Pokémon válido primero.";return;}
+        if(s==null){error=t("zianrct.designer.pick_valid","Selecciona un Pokémon válido primero.");return;}
         var choices=s.getStandardForm().getMoves().getAllLegalMoves().stream()
             .map(m->new TrainerChoiceScreen.Choice(m.getName(),m.getDisplayName().getString(),m.getDescription().getString()+" · Potencia: "+m.getPower()+" · Precisión: "+m.getAccuracy()+" · PP: "+m.getPp()))
             .sorted(Comparator.comparing(TrainerChoiceScreen.Choice::name)).toList();
         var legal=choices.stream().map(TrainerChoiceScreen.Choice::id).collect(java.util.stream.Collectors.toSet());
         var initial=Arrays.stream(moves[slot].split(",")).map(String::trim).filter(legal::contains).distinct().limit(4).toList();
-        minecraft.setScreen(new TrainerChoiceScreen(this,"Ataques de "+s.getTranslatedName().getString()+" (incluye MT / tutor)",choices,initial,4,ids->{
-            if(ids.isEmpty()){error="El Pokémon necesita al menos un ataque.";return;}
+        minecraft.setScreen(new TrainerChoiceScreen(this,t("zianrct.designer.moves_of","Ataques de %s (incluye MT / tutor)",s.getTranslatedName().getString()),choices,initial,4,ids->{
+            if(ids.isEmpty()){error=t("zianrct.designer.needs_move","El Pokémon necesita al menos un ataque.");return;}
             moves[slot]=String.join(",",ids);
         }));
     }
@@ -149,6 +150,7 @@ public final class CustomTrainerScreen extends ResponsiveScreen {
         var box=new EditBox(font,left,y+32+row,size,18,Component.translatableWithFallback("ui.zianrct.f6a1062a638b", "Dato del entrenador"));box.setMaxLength(max);box.setValue(value);
         addRenderableWidget(box);rows.put(box,row);return box;
     }
+    private static String skinName(int at){String texture=CustomTrainer.SKINS.get(at);String id=texture.substring(texture.lastIndexOf('/')+1,texture.length()-4);return t("zianrct.skin."+id,CustomTrainer.SKIN_NAMES.get(at));}
     private void label(String text,int row){labels.add(new Label(text,row));}
     private Button gold(int bx,int by,int size,String text,Runnable action){
         return new Button(bx,by,size,18,Component.literal(text),b->action.run(),s->s.get()){

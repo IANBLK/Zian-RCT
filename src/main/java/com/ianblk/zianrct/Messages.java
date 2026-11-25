@@ -18,6 +18,18 @@ public final class Messages {
   }catch(Exception error){org.slf4j.LoggerFactory.getLogger("zianrct").warn("No se pudo leer messages.json; se conserva el último prefijo válido: {}",error.toString());}
   return prefix;
  }
+ /** Texto de respaldo (español) sin pasar por el idioma del servidor; para datos de paneles de admin y pruebas. */
+ public static String plain(Component c){StringBuilder sb=new StringBuilder();plain(c,sb);return sb.toString();}
+ private static void plain(Component c,StringBuilder sb){
+  if(c.getContents() instanceof net.minecraft.network.chat.contents.TranslatableContents tc&&tc.getFallback()!=null){
+   Object[] a=tc.getArgs().clone();for(int i=0;i<a.length;i++)if(a[i] instanceof Component x)a[i]=plain(x);
+   sb.append(String.format(java.util.Locale.ROOT,tc.getFallback(),a));
+  }else c.getContents().visit(s->{sb.append(s);return java.util.Optional.empty();});
+  for(Component sibling:c.getSiblings())plain(sibling,sb);
+ }
+ public static Component c(Msg m){Object[] a=m.args().clone();for(int i=0;i<a.length;i++)if(a[i] instanceof Msg n)a[i]=c(n);return Component.translatableWithFallback(m.key(),m.fallback(),a);}
+ /** Texto traducible con respaldo en español; para etiquetas de pantalla que reciben String. */
+ public static String t(String key,String fallback,Object... args){return Component.translatableWithFallback(key,fallback,args).getString();}
  public static Component format(Component original){
   String text=original.getString();if(text.isBlank()||text.startsWith("✦"))return original;
   var body=original.copy();if(body.getStyle().getColor()==null)body.withStyle(ChatFormatting.GRAY);

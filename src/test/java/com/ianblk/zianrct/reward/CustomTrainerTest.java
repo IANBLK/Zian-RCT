@@ -104,11 +104,11 @@ class CustomTrainerTest {
         assertThrows(java.io.IOException.class,()->CustomTrainerStore.boot(temp));assertEquals("{}",Files.readString(path));
     }
     @Test void messagesUseReadableNamesAndCorrectSingularPluralDurations(){
-        assertEquals("3 horas",RewardMessages.waitFor(10800000));
-        assertEquals("1 minuto",RewardMessages.waitFor(60000));
-        assertEquals("33 segundos",RewardMessages.waitFor(33000));
+        assertEquals("3 horas",RewardMessages.waitFor(10800000).plain());
+        assertEquals("1 minuto",RewardMessages.waitFor(60000).plain());
+        assertEquals("33 segundos",RewardMessages.waitFor(33000).plain());
         assertEquals("Recompensa repetible del entrenador Novato entregada. Vuelve dentro de 3 horas para recibir otra recompensa.",
-                RewardMessages.delivered("Novato",10800000,true));
-        assertEquals("Recompensa del entrenador Guardia entregada.",RewardMessages.delivered("Guardia",0,false));
+                RewardMessages.delivered("Novato",10800000,true).plain());
+        assertEquals("Recompensa del entrenador Guardia entregada.",RewardMessages.delivered("Guardia",0,false).plain());
     }
 }

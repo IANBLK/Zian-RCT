@@ -17,7 +17,7 @@ import java.nio.file.Path;
 
 public final class TrainerRewardService {
     private static TrainerRewardService instance;
-    public static String battleBlock(ServerPlayer player,String trainer){return instance==null?"Premios aún no disponibles":instance.blocked(player,trainer);}
+    public static Component battleBlock(ServerPlayer player,String trainer){return instance==null?Component.translatableWithFallback("zianrct.reward.not_available","Premios aún no disponibles"):instance.blocked(player,trainer);}
     private com.ianblk.zianrct.rct.RctPackController packs;
     public void attach(com.ianblk.zianrct.rct.RctPackController packs){this.packs=packs;}
     public TrainerRewardService(){
@@ -32,37 +32,37 @@ public final class TrainerRewardService {
                 player.sendSystemMessage(com.ianblk.zianrct.Messages.format(com.ianblk.zianrct.npc.NpcDialogueFormat.line(name(npc.getTrainerId()),next(player,npc.getTrainerId()))));
                 return;
             }
-            String reason=blocked(player,npc.getTrainerId());
+            Component reason=blocked(player,npc.getTrainerId());
             if(reason!=null){event.setCanceled(true);event.setCancellationResult(net.minecraft.world.InteractionResult.SUCCESS);
                 player.sendSystemMessage(com.ianblk.zianrct.Messages.format(com.ianblk.zianrct.npc.NpcDialogueFormat.line(name(npc.getTrainerId()),reason)));}
         }
     }
-    public String blocked(ServerPlayer player,String trainer){
-        if(!StandaloneRuntime.getInstance().isCurrent(trainer))return "La definición no coincide con el equipo cargado. Consulta al administrador y recarga los entrenadores.";
-        String trialBlocked=com.ianblk.zianrct.legendary.LegendaryTrials.blocked(player,trainer);
+    public Component blocked(ServerPlayer player,String trainer){
+        if(!StandaloneRuntime.getInstance().isCurrent(trainer))return Component.translatableWithFallback("zianrct.reward.definition_mismatch","La definición no coincide con el equipo cargado. Consulta al administrador y recarga los entrenadores.");
+        Component trialBlocked=com.ianblk.zianrct.legendary.LegendaryTrials.blocked(player,trainer);
         if(trialBlocked!=null)return trialBlocked;
-        if(packs!=null && packs.isBusy())return "Se está recargando la configuración de entrenadores. Espera un momento.";
+        if(packs!=null && packs.isBusy())return Component.translatableWithFallback("zianrct.reward.reloading","Se está recargando la configuración de entrenadores. Espera un momento.");
         String requested=com.ianblk.zianrct.rct.RctTrainerOptions.formats().get(trainer);
         try{
             if(requested!=null && !requested.equals(StandaloneRuntime.getInstance().getTrainerManager().getData(trainer).getTrainerTeam().getBattleFormat().name()))
-                return "El formato de este entrenador aún no se ha verificado. Consulta al administrador.";
+                return Component.translatableWithFallback("zianrct.reward.format_unverified","El formato de este entrenador aún no se ha verificado. Consulta al administrador.");
             if(config==null || !config.enabled())return null;
             var definition=config.definition(trainer);
             if(definition==null || definition.empty())return null;
-            if(journal==null)return "El registro de premios no está disponible. Consulta al administrador.";
+            if(journal==null)return Component.translatableWithFallback("zianrct.reward.journal_unavailable","El registro de premios no está disponible. Consulta al administrador.");
             journal.ensureHealthy();
             if(definition.mode()!=RewardDefinition.Mode.REPEAT)return null;
             if(StandaloneRuntime.getInstance().getTrainerManager().getData(trainer).getMaxTrainerDefeats()!=-1
                     || StandaloneRuntime.getInstance().getTrainerManager().getData(trainer).getMaxTrainerWins()!=-1)
-                return "La revancha aún no se ha verificado. Consulta al administrador.";
+                return Component.translatableWithFallback("zianrct.reward.rematch_unverified","La revancha aún no se ha verificado. Consulta al administrador.");
             long remaining=journal.remaining(player.getUUID(),trainer,definition,System.currentTimeMillis());
-            if(remaining==-2)return "Reclama o resuelve el premio anterior antes de repetir este desafío. /zianrct reward pending";
-            if(remaining>0)return "Este desafío vuelve a estar disponible en "+waitText(remaining)+".";
+            if(remaining==-2)return Component.translatableWithFallback("zianrct.reward.resolve_previous","Reclama o resuelve el premio anterior antes de repetir este desafío. /zianrct reward pending");
+            if(remaining>0)return Component.translatableWithFallback("zianrct.reward.available_in","Este desafío vuelve a estar disponible en %s.",waitText(remaining));
             return null;
-        }catch(Exception error){return "No se pudo verificar este desafío. Consulta al administrador.";}
+        }catch(Exception error){return Component.translatableWithFallback("zianrct.reward.verify_failed","No se pudo verificar este desafío. Consulta al administrador.");}
     }
-    private static String waitText(long millis){
-        return RewardMessages.waitFor(millis);
+    private static Component waitText(long millis){
+        return com.ianblk.zianrct.Messages.c(RewardMessages.waitFor(millis));
     }
     public static String name(String trainer){
         try{
@@ -117,7 +117,7 @@ public final class TrainerRewardService {
             if (definition == null || definition.empty()) return;
             // Reserve independently from medals; historical reconciliation and admin medal grants never call this.
             if (!journal.reserveAt(player.getUUID(), trainer, definition,System.currentTimeMillis(),battle)) {
-                if(definition.mode()==RewardDefinition.Mode.REPEAT)player.sendSystemMessage(com.ianblk.zianrct.Messages.format(Component.literal(next(player,trainer))));
+                if(definition.mode()==RewardDefinition.Mode.REPEAT)player.sendSystemMessage(com.ianblk.zianrct.Messages.format(next(player,trainer)));
                 return;
             }
             RewardClaim claim=journal.latest(player.getUUID(),trainer);
@@ -126,7 +126,7 @@ public final class TrainerRewardService {
             deliver(player, claim.id());
         } catch (Exception error) {
             ZianRCT.LOGGER.error("Trainer reward could not be completed for {} / {}", player.getUUID(), trainer, error);
-            player.sendSystemMessage(com.ianblk.zianrct.Messages.format(Component.literal("La recompensa del entrenador necesita revisión. No repitas pagos manualmente sin revisar el registro.")));
+            player.sendSystemMessage(com.ianblk.zianrct.Messages.format(Component.translatableWithFallback("zianrct.reward.needs_review","La recompensa del entrenador necesita revisión. No repitas pagos manualmente sin revisar el registro.")));
         }
     }
     private HumanReferences references;
@@ -137,17 +137,17 @@ public final class TrainerRewardService {
     public void notifyPending(ServerPlayer player) {
         if (journal == null) return;
         long count = journal.forPlayer(player.getUUID()).stream().filter(c -> !c.complete()).count();
-        if (count > 0) player.sendSystemMessage(com.ianblk.zianrct.Messages.format(Component.literal("Tienes " + count + " recompensa(s) de entrenadores pendiente(s). Usa /zianrct reward pending.")));
+        if (count > 0) player.sendSystemMessage(com.ianblk.zianrct.Messages.format(Component.translatableWithFallback("zianrct.reward.pending_notice","Tienes %s recompensa(s) de entrenadores pendiente(s). Usa /zianrct reward pending.",count)));
     }
     public Map<String, RewardDefinition> definitions() { ready(); return config.definitions(); }
-    public String next(ServerPlayer player,String trainer){
+    public Component next(ServerPlayer player,String trainer){
         ready();var definition=config.definition(trainer);
-        if(!config.enabled())return "Recompensas nuevas desactivadas; los premios reservados siguen reclamables.";
-        if(definition==null || definition.empty())return "Sin premio configurado.";
+        if(!config.enabled())return Component.translatableWithFallback("zianrct.reward.next.disabled","Recompensas nuevas desactivadas; los premios reservados siguen reclamables.");
+        if(definition==null || definition.empty())return Component.translatableWithFallback("zianrct.reward.next.none","Sin premio configurado.");
         long remaining=journal.remaining(player.getUUID(),trainer,definition,System.currentTimeMillis());
-        if(remaining==-1)return "Premio único ya obtenido.";
-        if(remaining==-2)return "Premio anterior pendiente; reclámalo o pide revisión.";
-        return remaining==0?"Premio disponible al ganar.":"Próximo premio en "+waitText(remaining)+".";
+        if(remaining==-1)return Component.translatableWithFallback("zianrct.reward.next.unique_done","Premio único ya obtenido.");
+        if(remaining==-2)return Component.translatableWithFallback("zianrct.reward.next.previous_pending","Premio anterior pendiente; reclámalo o pide revisión.");
+        return remaining==0?Component.translatableWithFallback("zianrct.reward.next.available","Premio disponible al ganar."):Component.translatableWithFallback("zianrct.reward.next.in","Próximo premio en %s.",waitText(remaining));
     }
     private void noBattle(String trainer){
         if(StandaloneRuntime.getInstance().getTrainerSpawner().getSpawns().stream().anyMatch(n->trainer.equals(n.getTrainerId()) && n.isInBattle()))
@@ -208,7 +208,7 @@ public final class TrainerRewardService {
         ready();
         RewardClaim before=journal.get(player.getUUID(),id);
         if(before!=null && before.player().equals(player.getUUID()) && before.complete()){
-            player.sendSystemMessage(com.ianblk.zianrct.Messages.format(Component.literal("Esta recompensa ya fue entregada. "+next(player,before.trainer()))));return;
+            player.sendSystemMessage(com.ianblk.zianrct.Messages.format(Component.translatableWithFallback("zianrct.reward.already_delivered","Esta recompensa ya fue entregada. %s",next(player,before.trainer()))));return;
         }
         RewardDelivery.deliver(journal, player.getUUID(), id, new RewardDelivery.Port() {
             public String unavailable(RewardClaim.Part part) {
@@ -241,9 +241,9 @@ public final class TrainerRewardService {
             }
         });
         RewardClaim result = journal.get(player.getUUID(),id);
-        player.sendSystemMessage(com.ianblk.zianrct.Messages.format(Component.literal(result.complete() ? RewardMessages.delivered(name(result.trainer()),Math.max(0,result.nextEligibleAt()-System.currentTimeMillis()),result.cooldownMinutes()>0)
-                : result.review() ? "Recompensa " + id + " pendiente de revisión administrativa."
-                : "Recompensa " + id + " pendiente. Libera espacio o revisa la cartera y usa /zianrct reward claim " + id)));
+        player.sendSystemMessage(com.ianblk.zianrct.Messages.format((result.complete() ? com.ianblk.zianrct.Messages.c(RewardMessages.delivered(name(result.trainer()),Math.max(0,result.nextEligibleAt()-System.currentTimeMillis()),result.cooldownMinutes()>0))
+                : result.review() ? Component.translatableWithFallback("zianrct.reward.claim_review","Recompensa %s pendiente de revisión administrativa.",id.toString())
+                : Component.translatableWithFallback("zianrct.reward.claim_pending","Recompensa %s pendiente. Libera espacio o revisa la cartera y usa /zianrct reward claim %s",id.toString(),id.toString()))));
         ZianRCT.LOGGER.info("[ZIAN-AUDIT] action=trainer_reward_claim playerUuid={} trainer={} operation={} result={}",
                 player.getUUID(), result.trainer(), id, result.complete() ? "DELIVERED" : result.review() ? "REVIEW" : "PENDING");
     }

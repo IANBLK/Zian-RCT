@@ -5,6 +5,7 @@ import net.minecraft.ChatFormatting;
 public final class NpcDialogueFormat {
  private NpcDialogueFormat(){}
  public static Component line(String name,String text){return line(Component.literal(name),Component.literal(text));}
+ public static Component line(String name,Component text){return line(Component.literal(name),text);}
  public static Component line(Component name,Component text){return Component.empty()
   .append(Component.literal("✦ ").withStyle(ChatFormatting.GOLD))
   .append(name.copy().withStyle(ChatFormatting.GOLD,ChatFormatting.BOLD))
