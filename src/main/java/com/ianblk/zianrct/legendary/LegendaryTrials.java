@@ -41,8 +41,8 @@ public final class LegendaryTrials {
                                     if(entry==null || entry.phase()!=TrialJournal.Phase.REVIEW)throw new IllegalArgumentException("Solo permite cerrar una entrega en revisión, tras verificarla o compensarla manualmente.");
                                     journal.phase(player.getUUID(),trainer,TrialJournal.Phase.DELIVERED);
                                     ZianRCT.LOGGER.warn("[ZIAN-AUDIT] action=legendary_operator_confirmed admin={} player={} trainer={} pokemon={} evidence={}",c.getSource().getTextName(),player.getUUID(),trainer,entry.pokemon(),evidence);
-                                    c.getSource().sendSuccess(()->Component.literal("Entrega cerrada. No se generó otro Pokémon."),true);return 1;
-                                }catch(Exception error){c.getSource().sendFailure(Component.literal(error.getMessage()==null?"No se pudo resolver":error.getMessage()));return 0;}
+                                    c.getSource().sendSuccess(()->Component.translatableWithFallback("zianrct.legendary.cmd.closed","Entrega cerrada. No se generó otro Pokémon."),true);return 1;
+                                }catch(Exception error){c.getSource().sendFailure(Component.translatableWithFallback("zianrct.cmd.error","%s",error.getMessage()==null?Component.translatableWithFallback("zianrct.legendary.cmd.unresolved","No se pudo resolver"):Component.literal(error.getMessage())));return 0;}
                             }))))))));
     }
     public static void start(MinecraftServer s){server=s;journal=null;verifying.clear();ticks=0;smokePlayer=null;smokeBegan=0;smokeDone=false;
@@ -100,7 +100,7 @@ public final class LegendaryTrials {
             }
             var d=CustomTrainerStore.get(trainer);
             if(d!=null && d.trial()!=null){var entry=journal.victory(player.getUUID(),trainer,battle,RANDOM);if(entry!=null && entry.phase()==TrialJournal.Phase.READY)deliver(player,entry);}
-        }catch(Exception e){ZianRCT.LOGGER.error("Legendary trial mutation failed for {} / {}",player.getUUID(),trainer,e);player.sendSystemMessage(com.ianblk.zianrct.Messages.format(Component.literal("La prueba legendaria necesita revisión. No entregues otro Pokémon sin revisar el registro.")));}
+        }catch(Exception e){ZianRCT.LOGGER.error("Legendary trial mutation failed for {} / {}",player.getUUID(),trainer,e);player.sendSystemMessage(com.ianblk.zianrct.Messages.format(Component.translatableWithFallback("zianrct.legendary.needs_review","La prueba legendaria necesita revisión. No entregues otro Pokémon sin revisar el registro.")));}
     }
     private record Storage(PCStore pc,FileBackedPokemonStoreFactory<?> factory,FileStoreAdapter<?> adapter){}
     private static Storage storage(ServerPlayer player) throws ReflectiveOperationException {
@@ -209,7 +209,7 @@ public final class LegendaryTrials {
         try{for(var entry:journal.forPlayer(player.getUUID()))if(entry.player().equals(player.getUUID())){
             if(entry.phase()==TrialJournal.Phase.READY)deliver(player,entry);
             else if(entry.phase()==TrialJournal.Phase.APPLYING || entry.phase()==TrialJournal.Phase.REVIEW)verify(player,entry);
-        }}catch(Exception e){player.sendSystemMessage(com.ianblk.zianrct.Messages.format(Component.literal("Premio conservado pendiente o en revisión: "+e.getMessage())));ZianRCT.LOGGER.warn("Legendary claim deferred for {}",player.getUUID(),e);}
+        }}catch(Exception e){player.sendSystemMessage(com.ianblk.zianrct.Messages.format(Component.translatableWithFallback("zianrct.legendary.prize_kept","Premio conservado pendiente o en revisión: %s",String.valueOf(e.getMessage()))));ZianRCT.LOGGER.warn("Legendary claim deferred for {}",player.getUUID(),e);}
     }
     public static void notifyPending(ServerPlayer player){
         if(journal==null || !RctPermissions.allows(player.createCommandSourceStack(),"legendary.claim",false))return;

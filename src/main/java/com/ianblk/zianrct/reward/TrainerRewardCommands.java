@@ -14,11 +14,11 @@ public final class TrainerRewardCommands {
     @FunctionalInterface private interface Action { void run() throws Exception; }
     private static int execute(CommandSourceStack source, Action action) {
         try { action.run(); return 1; }
-        catch (Exception error) { source.sendFailure(Component.literal(error.getMessage() == null ? "No se pudo completar la operación" : error.getMessage())); return 0; }
+        catch (Exception error) { source.sendFailure(Component.translatableWithFallback("zianrct.cmd.error", "%s", error.getMessage() == null ? Component.translatableWithFallback("zianrct.reward.cmd.failed_generic", "No se pudo completar la operación") : Component.literal(error.getMessage()))); return 0; }
     }
     private static UUID admin(CommandSourceStack source) { return source.getEntity() instanceof ServerPlayer player ? player.getUUID() : new UUID(0, 0); }
     private static void saved(CommandSourceStack source, String trainer) {
-        source.sendSuccess(() -> Component.literal("Recompensa de " + trainer + " guardada. Es única por jugador; solo afecta futuras victorias."), true);
+        source.sendSuccess(() -> Component.translatableWithFallback("zianrct.reward.cmd.saved","Recompensa de %s guardada. Es única por jugador; solo afecta futuras victorias.",trainer), true);
     }
     private static java.util.concurrent.CompletableFuture<com.mojang.brigadier.suggestion.Suggestions> suggestTrainers(TrainerRewardService service,com.mojang.brigadier.suggestion.SuggestionsBuilder b){var ids=new java.util.LinkedHashSet<String>();try{com.ianblk.zianrct.config.ConfigState.current().activeProfileConfig().chain().forEach(c->ids.add(c.trainer()));ids.addAll(service.definitions().keySet());}catch(RuntimeException ignored){}return SharedSuggestionProvider.suggest(ids,b);}
     public static void register(CommandDispatcher<CommandSourceStack> dispatcher, TrainerRewardService service) {
@@ -32,12 +32,12 @@ public final class TrainerRewardCommands {
                 .then(Commands.argument("trainer",StringArgumentType.word()).suggests((c,b)->suggestTrainers(service,b))
                         .then(Commands.literal("unique").executes(c -> execute(c.getSource(),()->{
                             service.policy(StringArgumentType.getString(c,"trainer"),RewardDefinition.Mode.UNIQUE,0);
-                            c.getSource().sendSuccess(()->Component.literal("Premio único guardado; aplicando configuración de RCT."),true);
+                            c.getSource().sendSuccess(()->Component.translatableWithFallback("zianrct.reward.cmd.unique_saved","Premio único guardado; aplicando configuración de RCT."),true);
                         })))
                         .then(Commands.literal("repeat").then(Commands.argument("minutes",LongArgumentType.longArg(1,43200))
                                 .executes(c -> execute(c.getSource(),()->{
                                     service.policy(StringArgumentType.getString(c,"trainer"),RewardDefinition.Mode.REPEAT,LongArgumentType.getLong(c,"minutes"));
-                                    c.getSource().sendSuccess(()->Component.literal("Premio repetible guardado; aplicando revancha de RCT."),true);
+                                    c.getSource().sendSuccess(()->Component.translatableWithFallback("zianrct.reward.cmd.repeat_saved","Premio repetible guardado; aplicando revancha de RCT."),true);
                                 }))))));
         reward.then(Commands.literal("pending")
                 .requires(s -> RctPermissions.allows(s, "rewards.claim", false))
@@ -78,8 +78,8 @@ public final class TrainerRewardCommands {
                 .executes(c -> execute(c.getSource(), () -> c.getSource().sendSuccess(() -> Component.literal(service.status()), false))));
         reward.then(Commands.literal("list").requires(s -> RctPermissions.allows(s, "admin.rewards.configure", true))
                 .executes(c -> execute(c.getSource(), () -> {
-                    if (service.definitions().isEmpty()) c.getSource().sendSuccess(() -> Component.literal("Sin premios configurados."), false);
-                    service.definitions().forEach((trainer, d) -> c.getSource().sendSuccess(() -> Component.literal(trainer + ": " + d.items().size() + " objetos, " + d.coins() + " " + d.currency()), false));
+                    if (service.definitions().isEmpty()) c.getSource().sendSuccess(() -> Component.translatableWithFallback("zianrct.reward.cmd.none_configured","Sin premios configurados."), false);
+                    service.definitions().forEach((trainer, d) -> c.getSource().sendSuccess(() -> Component.translatableWithFallback("zianrct.reward.cmd.list_entry","%s: %s objetos, %s %s",trainer,d.items().size(),d.coins(),d.currency()), false));
                 })));
         reward.then(Commands.literal("set-money").requires(s -> RctPermissions.allows(s, "admin.rewards.configure", true))
                 .then(Commands.argument("trainer", StringArgumentType.word()).suggests((c,b)->suggestTrainers(service,b))
@@ -106,18 +106,18 @@ public final class TrainerRewardCommands {
         reward.then(Commands.literal("enabled").requires(s -> RctPermissions.allows(s, "admin.rewards.configure", true))
                 .then(Commands.argument("value", BoolArgumentType.bool()).executes(c -> execute(c.getSource(), () -> {
                     service.enabled(BoolArgumentType.getBool(c, "value"));
-                    c.getSource().sendSuccess(() -> Component.literal("Configuración guardada. Los premios pendientes siguen reclamables."), true);
+                    c.getSource().sendSuccess(() -> Component.translatableWithFallback("zianrct.reward.cmd.config_saved","Configuración guardada. Los premios pendientes siguen reclamables."), true);
                 }))));
         reward.then(Commands.literal("reload").requires(s -> RctPermissions.allows(s, "admin.rewards.configure", true))
                 .executes(c -> execute(c.getSource(), () -> {
                     service.reload();
-                    c.getSource().sendSuccess(() -> Component.literal("Configuración de recompensas recargada; no cambia premios ya reservados."), true);
+                    c.getSource().sendSuccess(() -> Component.translatableWithFallback("zianrct.reward.cmd.reloaded","Configuración de recompensas recargada; no cambia premios ya reservados."), true);
                 })));
         reward.then(Commands.literal("review").requires(s -> RctPermissions.allows(s, "admin.rewards.review", true))
                 .then(Commands.argument("player", EntityArgument.player()).executes(c -> execute(c.getSource(), () -> {
                     var target = EntityArgument.getPlayer(c, "player");
                     var claims = service.claims(target.getUUID());
-                    if (claims.isEmpty()) c.getSource().sendSuccess(() -> Component.literal("Sin reclamaciones registradas."), false);
+                    if (claims.isEmpty()) c.getSource().sendSuccess(() -> Component.translatableWithFallback("zianrct.reward.cmd.no_claims","Sin reclamaciones registradas."), false);
                     for (var claim : claims) {
                         c.getSource().sendSuccess(() -> Component.literal(service.reference(target.getUUID(),claim.id()) + " | " + target.getGameProfile().getName()+" | "+claim.trainer()), false);
                         for (int i = 0; i < claim.parts().size(); i++) {
@@ -140,7 +140,7 @@ public final class TrainerRewardCommands {
                                                                 IntegerArgumentType.getInteger(c, "component") - 1, admin(c.getSource()),
                                                                 decision.equals("confirm-delivered") ? "confirmed_delivered" : "confirmed_compensated",
                                                                 StringArgumentType.getString(c, "evidence"));
-                                                        c.getSource().sendSuccess(() -> Component.literal("Componente cerrado. No se entrega ni paga nada automáticamente."), true);
+                                                        c.getSource().sendSuccess(() -> Component.translatableWithFallback("zianrct.reward.cmd.component_closed","Componente cerrado. No se entrega ni paga nada automáticamente."), true);
                                                     })))))));
         }
         dispatcher.register(Commands.literal("zianrct").requires(s -> true).then(reward));

@@ -67,7 +67,7 @@ public final class NpcEditorService {
     }
     private int command(net.minecraft.commands.CommandSourceStack source) {
         try { open(source.getPlayerOrException()); return 1; }
-        catch (Exception e) { source.sendFailure(Component.literal(e.getMessage())); return 0; }
+        catch (Exception e) { source.sendFailure(Component.translatableWithFallback("zianrct.cmd.error","%s",String.valueOf(e.getMessage()))); return 0; }
     }
     private void registerCommands(RegisterCommandsEvent event) {
         event.getDispatcher().register(Commands.literal("zianrct").requires(s -> true)
@@ -112,7 +112,7 @@ public final class NpcEditorService {
         if (!allowed(player,"admin.npc.edit")) return;
         var session = sessions.take(player.getUUID(),UUID.fromString(action.nonce()),System.currentTimeMillis());
         if (session == null) {
-            player.sendSystemMessage(com.ianblk.zianrct.Messages.format(Component.literal("Sesión caducada o petición repetida. Abre /zianrct npc de nuevo.")));
+            player.sendSystemMessage(com.ianblk.zianrct.Messages.format(Component.translatableWithFallback("zianrct.npc.session_expired","Sesión caducada o petición repetida. Abre /zianrct npc de nuevo.")));
             return;
         }
         var mode = session.mode();

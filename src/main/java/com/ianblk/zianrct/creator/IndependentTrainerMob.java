@@ -59,7 +59,7 @@ public final class IndependentTrainerMob extends PathfinderMob implements net.mi
     }
     @Override public Component getDisplayName(){
         if(level().isClientSide)return super.getDisplayName();
-        try{return StandaloneRuntime.getInstance().getData(getTrainerId()).model().getName().getComponent();}catch(RuntimeException error){return Component.literal("Entrenador Zian");}
+        try{return StandaloneRuntime.getInstance().getData(getTrainerId()).model().getName().getComponent();}catch(RuntimeException error){return Component.translatableWithFallback("zianrct.trainer.default_name","Entrenador Zian");}
     }
     @Override public InteractionResult mobInteract(Player player,InteractionHand hand){
         if(hand==InteractionHand.MAIN_HAND && player instanceof ServerPlayer target)startBattleWith(target);
