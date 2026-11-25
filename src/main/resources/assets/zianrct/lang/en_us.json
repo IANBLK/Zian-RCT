@@ -356,5 +356,7 @@
   "zianrct.trainer.default_name": "Zian Trainer",
   "zianrct.legendary.cmd.closed": "Delivery closed. No other Pokémon was generated.",
   "zianrct.legendary.needs_review": "The legendary trial needs review. Do not hand out another Pokémon without checking the registry.",
-  "zianrct.legendary.prize_kept": "Prize kept pending or under review: %s"
+  "zianrct.legendary.prize_kept": "Prize kept pending or under review: %s",
+  "zianrct.cmd.progress.complete": "complete",
+  "zianrct.cmd.progress.none": "none"
 }

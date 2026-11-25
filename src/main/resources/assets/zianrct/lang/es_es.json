@@ -356,5 +356,7 @@
   "zianrct.trainer.default_name": "Entrenador Zian",
   "zianrct.legendary.cmd.closed": "Entrega cerrada. No se generó otro Pokémon.",
   "zianrct.legendary.needs_review": "La prueba legendaria necesita revisión. No entregues otro Pokémon sin revisar el registro.",
-  "zianrct.legendary.prize_kept": "Premio conservado pendiente o en revisión: %s"
+  "zianrct.legendary.prize_kept": "Premio conservado pendiente o en revisión: %s",
+  "zianrct.cmd.progress.complete": "completada",
+  "zianrct.cmd.progress.none": "ninguno"
 }
