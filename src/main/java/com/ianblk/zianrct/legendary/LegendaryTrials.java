@@ -56,19 +56,19 @@ public final class LegendaryTrials {
         var d=CustomTrainerStore.get(trainer);if(d==null || d.trial()==null)return true;
         try{validate(d);var entry=journal==null?null:journal.get(player,trainer);return entry!=null && entry.phase()==TrialJournal.Phase.UNLOCKED;}catch(Exception e){return false;}
     }
-    public static String blocked(ServerPlayer player,String trainer){
+    public static Component blocked(ServerPlayer player,String trainer){
         var d=CustomTrainerStore.get(trainer);if(d==null || d.trial()==null)return null;
-        if(!RctPermissions.allows(player.createCommandSourceStack(),"legendary.claim",false))return "No tienes permiso para este desafío.";
-        if(journal==null)return "El registro de pruebas no está disponible. Consulta al administrador.";
+        if(!RctPermissions.allows(player.createCommandSourceStack(),"legendary.claim",false))return Component.translatableWithFallback("zianrct.legendary.no_permission","No tienes permiso para este desafío.");
+        if(journal==null)return Component.translatableWithFallback("zianrct.legendary.journal_unavailable","El registro de pruebas no está disponible. Consulta al administrador.");
         try{var entry=journal.get(player.getUUID(),trainer);
-            if(entry==null)return "Primero debes derrotar al jefe "+com.ianblk.zianrct.reward.TrainerRewardService.name(d.trial().boss())+".";
+            if(entry==null)return Component.translatableWithFallback("zianrct.legendary.defeat_boss_first","Primero debes derrotar al jefe %s.",com.ianblk.zianrct.reward.TrainerRewardService.name(d.trial().boss()));
             return switch(entry.phase()){
                 case UNLOCKED->null;
-                case READY->"Ya ganaste este desafío. Tu Pokémon está pendiente: /zianrct legendary claim";
-                case APPLYING,REVIEW->"La entrega de tu Pokémon necesita confirmación; no se repetirá automáticamente.";
-                case DELIVERED->"Ya superaste la prueba y recibiste tu Pokémon. Este desafío es único.";
+                case READY->Component.translatableWithFallback("zianrct.legendary.ready","Ya ganaste este desafío. Tu Pokémon está pendiente: /zianrct legendary claim");
+                case APPLYING,REVIEW->Component.translatableWithFallback("zianrct.legendary.needs_confirmation","La entrega de tu Pokémon necesita confirmación; no se repetirá automáticamente.");
+                case DELIVERED->Component.translatableWithFallback("zianrct.legendary.delivered","Ya superaste la prueba y recibiste tu Pokémon. Este desafío es único.");
             };
-        }catch(Exception e){return "No se pudo verificar tu prueba. Consulta al administrador.";}
+        }catch(Exception e){return Component.translatableWithFallback("zianrct.legendary.verify_failed","No se pudo verificar tu prueba. Consulta al administrador.");}
     }
     public static void validate(CustomTrainer d){
         if(CustomTrainerStore.all().values().stream().anyMatch(t->t.trial()!=null && t.trial().boss().equals(d.id())) && (!d.difficulty().equals("JEFE") || d.trial()!=null))
@@ -87,14 +87,14 @@ public final class LegendaryTrials {
             throw new IllegalArgumentException("No cambies jefe, especie, nivel o shiny de una prueba que ya tiene progreso. Usa un ID nuevo.");
     }
     public static void won(ServerPlayer player,String trainer,UUID battle){
-        if(journal==null){if(interested(trainer))player.sendSystemMessage(com.ianblk.zianrct.Messages.format(Component.literal("No se pudo registrar la prueba legendaria. Consulta al administrador antes de continuar.")));return;}
+        if(journal==null){if(interested(trainer))player.sendSystemMessage(com.ianblk.zianrct.Messages.format(Component.translatableWithFallback("zianrct.legendary.register_failed","No se pudo registrar la prueba legendaria. Consulta al administrador antes de continuar.")));return;}
         if(battle==null || server==null || !server.isSameThread())return;
         try{
             for(var d:CustomTrainerStore.all().values())if(d.trial()!=null && d.trial().boss().equals(trainer)){
                 validate(d);
                 var m=d.team().getFirst();
                 if(journal.unlock(player.getUUID(),d.id(),trainer,m.species(),m.level(),d.trial().shinyDenominator(),battle)){
-                    player.sendSystemMessage(com.ianblk.zianrct.Messages.format(Component.literal("Has superado la prueba. Puedes hablar con "+d.name()+" para luchar con el legendario.")));
+                    player.sendSystemMessage(com.ianblk.zianrct.Messages.format(Component.translatableWithFallback("zianrct.legendary.unlocked","Has superado la prueba. Puedes hablar con %s para luchar con el legendario.",d.name())));
                     ZianRCT.LOGGER.info("[ZIAN-AUDIT] action=legendary_unlock player={} trainer={} boss={} battle={}",player.getUUID(),d.id(),trainer,battle);
                 }
             }
@@ -116,7 +116,7 @@ public final class LegendaryTrials {
     }
     private static void deliver(ServerPlayer player,TrialJournal.Entry entry) throws Exception {
         var store=storage(player);
-        if(store.pc().getFirstAvailablePosition()==null){player.sendSystemMessage(com.ianblk.zianrct.Messages.format(Component.literal("Tu PC está lleno. Libera espacio y usa /zianrct legendary claim; el premio está guardado.")));return;}
+        if(store.pc().getFirstAvailablePosition()==null){player.sendSystemMessage(com.ianblk.zianrct.Messages.format(Component.translatableWithFallback("zianrct.legendary.pc_full","Tu PC está lleno. Libera espacio y usa /zianrct legendary claim; el premio está guardado.")));return;}
         if(store.pc().get(entry.pokemon())!=null || Cobblemon.INSTANCE.getStorage().getParty(player).get(entry.pokemon())!=null){
             journal.phase(entry.player(),entry.trainer(),TrialJournal.Phase.APPLYING);journal.phase(entry.player(),entry.trainer(),TrialJournal.Phase.REVIEW);
             throw new IllegalStateException("El UUID reservado ya está presente; no se creará otro Pokémon");
@@ -130,7 +130,7 @@ public final class LegendaryTrials {
         if(!store.pc().add(pokemon)){journal.phase(entry.player(),entry.trainer(),TrialJournal.Phase.REVIEW);return;}
         store.factory().save(store.pc(),player.registryAccess());
         verifying.put(entry.player()+":"+entry.trainer(),System.currentTimeMillis());
-        player.sendSystemMessage(com.ianblk.zianrct.Messages.format(Component.literal("Has vencido al legendario. Tu Pokémon se añadió al PC; confirmando el guardado.")));
+        player.sendSystemMessage(com.ianblk.zianrct.Messages.format(Component.translatableWithFallback("zianrct.legendary.defeated","Has vencido al legendario. Tu Pokémon se añadió al PC; confirmando el guardado.")));
     }
     private static boolean verify(ServerPlayer player,TrialJournal.Entry entry) throws Exception {
         var store=storage(player);var persisted=store.adapter().load(PCStore.class,store.pc().getUuid(),player.registryAccess());
@@ -147,7 +147,7 @@ public final class LegendaryTrials {
         var stats=List.of(Stats.HP,Stats.ATTACK,Stats.DEFENCE,Stats.SPECIAL_ATTACK,Stats.SPECIAL_DEFENCE,Stats.SPEED);
         for(int i=0;i<6;i++)if(savedPokemon.getIvs().getOrDefault(stats.get(i))!=entry.ivs().get(i))throw new IllegalStateException("Los IV guardados no coinciden con el premio reservado");
         journal.phase(entry.player(),entry.trainer(),TrialJournal.Phase.DELIVERED);
-        player.sendSystemMessage(com.ianblk.zianrct.Messages.format(Component.literal("Prueba completada: recibiste "+entry.species()+(entry.shiny()?" shiny":"")+" en tu PC. No podrás repetir esta recompensa.")));
+        player.sendSystemMessage(com.ianblk.zianrct.Messages.format(Component.translatableWithFallback("zianrct.legendary.completed","Prueba completada: recibiste %s en tu PC. No podrás repetir esta recompensa.",entry.species()+(entry.shiny()?" shiny":""))));
         ZianRCT.LOGGER.info("[ZIAN-AUDIT] action=legendary_delivered player={} trainer={} pokemon={} shiny={} ivs={} battle={}",entry.player(),entry.trainer(),entry.pokemon(),entry.shiny(),entry.ivs(),entry.victoryBattle());return true;
     }
     private static com.cobblemon.mod.common.pokemon.Pokemon findPersisted(com.cobblemon.mod.common.api.storage.PokemonStore<?> store,UUID uuid){
@@ -204,7 +204,7 @@ public final class LegendaryTrials {
         }}catch(Exception e){ZianRCT.LOGGER.error("Legendary trial verification unavailable",e);journal=null;}
     }
     public static void claim(ServerPlayer player){
-        if(journal==null){player.sendSystemMessage(com.ianblk.zianrct.Messages.format(Component.literal("Registro de pruebas no disponible.")));return;}
+        if(journal==null){player.sendSystemMessage(com.ianblk.zianrct.Messages.format(Component.translatableWithFallback("zianrct.legendary.registry_unavailable","Registro de pruebas no disponible.")));return;}
         if(!RctPermissions.allows(player.createCommandSourceStack(),"legendary.claim",false))return;
         try{for(var entry:journal.forPlayer(player.getUUID()))if(entry.player().equals(player.getUUID())){
             if(entry.phase()==TrialJournal.Phase.READY)deliver(player,entry);
@@ -216,20 +216,20 @@ public final class LegendaryTrials {
         try{
             long count=journal.forPlayer(player.getUUID()).stream()
                 .filter(e->e.phase()==TrialJournal.Phase.READY || e.phase()==TrialJournal.Phase.APPLYING || e.phase()==TrialJournal.Phase.REVIEW).count();
-            if(count>0)player.sendSystemMessage(com.ianblk.zianrct.Messages.format(Component.literal("Tienes entregas legendarias pendientes o en revisión. Consulta /zianrct legendary status.")));
+            if(count>0)player.sendSystemMessage(com.ianblk.zianrct.Messages.format(Component.translatableWithFallback("zianrct.legendary.pending_notice","Tienes entregas legendarias pendientes o en revisión. Consulta /zianrct legendary status.")));
         }catch(Exception error){ZianRCT.LOGGER.warn("Could not check pending legendary deliveries for {}",player.getUUID(),error);}
     }
     public static void status(ServerPlayer player){
-        if(journal==null){player.sendSystemMessage(com.ianblk.zianrct.Messages.format(Component.literal("Registro de pruebas no disponible.")));return;}
+        if(journal==null){player.sendSystemMessage(com.ianblk.zianrct.Messages.format(Component.translatableWithFallback("zianrct.legendary.registry_unavailable","Registro de pruebas no disponible.")));return;}
         try{var own=journal.forPlayer(player.getUUID()).stream().toList();
-            if(own.isEmpty())player.sendSystemMessage(com.ianblk.zianrct.Messages.format(Component.literal("Aún no has desbloqueado pruebas legendarias.")));
-            for(var e:own){String state=switch(e.phase()){
-                case UNLOCKED->"Prueba superada; combate disponible";
-                case READY->"Victoria obtenida; premio pendiente";
-                case APPLYING->"Confirmando entrega";
-                case DELIVERED->"Pokémon recibido; prueba cerrada";
-                case REVIEW->"Entrega en revisión";
-            };player.sendSystemMessage(com.ianblk.zianrct.Messages.format(Component.literal(com.ianblk.zianrct.reward.TrainerRewardService.name(e.trainer())+" | "+state+" | "+e.species())));}
-        }catch(Exception e){player.sendSystemMessage(com.ianblk.zianrct.Messages.format(Component.literal("No se pudo leer el registro de pruebas.")));}
+            if(own.isEmpty())player.sendSystemMessage(com.ianblk.zianrct.Messages.format(Component.translatableWithFallback("zianrct.legendary.none_unlocked","Aún no has desbloqueado pruebas legendarias.")));
+            for(var e:own){Component state=switch(e.phase()){
+                case UNLOCKED->Component.translatableWithFallback("zianrct.legendary.state.unlocked","Prueba superada; combate disponible");
+                case READY->Component.translatableWithFallback("zianrct.legendary.state.ready","Victoria obtenida; premio pendiente");
+                case APPLYING->Component.translatableWithFallback("zianrct.legendary.state.applying","Confirmando entrega");
+                case DELIVERED->Component.translatableWithFallback("zianrct.legendary.state.delivered","Pokémon recibido; prueba cerrada");
+                case REVIEW->Component.translatableWithFallback("zianrct.legendary.state.review","Entrega en revisión");
+            };player.sendSystemMessage(com.ianblk.zianrct.Messages.format(Component.literal(com.ianblk.zianrct.reward.TrainerRewardService.name(e.trainer())+" | ").append(state).append(" | "+e.species())));}
+        }catch(Exception e){player.sendSystemMessage(com.ianblk.zianrct.Messages.format(Component.translatableWithFallback("zianrct.legendary.read_failed","No se pudo leer el registro de pruebas.")));}
     }
 }

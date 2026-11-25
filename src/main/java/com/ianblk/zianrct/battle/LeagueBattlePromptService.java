@@ -71,7 +71,7 @@ public final class LeagueBattlePromptService {
         event.setCanceled(true);
         event.setCancellationResult(InteractionResult.SUCCESS);
 
-        String prerequisiteMessage = missingPrerequisiteMessage(player, trainer.getTrainerId());
+        Component prerequisiteMessage = missingPrerequisiteMessage(player, trainer.getTrainerId());
         if (prerequisiteMessage != null) {
             pending.remove(player.getUUID());
             player.sendSystemMessage(com.ianblk.zianrct.Messages.format(
@@ -124,11 +124,11 @@ public final class LeagueBattlePromptService {
 
         PendingInvite invite = pending.remove(player.getUUID());
         if (invite == null) {
-            player.sendSystemMessage(com.ianblk.zianrct.Messages.format(Component.literal("La invitación de combate ya no está disponible.").withStyle(ChatFormatting.RED)));
+            player.sendSystemMessage(com.ianblk.zianrct.Messages.format(Component.translatableWithFallback("zianrct.battle.invite_gone","La invitación de combate ya no está disponible.").withStyle(ChatFormatting.RED)));
             return 0;
         }
         if (invite.expiresAtMillis() < System.currentTimeMillis()) {
-            player.sendSystemMessage(com.ianblk.zianrct.Messages.format(Component.literal("La invitación de combate ha caducado.").withStyle(ChatFormatting.RED)));
+            player.sendSystemMessage(com.ianblk.zianrct.Messages.format(Component.translatableWithFallback("zianrct.battle.invite_expired","La invitación de combate ha caducado.").withStyle(ChatFormatting.RED)));
             return 0;
         }
 
@@ -139,7 +139,7 @@ public final class LeagueBattlePromptService {
             return 0;
         }
         if (!invite.trainerUuid().equals(requestedTrainer)) {
-            player.sendSystemMessage(com.ianblk.zianrct.Messages.format(Component.literal("Esta invitación ya no corresponde al entrenador seleccionado.").withStyle(ChatFormatting.RED)));
+            player.sendSystemMessage(com.ianblk.zianrct.Messages.format(Component.translatableWithFallback("zianrct.battle.invite_mismatch","Esta invitación ya no corresponde al entrenador seleccionado.").withStyle(ChatFormatting.RED)));
             return 0;
         }
 
@@ -147,15 +147,15 @@ public final class LeagueBattlePromptService {
         if (!(entity instanceof IndependentTrainerMob trainer)
                 || !invite.trainerId().equals(trainer.getTrainerId())
                 || !isRassvetTrainer(trainer.getTrainerId())) {
-            player.sendSystemMessage(com.ianblk.zianrct.Messages.format(Component.literal("El entrenador ya no está disponible.").withStyle(ChatFormatting.RED)));
+            player.sendSystemMessage(com.ianblk.zianrct.Messages.format(Component.translatableWithFallback("zianrct.battle.trainer_gone","El entrenador ya no está disponible.").withStyle(ChatFormatting.RED)));
             return 0;
         }
         if (player.distanceToSqr(trainer) > MAX_ACCEPT_DISTANCE_SQR) {
-            player.sendSystemMessage(com.ianblk.zianrct.Messages.format(Component.literal("Te alejaste demasiado del entrenador. Interactúa con él otra vez.").withStyle(ChatFormatting.RED)));
+            player.sendSystemMessage(com.ianblk.zianrct.Messages.format(Component.translatableWithFallback("zianrct.battle.too_far","Te alejaste demasiado del entrenador. Interactúa con él otra vez.").withStyle(ChatFormatting.RED)));
             return 0;
         }
 
-        String prerequisiteMessage = missingPrerequisiteMessage(player, trainer.getTrainerId());
+        Component prerequisiteMessage = missingPrerequisiteMessage(player, trainer.getTrainerId());
         if (prerequisiteMessage != null) {
             player.sendSystemMessage(com.ianblk.zianrct.Messages.format(
                     com.ianblk.zianrct.npc.NpcDialogueFormat.line(trainerName(trainer.getTrainerId()),prerequisiteMessage)
@@ -168,7 +168,7 @@ public final class LeagueBattlePromptService {
             return 0;
         }
 
-        player.sendSystemMessage(com.ianblk.zianrct.Messages.format(Component.literal("Desafío aceptado. ¡Prepárate para combatir!").withStyle(ChatFormatting.GREEN)));
+        player.sendSystemMessage(com.ianblk.zianrct.Messages.format(Component.translatableWithFallback("zianrct.battle.accepted","Desafío aceptado. ¡Prepárate para combatir!").withStyle(ChatFormatting.GREEN)));
         trainer.startBattleWith(player);
         return 1;
     }
@@ -187,34 +187,34 @@ public final class LeagueBattlePromptService {
         }
 
         pending.remove(player.getUUID());
-        player.sendSystemMessage(com.ianblk.zianrct.Messages.format(Component.literal("Has rechazado el desafío. Regresa cuando estés preparado.").withStyle(ChatFormatting.GRAY)));
+        player.sendSystemMessage(com.ianblk.zianrct.Messages.format(Component.translatableWithFallback("zianrct.battle.rejected","Has rechazado el desafío. Regresa cuando estés preparado.").withStyle(ChatFormatting.GRAY)));
         return 1;
     }
 
     private void sendPrompt(ServerPlayer player, IndependentTrainerMob trainer, PendingInvite invite) {
         String uuid = invite.trainerUuid().toString();
-        Component accept = Component.literal("[✔ Aceptar]")
+        Component accept = Component.translatableWithFallback("zianrct.battle.accept","[✔ Aceptar]")
                 .withStyle(style -> style
                         .withColor(ChatFormatting.GREEN)
                         .withBold(true)
                         .withClickEvent(new ClickEvent(ClickEvent.Action.RUN_COMMAND, "/zianrctbattle accept " + uuid))
-                        .withHoverEvent(new HoverEvent(HoverEvent.Action.SHOW_TEXT, Component.literal("Aceptar el desafío"))));
-        Component reject = Component.literal("[✖ Rechazar]")
+                        .withHoverEvent(new HoverEvent(HoverEvent.Action.SHOW_TEXT, Component.translatableWithFallback("zianrct.battle.accept_tooltip","Aceptar el desafío"))));
+        Component reject = Component.translatableWithFallback("zianrct.battle.reject","[✖ Rechazar]")
                 .withStyle(style -> style
                         .withColor(ChatFormatting.RED)
                         .withBold(true)
                         .withClickEvent(new ClickEvent(ClickEvent.Action.RUN_COMMAND, "/zianrctbattle reject " + uuid))
-                        .withHoverEvent(new HoverEvent(HoverEvent.Action.SHOW_TEXT, Component.literal("Rechazar el desafío"))));
+                        .withHoverEvent(new HoverEvent(HoverEvent.Action.SHOW_TEXT, Component.translatableWithFallback("zianrct.battle.reject_tooltip","Rechazar el desafío"))));
 
-        Component line = com.ianblk.zianrct.npc.NpcDialogueFormat.line(trainerName(trainer.getTrainerId()),"¿Quieres comenzar este desafío?");
+        Component line = com.ianblk.zianrct.npc.NpcDialogueFormat.line(trainerName(trainer.getTrainerId()),Component.translatableWithFallback("zianrct.battle.start_question","¿Quieres comenzar este desafío?"));
         player.sendSystemMessage(com.ianblk.zianrct.Messages.format(line));
         player.sendSystemMessage(com.ianblk.zianrct.Messages.format(Component.empty().append(accept).append(Component.literal("  ")).append(reject)));
-        player.sendSystemMessage(com.ianblk.zianrct.Messages.format(Component.literal("[Ver disponibilidad de recompensa]").withStyle(style->style.withColor(ChatFormatting.GOLD)
+        player.sendSystemMessage(com.ianblk.zianrct.Messages.format(Component.translatableWithFallback("zianrct.battle.reward_availability","[Ver disponibilidad de recompensa]").withStyle(style->style.withColor(ChatFormatting.GOLD)
                 .withClickEvent(new ClickEvent(ClickEvent.Action.RUN_COMMAND,"/zianrct reward next "+trainer.getTrainerId())))));
-        player.sendSystemMessage(com.ianblk.zianrct.Messages.format(Component.literal("La invitación caduca en 15 segundos.").withStyle(ChatFormatting.DARK_GRAY)));
+        player.sendSystemMessage(com.ianblk.zianrct.Messages.format(Component.translatableWithFallback("zianrct.battle.invite_ttl","La invitación caduca en 15 segundos.").withStyle(ChatFormatting.DARK_GRAY)));
     }
 
-    private static String missingPrerequisiteMessage(ServerPlayer player, String trainerId) {
+    private static Component missingPrerequisiteMessage(ServerPlayer player, String trainerId) {
         ZianRctConfig.Profile profile = ConfigState.current().activeProfileConfig();
         List<ZianRctConfig.ChainEntry> chain = profile.chain();
         int index = -1;
@@ -235,27 +235,29 @@ public final class LeagueBattlePromptService {
             }
         } catch (RuntimeException exception) {
             ZianRCT.LOGGER.warn("Could not inspect Rassvet prerequisite progress for {} against {}", player.getGameProfile().getName(), trainerId, exception);
-            return "No se pudo verificar tu progreso. Inténtalo de nuevo o avisa a un administrador.";
+            return Component.translatableWithFallback("zianrct.league.progress_unverified", "No se pudo verificar tu progreso. Inténtalo de nuevo o avisa a un administrador.");
         }
-        return PREREQUISITE_MESSAGES.getOrDefault(
-                trainerId,
-                "Antes debes superar al líder anterior de la Liga Rassvet."
-        );
+        String known = PREREQUISITE_MESSAGES.get(trainerId);
+        return known != null
+                ? Component.translatableWithFallback("zianrct.league.prereq." + trainerId, known)
+                : Component.translatableWithFallback("zianrct.league.prereq.default", "Antes debes superar al líder anterior de la Liga Rassvet.");
     }
 
-    private static String trainerName(String trainerId) {
+    private static Component leader(String name) { return Component.translatableWithFallback("zianrct.league.leader", "Líder %s", name); }
+
+    private static Component trainerName(String trainerId) {
         return switch (trainerId) {
-            case "rassvet_leader_novato" -> "Líder Novato";
-            case "rassvet_leader_ferrum" -> "Líder Ferrum";
-            case "rassvet_leader_aquila" -> "Líder Aquila";
-            case "rassvet_leader_voltar" -> "Líder Voltar";
-            case "rassvet_leader_engranaje" -> "Líder Engranaje";
-            case "rassvet_leader_bruma" -> "Líder Bruma";
-            case "rassvet_leader_cognitus" -> "Líder Cognitus";
-            case "rassvet_leader_forjax" -> "Líder Forjax";
-            case "rassvet_leader_glacius" -> "Líder Glacius";
-            case "rassvet_master_aurelia" -> "Maestra Aurelia";
-            default -> "Líder Rassvet";
+            case "rassvet_leader_novato" -> leader("Novato");
+            case "rassvet_leader_ferrum" -> leader("Ferrum");
+            case "rassvet_leader_aquila" -> leader("Aquila");
+            case "rassvet_leader_voltar" -> leader("Voltar");
+            case "rassvet_leader_engranaje" -> leader("Engranaje");
+            case "rassvet_leader_bruma" -> leader("Bruma");
+            case "rassvet_leader_cognitus" -> leader("Cognitus");
+            case "rassvet_leader_forjax" -> leader("Forjax");
+            case "rassvet_leader_glacius" -> leader("Glacius");
+            case "rassvet_master_aurelia" -> Component.translatableWithFallback("zianrct.league.master", "Maestra %s", "Aurelia");
+            default -> Component.translatableWithFallback("zianrct.league.leader_default", "Líder Rassvet");
         };
     }
 

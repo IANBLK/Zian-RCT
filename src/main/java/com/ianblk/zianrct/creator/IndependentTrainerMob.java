@@ -89,16 +89,16 @@ public final class IndependentTrainerMob extends PathfinderMob implements net.mi
     public void startBattleWith(Player player){
         if(!(player instanceof ServerPlayer target))return;
         try{
-            String trial=com.ianblk.zianrct.reward.TrainerRewardService.battleBlock(target,getTrainerId());
+            Component trial=com.ianblk.zianrct.reward.TrainerRewardService.battleBlock(target,getTrainerId());
             if(trial!=null){say(target,trial);return;}
-            if(!com.ianblk.zianrct.permission.RctPermissions.allows(target.createCommandSourceStack(),"battle",false)){say(target,"No tienes permiso para iniciar este desafío.");return;}
+            if(!com.ianblk.zianrct.permission.RctPermissions.allows(target.createCommandSourceStack(),"battle",false)){say(target,Component.translatableWithFallback("zianrct.trainer.no_permission","No tienes permiso para iniciar este desafío."));return;}
             var own=CustomTrainerStore.get(getTrainerId());
             if(own!=null && own.trial()!=null && !com.ianblk.zianrct.permission.RctPermissions.allows(target.createCommandSourceStack(),"legendary.claim",false)){
-                say(target,"No tienes permiso para participar en esta prueba legendaria.");return;
+                say(target,Component.translatableWithFallback("zianrct.trainer.no_trial_permission","No tienes permiso para participar en esta prueba legendaria."));return;
             }
             String reason=blocked(target);if(reason!=null){reply(target,reason);return;}
             if(StandaloneRuntime.getInstance().start(this,target))reply(target,"on_battle_start");else reply(target,"unknown_reason");
-        }catch(RuntimeException error){com.ianblk.zianrct.ZianRCT.LOGGER.error("Could not start trainer battle {}",getTrainerId(),error);say(target,"No se pudo iniciar el combate. Consulta al administrador.");}
+        }catch(RuntimeException error){com.ianblk.zianrct.ZianRCT.LOGGER.error("Could not start trainer battle {}",getTrainerId(),error);say(target,Component.translatableWithFallback("zianrct.trainer.start_failed","No se pudo iniciar el combate. Consulta al administrador."));}
     }
     public void finishBattle(){cooldown=StandaloneRuntime.getInstance().getData(getTrainerId()).cooldown();}
     public void reply(ServerPlayer player,String context){
@@ -108,14 +108,15 @@ public final class IndependentTrainerMob extends PathfinderMob implements net.mi
             if(message.isJsonPrimitive())say(player,message.getAsString());
             else{var text=message.getAsJsonObject();if(text.has("literal"))say(player,text.get("literal").getAsString());else if(text.has("translatable"))player.sendSystemMessage(com.ianblk.zianrct.Messages.format(com.ianblk.zianrct.npc.NpcDialogueFormat.line(getDisplayName(),Component.translatable(text.get("translatable").getAsString()))));}
         }else say(player,switch(context){
-            case "trainer_busy"->"Estoy en otro combate. Espera a que termine.";
-            case "player_busy"->"Termina tu combate actual antes de retarme.";
-            case "on_cooldown"->"Nuestros equipos necesitan descansar un momento.";
-            case "missing_pokemon"->"Necesitas suficientes Pokémon capaces de combatir para este formato.";
-            case "over_level_cap"->"Tu equipo supera tu tope actual: nivel "+StandaloneRuntime.getInstance().getData(player).getLevelCap()+".";
-            case "done_generic"->"Ya has completado este encuentro.";
-            default->"No puedes iniciar este desafío en este momento.";
+            case "trainer_busy"->Component.translatableWithFallback("zianrct.trainer.busy","Estoy en otro combate. Espera a que termine.");
+            case "player_busy"->Component.translatableWithFallback("zianrct.trainer.player_busy","Termina tu combate actual antes de retarme.");
+            case "on_cooldown"->Component.translatableWithFallback("zianrct.trainer.cooldown","Nuestros equipos necesitan descansar un momento.");
+            case "missing_pokemon"->Component.translatableWithFallback("zianrct.trainer.missing_pokemon","Necesitas suficientes Pokémon capaces de combatir para este formato.");
+            case "over_level_cap"->Component.translatableWithFallback("zianrct.trainer.over_level_cap","Tu equipo supera tu tope actual: nivel %s.",StandaloneRuntime.getInstance().getData(player).getLevelCap());
+            case "done_generic"->Component.translatableWithFallback("zianrct.trainer.done","Ya has completado este encuentro.");
+            default->Component.translatableWithFallback("zianrct.trainer.cannot_start","No puedes iniciar este desafío en este momento.");
         });
     }
+    private void say(ServerPlayer player,Component text){String plain=com.ianblk.zianrct.Messages.plain(text);if(!plain.isBlank()){entityData.set(SPEECH,plain.substring(0,Math.min(512,plain.length())));speechTicks=120;player.sendSystemMessage(com.ianblk.zianrct.Messages.format(com.ianblk.zianrct.npc.NpcDialogueFormat.line(getDisplayName(),text)));}}
     private void say(ServerPlayer player,String text){if(!text.isBlank()){entityData.set(SPEECH,text.substring(0,Math.min(512,text.length())));speechTicks=120;player.sendSystemMessage(com.ianblk.zianrct.Messages.format(com.ianblk.zianrct.npc.NpcDialogueFormat.line(getDisplayName(),Component.literal(text))));}}
 }

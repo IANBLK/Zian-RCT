@@ -288,7 +288,7 @@ public final class NpcEditorService {
         descriptions=descriptions.stream().map(s -> s.length()>256?s.substring(0,256):s).toList();
         if(notice.length()>256)notice=notice.substring(0,256);
         String next="";
-        if(mode==NpcEditorState.Mode.EDIT)try{next=rewards.next(player,trainer);}catch(RuntimeException error){next="Recompensas no disponibles.";}
+        if(mode==NpcEditorState.Mode.EDIT)try{next=com.ianblk.zianrct.Messages.plain(rewards.next(player,trainer));}catch(RuntimeException error){next="Recompensas no disponibles.";}
         String draft="";
         if(mode==NpcEditorState.Mode.DESIGN){
             var own=com.ianblk.zianrct.creator.CustomTrainerStore.get(trainer);

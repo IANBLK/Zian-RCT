@@ -26,7 +26,7 @@ public final class TrainerRewardCommands {
         reward.then(Commands.literal("next").requires(s -> RctPermissions.allows(s,"rewards.claim",false))
                 .then(Commands.argument("trainer",StringArgumentType.word()).suggests((c,b)->suggestTrainers(service,b)).executes(c -> execute(c.getSource(),()->{
                     var player=c.getSource().getPlayerOrException();
-                    player.sendSystemMessage(com.ianblk.zianrct.Messages.format(Component.literal(service.next(player,StringArgumentType.getString(c,"trainer")))));
+                    player.sendSystemMessage(com.ianblk.zianrct.Messages.format(service.next(player,StringArgumentType.getString(c,"trainer"))));
                 }))));
         reward.then(Commands.literal("policy").requires(s -> RctPermissions.allows(s,"admin.rewards.configure",true))
                 .then(Commands.argument("trainer",StringArgumentType.word()).suggests((c,b)->suggestTrainers(service,b))
@@ -44,18 +44,18 @@ public final class TrainerRewardCommands {
                 .executes(c -> execute(c.getSource(), () -> {
                     var player = c.getSource().getPlayerOrException();
                     var pending = service.claims(player.getUUID()).stream().filter(r -> !r.complete()).toList();
-                    if (pending.isEmpty()) player.sendSystemMessage(com.ianblk.zianrct.Messages.format(Component.literal("No tienes recompensas pendientes.")));
+                    if (pending.isEmpty()) player.sendSystemMessage(com.ianblk.zianrct.Messages.format(Component.translatableWithFallback("zianrct.reward.none_pending","No tienes recompensas pendientes.")));
                     for (var claim : pending.stream().limit(20).toList()) {
-                        var message = Component.literal(claim.trainer() + " | " + service.reference(player.getUUID(),claim.id()) + " | " + (claim.review() ? "REVISIÓN" : "PENDIENTE"));
-                        if (!claim.review()) message.append(Component.literal(" [Reclamar]").withStyle(style -> style
+                        var message = Component.literal(claim.trainer() + " | " + service.reference(player.getUUID(),claim.id()) + " | ").append(Component.translatableWithFallback(claim.review() ? "zianrct.reward.state.review" : "zianrct.reward.state.pending", claim.review() ? "REVISIÓN" : "PENDIENTE"));
+                        if (!claim.review()) message.append(Component.translatableWithFallback("zianrct.reward.claim_button"," [Reclamar]").withStyle(style -> style
                                 .withColor(net.minecraft.ChatFormatting.GOLD)
                                 .withClickEvent(new net.minecraft.network.chat.ClickEvent(net.minecraft.network.chat.ClickEvent.Action.RUN_COMMAND,
                                         "/zianrct reward claim " + service.reference(player.getUUID(),claim.id())))
                                 .withHoverEvent(new net.minecraft.network.chat.HoverEvent(net.minecraft.network.chat.HoverEvent.Action.SHOW_TEXT,
-                                        Component.literal("Pulsa para reclamar este premio pendiente.")))));
+                                        Component.translatableWithFallback("zianrct.reward.claim_tooltip","Pulsa para reclamar este premio pendiente.")))));
                         player.sendSystemMessage(com.ianblk.zianrct.Messages.format(message));
                     }
-                    if (pending.size() > 20) player.sendSystemMessage(com.ianblk.zianrct.Messages.format(Component.literal("Mostrando 20 de " + pending.size() + ". Reclama las disponibles y consulta de nuevo.")));
+                    if (pending.size() > 20) player.sendSystemMessage(com.ianblk.zianrct.Messages.format(Component.translatableWithFallback("zianrct.reward.showing_20","Mostrando 20 de %s. Reclama las disponibles y consulta de nuevo.",pending.size())));
                 })));
         reward.then(Commands.literal("claim")
                 .requires(s -> RctPermissions.allows(s, "rewards.claim", false))
