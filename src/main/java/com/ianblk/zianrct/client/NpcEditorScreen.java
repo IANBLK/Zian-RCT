@@ -19,7 +19,7 @@ public final class NpcEditorScreen extends ResponsiveScreen {
     private static boolean lootTab;
     private long lastSend;
     private String confirm = "";
-    private record TextLine(String text, int row, int color, int maxWidth) {}
+    private record TextLine(String text, int row, int color, int maxWidth, int centerX) {}
     public NpcEditorScreen(NpcEditorState state) { super(Component.translatableWithFallback("ui.zianrct.ff1abce411eb", "Zian RCT · Gestor de NPC")); this.state = state;
         repeatChoice=state.rewardMode().equals("REPEAT");if(state.mode()!=NpcEditorState.Mode.EDIT)lootTab=false; }
     @Override protected void init() {fitViewport(600,360);
@@ -51,11 +51,11 @@ public final class NpcEditorScreen extends ResponsiveScreen {
                 button(left+usable/2+3,90,usable/2-3,t("zianrct.common.cancel","Cancelar"),()->send("cancel","",""));
                 contentHeight=118;
             }else{
-                trainer=field(left,44,usable-80,state.query());
-                button(left+usable-74,44,74,t("zianrct.npc.search","Buscar"),()->send("search",trainer.getValue(),""));
-                label(state.trainer().isEmpty()?t("zianrct.npc.select_trainer","Selecciona un entrenador de la lista."):t("zianrct.npc.selected","Seleccionado: %s",state.trainer()),68,0xF7E2AC);
-                button(left,86,usable,t("zianrct.npc.create_selected","Crear el seleccionado..."),()->send("spawn_prompt","","")).active=!state.trainer().isEmpty();
-                row=112;
+                trainer=field(left,48,usable-80,state.query());
+                button(left+usable-74,48,74,t("zianrct.npc.search","Buscar"),()->send("search",trainer.getValue(),""));
+                label(state.trainer().isEmpty()?t("zianrct.npc.select_trainer","Selecciona un entrenador de la lista."):t("zianrct.npc.selected","Seleccionado: %s",state.trainer()),72,0xF7E2AC);
+                button(left,90,usable,t("zianrct.npc.create_selected","Crear el seleccionado..."),()->send("spawn_prompt","","")).active=!state.trainer().isEmpty();
+                row=116;
                 for(String id:state.matches()){
                     button(left,row,usable,font.plainSubstrByWidth(id,usable-12),()->send("choose_template",id,""));row+=22;
                 }
@@ -118,7 +118,7 @@ public final class NpcEditorScreen extends ResponsiveScreen {
     private int pages(int left,int usable,int row){
         if(state.pages()>1){
             button(left,row,60,"<",()->send("previous","","")).active=state.page()>0;
-            label(t("zianrct.npc.page","                Página %s / %s",state.page()+1,state.pages()),row+5,0xB8B8B8);
+            centered(t("zianrct.npc.page","Página %s / %s",state.page()+1,state.pages()),left+60,left+usable-60,row+5);
             button(left+usable-60,row,60,">",()->send("next","","")).active=state.page()<state.pages()-1;
             return row+26;
         }
@@ -141,7 +141,8 @@ public final class NpcEditorScreen extends ResponsiveScreen {
         g.drawCenteredString(font,button.getMessage(),bx+button.getWidth()/2,by+5,button.active?0xFFF7E2AC:0xFF888888);
     }
     private void label(String text,int row,int color){label(text,row,color,w-24);}
-    private void label(String text,int row,int color,int maxWidth){labels.add(new TextLine(text,row,color,maxWidth));}
+    private void label(String text,int row,int color,int maxWidth){labels.add(new TextLine(text,row,color,maxWidth,-1));}
+    private void centered(String text,int from,int to,int row){labels.add(new TextLine(text,row,0xB8B8B8,to-from,(from+to)/2));}
     private void position(){
         int viewport=h-66;
         scroll=Math.max(0,Math.min(scroll,Math.max(0,contentHeight-viewport)));
@@ -167,7 +168,7 @@ public final class NpcEditorScreen extends ResponsiveScreen {
         g.fill(x,y,x+w,y+h,0xF0181818);g.fill(x,y,x+w,y+2,0xFFF2C14E);
         g.drawCenteredString(font,title,width/2,y+12,0xFFF2C14E);
         canvasScissor(g,x+6,y+30,x+w-6,y+h-36);
-        for(var label:labels)g.drawString(font,font.plainSubstrByWidth(label.text,label.maxWidth),x+12,y+32+label.row-scroll,label.color,false);
+        for(var label:labels){var shown=font.plainSubstrByWidth(label.text,label.maxWidth);if(label.centerX>=0)g.drawCenteredString(font,shown,label.centerX,y+32+label.row-scroll,label.color);else g.drawString(font,shown,x+12,y+32+label.row-scroll,label.color,false);}
         for(var renderable:renderables)if(renderable!=close)renderable.render(g,mx,my,partial);
         g.disableScissor();
         close.render(g,mx,my,partial);

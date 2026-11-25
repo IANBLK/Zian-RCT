@@ -58,7 +58,7 @@ public final class CustomTrainerScreen extends ResponsiveScreen {
             label(t("zianrct.designer.visible_name","Nombre visible:"),64);EditBox n=field(left,78,usable,64,name);reads.add(()->name=n.getValue());
             button(left,102,usable,t("zianrct.designer.difficulty","Dificultad: %s",difficulty),()->{read();var all=List.of("FACIL","NORMAL","DIFICIL","JEFE");difficulty=all.get((all.indexOf(difficulty)+1)%4);init();});
             button(left,126,usable,t("zianrct.designer.battle","Batalla: %s",format.equals("GEN_9_DOUBLES")?t("zianrct.designer.double","Doble"):t("zianrct.designer.single","Individual")),()->{read();format=format.equals("GEN_9_DOUBLES")?"GEN_9_SINGLES":"GEN_9_DOUBLES";init();});
-            button(left,150,usable,t("zianrct.designer.skin","Skin: %s",CustomTrainer.SKIN_NAMES.get(skin)),()->{read();var options=new java.util.ArrayList<TrainerChoiceScreen.Choice>();for(int at=0;at<CustomTrainer.SKINS.size();at++){String texture=CustomTrainer.SKINS.get(at);options.add(new TrainerChoiceScreen.Choice(""+at,CustomTrainer.SKIN_NAMES.get(at),CustomTrainer.slim(texture)?t("zianrct.designer.arms.slim","Brazos delgados"):t("zianrct.designer.arms.wide","Brazos gruesos")));}minecraft.setScreen(new TrainerChoiceScreen(this,t("zianrct.designer.appearance","Apariencia del entrenador"),options,List.of(""+skin),1,chosen->{if(!chosen.isEmpty())skin=Integer.parseInt(chosen.getFirst());minecraft.setScreen(this);}));});
+            button(left,150,usable,t("zianrct.designer.skin","Skin: %s",skinName(skin)),()->{read();var options=new java.util.ArrayList<TrainerChoiceScreen.Choice>();for(int at=0;at<CustomTrainer.SKINS.size();at++){String texture=CustomTrainer.SKINS.get(at);options.add(new TrainerChoiceScreen.Choice(""+at,skinName(at),CustomTrainer.slim(texture)?t("zianrct.designer.arms.slim","Brazos delgados"):t("zianrct.designer.arms.wide","Brazos gruesos")));}minecraft.setScreen(new TrainerChoiceScreen(this,t("zianrct.designer.appearance","Apariencia del entrenador"),options,List.of(""+skin),1,chosen->{if(!chosen.isEmpty())skin=Integer.parseInt(chosen.getFirst());minecraft.setScreen(this);}));});
             label(t("zianrct.designer.no_medals","No exige medallas de Rassvet ni otorga nuevas medallas."),180);
             label(t("zianrct.designer.difficulty_hint","Dificultad ajusta IV/EV e IA; los niveles se editan aparte."),196);
             label(t("zianrct.designer.loot_hint","El loot se configura después en Modificar > Loot."),212);
@@ -150,6 +150,7 @@ public final class CustomTrainerScreen extends ResponsiveScreen {
         var box=new EditBox(font,left,y+32+row,size,18,Component.translatableWithFallback("ui.zianrct.f6a1062a638b", "Dato del entrenador"));box.setMaxLength(max);box.setValue(value);
         addRenderableWidget(box);rows.put(box,row);return box;
     }
+    private static String skinName(int at){String texture=CustomTrainer.SKINS.get(at);String id=texture.substring(texture.lastIndexOf('/')+1,texture.length()-4);return t("zianrct.skin."+id,CustomTrainer.SKIN_NAMES.get(at));}
     private void label(String text,int row){labels.add(new Label(text,row));}
     private Button gold(int bx,int by,int size,String text,Runnable action){
         return new Button(bx,by,size,18,Component.literal(text),b->action.run(),s->s.get()){
