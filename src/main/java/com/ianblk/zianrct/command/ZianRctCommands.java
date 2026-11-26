@@ -322,7 +322,7 @@ public final class ZianRctCommands {
         if (completion.isDone()) {
             RctPackController.ConfigReloadResult immediate = completion.join();
             if (!immediate.success()) {
-                source.sendFailure(Component.translatableWithFallback("zianrct.cmd.error", "%s", immediate.message()));
+                source.sendFailure(Component.translatableWithFallback("zianrct.cmd.reload_failed","No se recargó Zian RCT: %s",immediate.message()));
                 return 0;
             }
         }
@@ -348,7 +348,7 @@ public final class ZianRctCommands {
             int finalSyncFailures = syncFailures;
             source.sendSuccess(
                     () -> finalSyncFailures == 0
-                            ? Component.literal(result.message())
+                            ? result.message()
                             : Component.translatableWithFallback("zianrct.cmd.reload_sync_failed", "%s No se pudo reenviar el snapshot a %s jugador(es).", result.message(), finalSyncFailures),
                     true
             );

@@ -432,6 +432,8 @@
   "zianrct.err.bad_amount": "Moneda o importe inválido (máximo 1728).",
   "zianrct.err.max_items": "Máximo 8 objetos válidos por entrenador.",
   "zianrct.err.wait_battles_trainer": "Espera a que terminen los combates contra este entrenador.",
+  "zianrct.err.reload_no_server": "Servidor no disponible.",
+  "zianrct.err.reload_battles": "Espera a que terminen los combates",
   "zianrct.err.reload_running": "Ya hay una recarga de entrenadores en curso.",
   "zianrct.err.claim_wait": "Espera un segundo antes de reclamar otra vez",
   "zianrct.err.rct_trainer_missing": "Entrenador RCT inexistente: %s",

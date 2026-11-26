@@ -432,6 +432,8 @@
   "zianrct.err.bad_amount": "Invalid currency or amount (maximum 1728).",
   "zianrct.err.max_items": "Maximum of 8 valid items per trainer.",
   "zianrct.err.wait_battles_trainer": "Wait for the battles against this trainer to end.",
+  "zianrct.err.reload_no_server": "Server not available.",
+  "zianrct.err.reload_battles": "Wait for the battles to finish",
   "zianrct.err.reload_running": "A trainer reload is already in progress.",
   "zianrct.err.claim_wait": "Wait a second before claiming again",
   "zianrct.err.rct_trainer_missing": "RCT trainer does not exist: %s",

@@ -7,6 +7,9 @@ import com.ianblk.zianrct.standalone.*;
 import com.ianblk.zianrct.ZianRCT;
 import com.ianblk.zianrct.config.*;
 import com.ianblk.zianrct.rct.pack.*;
+import com.ianblk.zianrct.Messages;
+import com.ianblk.zianrct.Msg;
+import net.minecraft.network.chat.Component;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.server.MinecraftServer;
 import net.minecraft.server.packs.resources.Resource;
@@ -21,7 +24,7 @@ import java.util.concurrent.CompletableFuture;
 /** Direct, transactional loading into our API instance; never reloads the Minecraft resource registry. */
 public final class RctPackController {
     private MinecraftServer activeServer;
-    private boolean busy;
+    private final ReloadGate gate=new ReloadGate();
     private boolean startupPending;
     private boolean reloadPending;
     public RctPackController(IEventBus ignored){
@@ -35,7 +38,7 @@ public final class RctPackController {
             else if(reloadPending){reloadPending=false;regenerate(activeServer,"server data reload");}
         });
         NeoForge.EVENT_BUS.addListener((ServerStoppedEvent event)->{
-            StandaloneRuntime.getInstance().stop();activeServer=null;busy=false;startupPending=false;reloadPending=false;
+            StandaloneRuntime.getInstance().stop();activeServer=null;startupPending=false;reloadPending=false;
             com.ianblk.zianrct.creator.CustomTrainerStore.clear();RctTrainerOptions.clear();
         });
         NeoForge.EVENT_BUS.addListener((TagsUpdatedEvent event)->{
@@ -44,24 +47,24 @@ public final class RctPackController {
         });
     }
     public CompletableFuture<ConfigReloadResult> reloadConfig(MinecraftServer server,ZianRctConfig next,String reason){
-        if(server!=activeServer || busy)return CompletableFuture.completedFuture(new ConfigReloadResult(false,"Servidor no disponible o recarga en curso."));
-        busy=true;
-        try{next.validateOrThrow();install(server,next,reason);ConfigState.replace(next);
-            return CompletableFuture.completedFuture(new ConfigReloadResult(true,next.messages().reloadSuccess()));
+        if(server!=activeServer)return CompletableFuture.completedFuture(new ConfigReloadResult(false,Messages.c(new Msg("zianrct.err.reload_no_server","Servidor no disponible."))));
+        try{
+            /* Todo o nada: install valida y construye sin tocar nada; el cambio vivo solo ocurre en el commit. */
+            gate.run(()->{next.validateOrThrow();return install(server,next,reason);},commit->{commit.run();ConfigState.replace(next);});
+            return CompletableFuture.completedFuture(new ConfigReloadResult(true,Component.literal(next.messages().reloadSuccess())));
         }catch(Exception error){ZianRCT.LOGGER.error("Trainer reload rejected; previous catalog retained",error);
-            return CompletableFuture.completedFuture(new ConfigReloadResult(false,"No se recargó Zian RCT: "+error.getMessage()));
-        }finally{busy=false;}
+            return CompletableFuture.completedFuture(new ConfigReloadResult(false,Messages.of(error)));
+        }
     }
     public void regenerate(MinecraftServer server,String reason){
-        if(server==null || server!=activeServer || busy)return;
-        busy=true;
-        try{install(server,ConfigState.current(),reason);}
+        if(server==null || server!=activeServer || gate.isRunning())return;
+        try{gate.run(()->install(server,ConfigState.current(),reason),Runnable::run);}
         catch(Exception error){ZianRCT.LOGGER.error("Standalone trainer loading failed; previous catalog retained",error);}
-        finally{busy=false;}
     }
-    private void install(MinecraftServer server,ZianRctConfig config,String reason){
+    /** Valida y prepara todo sin tocar el estado vivo; devuelve el cambio que lo aplica de golpe. */
+    private Runnable install(MinecraftServer server,ZianRctConfig config,String reason){
         var runtime=StandaloneRuntime.getInstance();
-        if(!runtime.api().getBattleManager().getStates().isEmpty())throw new IllegalStateException("Espera a que terminen los combates");
+        if(!runtime.api().getBattleManager().getStates().isEmpty())throw new com.ianblk.zianrct.LocalizedException.State("zianrct.err.reload_battles","Espera a que terminen los combates");
         GeneratedCandidate candidate=buildCandidate(server,config);
         Set<String> ids=new LinkedHashSet<>();candidate.profile().chain().forEach(e->ids.add(e.trainer()));
         ids.addAll(com.ianblk.zianrct.creator.CustomTrainerStore.all().keySet());
@@ -88,12 +91,14 @@ public final class RctPackController {
             if(d.autoMoves())ZianRCT.LOGGER.info("Zian RCT automatic trainer moves verified: {}",d.id());
             if(d.trial()!=null)ZianRCT.LOGGER.info("Zian RCT legendary trial definition verified: {}",d.id());
         }
+        return ()->{
         runtime.replace(definitions);
         Map<String,Integer> levels=new LinkedHashMap<>();definitions.forEach((id,d)->levels.put(id,d.level()));
         ZianRCT.LOGGER.info("Zian RCT standalone team levels: {}",levels);
         ZianRCT.LOGGER.info("Zian RCT custom trainer definitions verified: {}",com.ianblk.zianrct.creator.CustomTrainerStore.all().keySet());
         ZianRCT.LOGGER.info("Zian RCT generated progression verified for {} trainers; standalone RCTAPI catalog ready after {}",candidate.profile().chain().size(),reason);
         ZianRCT.LOGGER.info("Zian RCT standalone catalog: {} trainer models; {} retained NPC teams",definitions.size(),runtime.retainedNpcTeams());
+        };
     }
     private static JsonObject json(MinecraftServer server,GeneratedCandidate candidate,String key,boolean optional){
         byte[] generated=candidate.generated().get(key);
@@ -101,7 +106,7 @@ public final class RctPackController {
         if(source==null)throw new IllegalArgumentException("Falta la definición: "+key);
         return JsonParser.parseString(source).getAsJsonObject();
     }
-    public boolean isBusy(){return busy;}
+    public boolean isBusy(){return gate.isRunning();}
     public void requireTrainerSource(MinecraftServer server,String trainer,boolean mob){
         if(com.ianblk.zianrct.creator.CustomTrainerStore.get(trainer)!=null)return;
         String key=(mob?"mobs/trainers/single/":"trainers/")+trainer+".json";
@@ -221,6 +226,6 @@ public final class RctPackController {
         return max;
     }
 
-    public record ConfigReloadResult(boolean success,String message){}
+    public record ConfigReloadResult(boolean success,Component message){}
     private record GeneratedCandidate(ZianRctConfig.Profile profile,Map<String,byte[]> generated,Map<String,TrainerPackSnapshot> snapshots){}
 }
