@@ -36,6 +36,9 @@ public final class ZianRCT {
         com.ianblk.zianrct.standalone.ExperienceCaps.register();
         ZianRctConfig bootstrapDefaults = ZianRctConfig.defaults();
         ConfigState.replace(bootstrapDefaults);
+        /* Crea y lee zianrct.json al cargar el mod en cualquier lado (también cliente de un jugador); el servidor lo vuelve a leer al arrancar y el dedicado sigue siendo estricto. */
+        try { ConfigState.replace(ZianRctConfigLoader.loadOrCreate(FMLPaths.CONFIGDIR.get().resolve(ZianRctConfigLoader.FILE_NAME))); }
+        catch (IOException | RuntimeException exception) { LOGGER.error("Could not load zianrct.json at mod load; built-in defaults until a world starts", exception); }
         modEventBus.addListener(ZianRctNetwork::registerPayloads);
         this.rctPackController = new RctPackController(modEventBus);
         this.medalRuntime = new MedalRuntime(rctPackController);
