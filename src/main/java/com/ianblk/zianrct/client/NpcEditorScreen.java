@@ -90,7 +90,7 @@ public final class NpcEditorScreen extends ResponsiveScreen {
                     label(t("zianrct.npc.cooldown_minutes","Espera en minutos (24 h = 1440):"),116,0xB8B8B8);
                     cooldown=field(left,132,usable-100,Long.toString(state.cooldownMinutes()==0?1440:state.cooldownMinutes()));
                     button(left+usable-94,132,94,t("zianrct.npc.save_type","Guardar tipo"),()->send("policy",repeatChoice?"REPEAT":"UNIQUE",repeatChoice?cooldown.getValue():"0"));
-                    label(t("zianrct.npc.for_you","Para ti: %s",state.nextReward()),156,0xF7E2AC);
+                    label(t("zianrct.npc.for_you","Para ti: %s",com.ianblk.zianrct.Messages.decode(state.nextReward())),156,0xF7E2AC);
                     button(left,174,usable,t("zianrct.npc.refresh_cooldown","Actualizar mi espera"),()->send("refresh","",""));
                     label(t("zianrct.npc.currency_amount","Moneda AVECOINS / cantidad"),198,0xB8B8B8);
                     currency=field(left,214,usable-72,state.currency().isEmpty()?"avecoins:coppercoin":state.currency());
@@ -98,7 +98,7 @@ public final class NpcEditorScreen extends ResponsiveScreen {
                     button(left,238,usable,t("zianrct.npc.save_coins","Guardar monedas (0 = quitar)"),()->send("money",currency.getValue(),coins.getValue()));
                     row=264;
                     label(t("zianrct.npc.items_saved","Objetos guardados: %s",state.rewards().size()),row,0xF7E2AC);row+=18;
-                    for(String item:state.rewards()){label(item,row,0xB8B8B8);row+=16;}
+                    for(String item:state.rewards()){label(com.ianblk.zianrct.Messages.decode(item).getString(),row,0xB8B8B8);row+=16;}
                     button(left,row,usable,t("zianrct.npc.add_stack","Añadir stack de mi mano principal"),()->send("add_item","",""));row+=24;
                     button(left,row,usable,t("zianrct.npc.clear_items","Vaciar objetos"),()->destructive("clear_items"));row+=24;
                     button(left,row,usable,t("zianrct.npc.remove_loot","Quitar loot del entrenador"),()->destructive("remove_reward"));row+=26;

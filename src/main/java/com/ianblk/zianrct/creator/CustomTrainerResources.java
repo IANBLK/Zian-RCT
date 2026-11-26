@@ -37,8 +37,8 @@ public final class CustomTrainerResources {
             mob.addProperty("maxTrainerWins",-1);mob.addProperty("maxTrainerDefeats",-1);mob.addProperty("battleCooldownTicks",240);mob.addProperty("spawnWeightFactor",0);
             put(out,"mobs/trainers/single/"+d.id()+".json",mob);
             var dialogs=new JsonObject();
-            String welcome=d.trial()==null?d.start():"Has logrado superar la prueba y demostrado tu valía. Ahora tienes la oportunidad de luchar con el legendario.";
-            dialog(dialogs,"on_battle_start",welcome);dialog(dialogs,"battle_start",welcome);
+            if(d.trial()==null){dialog(dialogs,"on_battle_start",d.start());dialog(dialogs,"battle_start",d.start());}
+            else{fixed(dialogs,"on_battle_start","trial_welcome",TRIAL_WELCOME);fixed(dialogs,"battle_start","trial_welcome",TRIAL_WELCOME);}
             dialog(dialogs,"on_battle_lost",d.playerWins());dialog(dialogs,"battle_lost",d.playerWins());dialog(dialogs,"trainer_lost",d.playerWins());
             dialog(dialogs,"on_battle_won",d.playerLoses());dialog(dialogs,"battle_won",d.playerLoses());dialog(dialogs,"trainer_won",d.playerLoses());
             var replies=Map.ofEntries(
@@ -54,11 +54,14 @@ public final class CustomTrainerResources {
                 Map.entry("done_generic","Este encuentro no está disponible en este momento."),
                 Map.entry("unknown_reason","No se pudo iniciar el combate. Revisa tu equipo y vuelve a intentarlo.")
             );
-            replies.forEach((context,text)->dialog(dialogs,context,text));
+            replies.forEach((context,text)->fixed(dialogs,context,context,text));
             put(out,"dialogs/trainers/single/"+d.id()+".json",dialogs);
         }
         return out;
     }
+    private static final String TRIAL_WELCOME="Has logrado superar la prueba y demostrado tu valía. Ahora tienes la oportunidad de luchar con el legendario.";
+    /** Texto fijo del mod: lleva su clave de idioma en "translatable" y el español en "literal". */
+    private static void fixed(JsonObject o,String context,String name,String es){var a=new JsonArray();var m=literal(es);m.addProperty("translatable","zianrct.trainer.reply."+name);a.add(m);o.add(context,a);}
     private static JsonObject literal(String s){var o=new JsonObject();o.addProperty("literal",s);return o;}
     private static void dialog(JsonObject o,String key,String text){
         var a=new JsonArray();

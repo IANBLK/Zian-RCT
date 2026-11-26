@@ -17,7 +17,7 @@ import net.minecraft.world.level.Level;
 /** Zian-owned entity; preserves legacy NBT keys for custom NPCs. */
 public final class IndependentTrainerMob extends PathfinderMob implements net.minecraft.world.entity.npc.Npc {
     private static final EntityDataAccessor<String> TRAINER=SynchedEntityData.defineId(IndependentTrainerMob.class,EntityDataSerializers.STRING);
-    private static final EntityDataAccessor<String> SPEECH=SynchedEntityData.defineId(IndependentTrainerMob.class,EntityDataSerializers.STRING);
+    private static final EntityDataAccessor<Component> SPEECH=SynchedEntityData.defineId(IndependentTrainerMob.class,EntityDataSerializers.COMPONENT);
     private int speechTicks;
     private int cooldown;
     private BlockPos home;
@@ -25,12 +25,12 @@ public final class IndependentTrainerMob extends PathfinderMob implements net.mi
     public IndependentTrainerMob(EntityType<? extends PathfinderMob> type,Level level){super(type,level);}
     public static EntityType<IndependentTrainerMob> getEntityType(){return CustomTrainerEntities.TYPE.get();}
     public static AttributeSupplier.Builder createAttributes(){return Mob.createMobAttributes().add(Attributes.MAX_HEALTH,20).add(Attributes.MOVEMENT_SPEED,0.25).add(Attributes.FOLLOW_RANGE,16);}
-    @Override protected void defineSynchedData(SynchedEntityData.Builder builder){super.defineSynchedData(builder);builder.define(TRAINER,"");builder.define(SPEECH,"");}
+    @Override protected void defineSynchedData(SynchedEntityData.Builder builder){super.defineSynchedData(builder);builder.define(TRAINER,"");builder.define(SPEECH,Component.empty());}
     @Override protected void registerGoals(){
         goalSelector.addGoal(0,new FloatGoal(this));goalSelector.addGoal(5,new RandomStrollGoal(this,0.8));
         goalSelector.addGoal(6,new LookAtPlayerGoal(this,Player.class,8));goalSelector.addGoal(7,new RandomLookAroundGoal(this));
     }
-    public String getSpeech(){return entityData.get(SPEECH);}
+    public Component getSpeech(){return entityData.get(SPEECH);}
     @Override public boolean shouldBeSaved(){return persistent;}
     public String getTrainerId(){return entityData.get(TRAINER);}
     public void setTrainerId(String id){entityData.set(TRAINER,id);}
@@ -44,7 +44,7 @@ public final class IndependentTrainerMob extends PathfinderMob implements net.mi
     @Override public boolean hurt(net.minecraft.world.damagesource.DamageSource source,float amount){return false;}
     @Override public void tick(){super.tick();if(!level().isClientSide){
         if(cooldown>0)cooldown--;
-        if(speechTicks>0 && --speechTicks==0)entityData.set(SPEECH,"");
+        if(speechTicks>0 && --speechTicks==0)entityData.set(SPEECH,Component.empty());
         if(tickCount%20==0 && StandaloneRuntime.getInstance().isValidId(getTrainerId())){
             Component name=StandaloneRuntime.getInstance().getData(getTrainerId()).model().getName().getComponent();
             if(!name.equals(getCustomName()))setCustomName(name);setCustomNameVisible(true);
@@ -106,7 +106,7 @@ public final class IndependentTrainerMob extends PathfinderMob implements net.mi
         if(messages!=null && !messages.isEmpty()){
             var message=messages.get(random.nextInt(messages.size()));
             if(message.isJsonPrimitive())say(player,message.getAsString());
-            else{var text=message.getAsJsonObject();if(text.has("literal"))say(player,text.get("literal").getAsString());else if(text.has("translatable"))player.sendSystemMessage(com.ianblk.zianrct.Messages.format(com.ianblk.zianrct.npc.NpcDialogueFormat.line(getDisplayName(),Component.translatable(text.get("translatable").getAsString()))));}
+            else{var text=message.getAsJsonObject();if(text.has("literal")&&text.has("translatable")&&text.get("translatable").getAsString().startsWith("zianrct."))say(player,Component.translatableWithFallback(text.get("translatable").getAsString(),text.get("literal").getAsString()));else if(text.has("literal"))say(player,text.get("literal").getAsString());else if(text.has("translatable"))player.sendSystemMessage(com.ianblk.zianrct.Messages.format(com.ianblk.zianrct.npc.NpcDialogueFormat.line(getDisplayName(),Component.translatable(text.get("translatable").getAsString()))));}
         }else say(player,switch(context){
             case "trainer_busy"->Component.translatableWithFallback("zianrct.trainer.busy","Estoy en otro combate. Espera a que termine.");
             case "player_busy"->Component.translatableWithFallback("zianrct.trainer.player_busy","Termina tu combate actual antes de retarme.");
@@ -117,6 +117,6 @@ public final class IndependentTrainerMob extends PathfinderMob implements net.mi
             default->Component.translatableWithFallback("zianrct.trainer.cannot_start","No puedes iniciar este desafío en este momento.");
         });
     }
-    private void say(ServerPlayer player,Component text){String plain=com.ianblk.zianrct.Messages.plain(text);if(!plain.isBlank()){entityData.set(SPEECH,plain.substring(0,Math.min(512,plain.length())));speechTicks=120;player.sendSystemMessage(com.ianblk.zianrct.Messages.format(com.ianblk.zianrct.npc.NpcDialogueFormat.line(getDisplayName(),text)));}}
-    private void say(ServerPlayer player,String text){if(!text.isBlank()){entityData.set(SPEECH,text.substring(0,Math.min(512,text.length())));speechTicks=120;player.sendSystemMessage(com.ianblk.zianrct.Messages.format(com.ianblk.zianrct.npc.NpcDialogueFormat.line(getDisplayName(),Component.literal(text))));}}
+    private void say(ServerPlayer player,Component text){String plain=com.ianblk.zianrct.Messages.plain(text);if(!plain.isBlank()){entityData.set(SPEECH,text);speechTicks=120;player.sendSystemMessage(com.ianblk.zianrct.Messages.format(com.ianblk.zianrct.npc.NpcDialogueFormat.line(getDisplayName(),text)));}}
+    private void say(ServerPlayer player,String text){if(!text.isBlank()){entityData.set(SPEECH,Component.literal(text.substring(0,Math.min(512,text.length()))));speechTicks=120;player.sendSystemMessage(com.ianblk.zianrct.Messages.format(com.ianblk.zianrct.npc.NpcDialogueFormat.line(getDisplayName(),Component.literal(text))));}}
 }

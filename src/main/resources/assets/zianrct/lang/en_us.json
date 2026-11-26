@@ -456,5 +456,21 @@
   "zianrct.npc.deleted": "NPC deleted. Medals and rewards kept.",
   "zianrct.npc.policy_saved": "Type saved. Applying rematch; previous prizes kept.",
   "zianrct.npc.loot_saved": "Loot saved; reserved prizes kept.",
-  "zianrct.npc.apply_failed": "Could not apply the change."
+  "zianrct.npc.apply_failed": "Could not apply the change.",
+  "zianrct.trainer.reply.trainer_busy": "I am in another battle. Wait for it to end.",
+  "zianrct.trainer.reply.player_busy": "Finish your current battle before challenging me.",
+  "zianrct.trainer.reply.on_cooldown": "Our teams need a moment to rest. Try again later.",
+  "zianrct.trainer.reply.missing_pokemon": "You need at least one Pokémon able to battle.",
+  "zianrct.trainer.reply.over_level_cap": "Your team exceeds your current RCT level cap.",
+  "zianrct.trainer.reply.low_level_cap": "You do not yet meet the cap required for this challenge.",
+  "zianrct.trainer.reply.wrong_series": "This is a standalone challenge; check the current battle requirements.",
+  "zianrct.trainer.reply.missing_required_series": "Complete the required series first.",
+  "zianrct.trainer.reply.missing_required_trainer": "Defeat the required trainer first.",
+  "zianrct.trainer.reply.done_generic": "This encounter is not available right now.",
+  "zianrct.trainer.reply.unknown_reason": "Could not start the battle. Check your team and try again.",
+  "zianrct.trainer.reply.trial_welcome": "You passed the trial and proved your worth. Now you have the chance to battle the legendary.",
+  "zianrct.npc.rewards_unavailable_log": "Rewards unavailable; check the log.",
+  "zianrct.npc.rewards_unavailable": "Rewards unavailable.",
+  "zianrct.legendary.shiny_species": "Shiny %s",
+  "zianrct.legendary.plain_species": "%s"
 }

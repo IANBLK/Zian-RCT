@@ -456,5 +456,21 @@
   "zianrct.npc.deleted": "NPC eliminado. Medallas y recompensas conservadas.",
   "zianrct.npc.policy_saved": "Tipo guardado. Aplicando revancha; premios previos conservados.",
   "zianrct.npc.loot_saved": "Loot guardado; premios reservados conservados.",
-  "zianrct.npc.apply_failed": "No se pudo aplicar el cambio."
+  "zianrct.npc.apply_failed": "No se pudo aplicar el cambio.",
+  "zianrct.trainer.reply.trainer_busy": "Estoy en otro combate. Espera a que termine.",
+  "zianrct.trainer.reply.player_busy": "Termina tu combate actual antes de retarme.",
+  "zianrct.trainer.reply.on_cooldown": "Nuestros equipos necesitan descansar un momento. Vuelve a intentarlo después.",
+  "zianrct.trainer.reply.missing_pokemon": "Necesitas al menos un Pokémon capaz de combatir.",
+  "zianrct.trainer.reply.over_level_cap": "Tu equipo supera tu tope de nivel actual de RCT.",
+  "zianrct.trainer.reply.low_level_cap": "Todavía no cumples el tope requerido para este desafío.",
+  "zianrct.trainer.reply.wrong_series": "Este es un reto independiente; revisa los requisitos actuales del combate.",
+  "zianrct.trainer.reply.missing_required_series": "Completa primero la serie requerida.",
+  "zianrct.trainer.reply.missing_required_trainer": "Derrota primero al entrenador requerido.",
+  "zianrct.trainer.reply.done_generic": "Este encuentro no está disponible en este momento.",
+  "zianrct.trainer.reply.unknown_reason": "No se pudo iniciar el combate. Revisa tu equipo y vuelve a intentarlo.",
+  "zianrct.trainer.reply.trial_welcome": "Has logrado superar la prueba y demostrado tu valía. Ahora tienes la oportunidad de luchar con el legendario.",
+  "zianrct.npc.rewards_unavailable_log": "Recompensas no disponibles; revisa el log.",
+  "zianrct.npc.rewards_unavailable": "Recompensas no disponibles.",
+  "zianrct.legendary.shiny_species": "%s shiny",
+  "zianrct.legendary.plain_species": "%s"
 }

@@ -20,7 +20,7 @@ public record NpcEditorState(String nonce, Mode mode, String trainer, String npc
                 || query == null || query.length() > 128 || page < 0 || pages < 1 || page >= pages
                 || !java.util.Set.of("", "spawn", "delete").contains(confirmation)
                 || !java.util.Set.of("UNIQUE","REPEAT").contains(rewardMode) || cooldownMinutes<0 || cooldownMinutes>43200
-                || nextReward==null || nextReward.length()>256 || battleFormat==null || battleFormat.length()>64
+                || nextReward==null || nextReward.length()>1024 || battleFormat==null || battleFormat.length()>64
                 || customDraft==null || customDraft.length()>12000)
             throw new IllegalArgumentException("Editor snapshot invalid");
         if (!npc.isEmpty()) UUID.fromString(npc);

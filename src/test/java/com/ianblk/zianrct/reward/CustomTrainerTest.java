@@ -33,6 +33,15 @@ class CustomTrainerTest {
         var dialogs=JsonParser.parseString(new String(r.get("dialogs/trainers/single/"+d.id()+".json"),java.nio.charset.StandardCharsets.UTF_8)).getAsJsonObject();
         assertEquals("Me has derrotado",dialogs.getAsJsonArray("on_battle_lost").get(0).getAsJsonObject().get("literal").getAsString());
     }
+    @Test void fixedRepliesCarryLangKeysPresentInSpanishLang() throws Exception{
+        var d=trainer();var resources=CustomTrainerResources.build(Map.of(d.id(),d));
+        var dialogs=JsonParser.parseString(new String(resources.get("dialogs/trainers/single/"+d.id()+".json"),java.nio.charset.StandardCharsets.UTF_8)).getAsJsonObject();
+        var lang=JsonParser.parseString(new String(CustomTrainerTest.class.getResourceAsStream("/assets/zianrct/lang/es_es.json").readAllBytes(),java.nio.charset.StandardCharsets.UTF_8)).getAsJsonObject();
+        var busy=dialogs.getAsJsonArray("trainer_busy").get(0).getAsJsonObject();
+        assertEquals("zianrct.trainer.reply.trainer_busy",busy.get("translatable").getAsString());
+        assertEquals(busy.get("literal").getAsString(),lang.get("zianrct.trainer.reply.trainer_busy").getAsString());
+        assertEquals("Hola",dialogs.getAsJsonArray("on_battle_start").get(0).getAsJsonObject().get("translatable").getAsString());
+    }
     @Test void definitionsAndSkinReferencesSurviveRestart() throws Exception{
         CustomTrainerStore.boot(temp);CustomTrainerStore.save(trainer());CustomTrainerStore.clear();CustomTrainerStore.boot(temp);
         assertEquals(trainer(),CustomTrainerStore.get(trainer().id()));
@@ -47,7 +56,7 @@ class CustomTrainerTest {
             assertTrue(message.has("translatable"),context.getKey());
             assertFalse(message.get("translatable").isJsonNull());
             assertFalse(message.get("translatable").getAsString().isBlank());
-            assertEquals(message.get("literal"),message.get("translatable"));
+            if(!message.get("translatable").getAsString().startsWith("zianrct.trainer.reply."))assertEquals(message.get("literal"),message.get("translatable"));
         }
     }
     @Test void editedDialoguePreservesUnicodePercentAndQuotesWhileBlankContextsStayEmpty(){

@@ -286,11 +286,11 @@ public final class NpcEditorService {
             definition=rewards.definitions().get(trainer);
             if(definition!=null)for(String item:definition.items())descriptions.add(rewards.describe(player,
                     new RewardClaim.Part(RewardClaim.Kind.ITEM,item,1,RewardClaim.Phase.PENDING,"")));
-        }catch(Exception error){descriptions.add("Recompensas no disponibles; revisa el log.");}
+        }catch(Exception error){descriptions.add(note("zianrct.npc.rewards_unavailable_log","Recompensas no disponibles; revisa el log."));}
         descriptions=descriptions.stream().map(s -> s.length()>256?s.substring(0,256):s).toList();
         if(notice.length()>1024)notice=com.ianblk.zianrct.Messages.encode(Component.literal(com.ianblk.zianrct.Messages.decode(notice).getString().substring(0,256)));
         String next="";
-        if(mode==NpcEditorState.Mode.EDIT)try{next=com.ianblk.zianrct.Messages.plain(rewards.next(player,trainer));}catch(RuntimeException error){next="Recompensas no disponibles.";}
+        if(mode==NpcEditorState.Mode.EDIT)try{next=com.ianblk.zianrct.Messages.encode(rewards.next(player,trainer));}catch(RuntimeException error){next=note("zianrct.npc.rewards_unavailable","Recompensas no disponibles.");}
         String draft="";
         if(mode==NpcEditorState.Mode.DESIGN){
             var own=com.ianblk.zianrct.creator.CustomTrainerStore.get(trainer);
