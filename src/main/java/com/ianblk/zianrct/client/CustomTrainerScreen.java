@@ -163,22 +163,22 @@ public final class CustomTrainerScreen extends ResponsiveScreen {
     }
     private void button(int left,int row,int size,String text,Runnable action){var b=addRenderableWidget(gold(left,y+32+row,size,text,action));rows.put(b,row);}
     private void position(){
-        scroll=Math.max(0,Math.min(scroll,Math.max(0,contentHeight-(h-68))));
-        rows.forEach((widget,row)->{widget.setY(y+32+row-scroll);widget.visible=widget.getY()+widget.getHeight()>y+30 && widget.getY()<y+h-36;});
+        scroll=Math.max(0,Math.min(scroll,Math.max(0,contentHeight-(h-80))));
+        rows.forEach((widget,row)->{widget.setY(y+32+row-scroll);widget.visible=widget.getY()+widget.getHeight()>y+30 && widget.getY()<y+h-48;});
     }
     @Override protected void renderCanvas(GuiGraphics g,int mx,int my,float p){
         g.fill(0,0,width,height,0x90000000);g.fill(x,y,x+w,y+h,0xF0181818);g.fill(x,y,x+w,y+2,0xFFF2C14E);
         g.drawCenteredString(font,title,width/2,y+12,0xFFF2C14E);
-        canvasScissor(g,x+6,y+30,x+w-6,y+h-36);
+        canvasScissor(g,x+6,y+30,x+w-6,y+h-48);
         for(var label:labels)g.drawString(font,font.plainSubstrByWidth(label.text,w-24),x+12,y+32+label.row-scroll,0xB8B8B8,false);
         for(var r:renderables)if(r!=save && r!=back)r.render(g,mx,my,p);
         g.disableScissor();save.render(g,mx,my,p);back.render(g,mx,my,p);
-        if(!error.isBlank())g.drawString(font,font.plainSubstrByWidth(error,w-24),x+12,y+h-35,0xF2C14E,false);
+        if(!error.isBlank()){String n=font.plainSubstrByWidth(error,w-24);g.drawString(font,n,x+(w-font.width(n))/2,y+h-41,0xF2C14E,false);}
     }
     @Override public boolean canvasMouseScrolled(double mx,double my,double horizontal,double vertical){scroll-=(int)(vertical*24);position();return true;}
     @Override public boolean canvasMouseClicked(double mx,double my,int button){
         if(save.isMouseOver(mx,my)||back.isMouseOver(mx,my))return super.canvasMouseClicked(mx,my,button);
-        if(my<y+30||my>=y+h-36||mx<x||mx>=x+w)return false;
+        if(my<y+30||my>=y+h-48||mx<x||mx>=x+w)return false;
         return super.canvasMouseClicked(mx,my,button);
     }
     @Override public boolean isPauseScreen(){return false;}

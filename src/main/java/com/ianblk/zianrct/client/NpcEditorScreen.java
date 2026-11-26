@@ -144,9 +144,9 @@ public final class NpcEditorScreen extends ResponsiveScreen {
     private void label(String text,int row,int color,int maxWidth){labels.add(new TextLine(text,row,color,maxWidth,-1));}
     private void centered(String text,int from,int to,int row){labels.add(new TextLine(text,row,0xB8B8B8,to-from,(from+to)/2));}
     private void position(){
-        int viewport=h-66;
+        int viewport=h-78;
         scroll=Math.max(0,Math.min(scroll,Math.max(0,contentHeight-viewport)));
-        base.forEach((widget,row)->{widget.setY(y+32+row-scroll);widget.visible=widget.getY()+widget.getHeight()>y+30&&widget.getY()<y+h-36;});
+        base.forEach((widget,row)->{widget.setY(y+32+row-scroll);widget.visible=widget.getY()+widget.getHeight()>y+30&&widget.getY()<y+h-48;});
     }
     private void destructive(String action){
         if(!confirm.equals(action)){
@@ -167,22 +167,22 @@ public final class NpcEditorScreen extends ResponsiveScreen {
         g.fill(0,0,width,height,0x90000000);
         g.fill(x,y,x+w,y+h,0xF0181818);g.fill(x,y,x+w,y+2,0xFFF2C14E);
         g.drawCenteredString(font,title,width/2,y+12,0xFFF2C14E);
-        canvasScissor(g,x+6,y+30,x+w-6,y+h-36);
+        canvasScissor(g,x+6,y+30,x+w-6,y+h-48);
         for(var label:labels){var shown=font.plainSubstrByWidth(label.text,label.maxWidth);if(label.centerX>=0)g.drawCenteredString(font,shown,label.centerX,y+32+label.row-scroll,label.color);else g.drawString(font,shown,x+12,y+32+label.row-scroll,label.color,false);}
         for(var renderable:renderables)if(renderable!=close)renderable.render(g,mx,my,partial);
         g.disableScissor();
         close.render(g,mx,my,partial);
         if(!state.notice().isBlank()&&minecraft.player!=null){
-            g.drawString(font,font.plainSubstrByWidth(com.ianblk.zianrct.Messages.decode(state.notice()).getString(),w-24),x+12,y+h-35,0xF2C14E,false);
+            {String n=font.plainSubstrByWidth(com.ianblk.zianrct.Messages.decode(state.notice()).getString(),w-24);g.drawString(font,n,x+(w-font.width(n))/2,y+h-41,0xF2C14E,false);}
         }
-        if(contentHeight>h-66)g.drawString(font,"↕",x+w-12,y+h-50,0xF2C14E,false);
+        if(contentHeight>h-78)g.drawString(font,"↕",x+w-12,y+h-62,0xF2C14E,false);
     }
     @Override public boolean canvasMouseScrolled(double mx,double my,double horizontal,double vertical){
         scroll-=(int)(vertical*24);position();return true;
     }
     @Override public boolean canvasMouseClicked(double mx,double my,int button){
         if(close.isMouseOver(mx,my))return super.canvasMouseClicked(mx,my,button);
-        if(my<y+30||my>=y+h-36||mx<x||mx>=x+w)return false;
+        if(my<y+30||my>=y+h-48||mx<x||mx>=x+w)return false;
         return super.canvasMouseClicked(mx,my,button);
     }
     @Override public boolean isPauseScreen(){return false;}
