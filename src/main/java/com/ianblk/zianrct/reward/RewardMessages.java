@@ -2,6 +2,8 @@ package com.ianblk.zianrct.reward;
 import com.ianblk.zianrct.Msg;
 public final class RewardMessages {
     private RewardMessages() {}
+    /** Nombre de la especie entregada; el adjetivo "shiny" va según el idioma (es: "%s shiny", en: "Shiny %s"). */
+    public static Msg species(String species,boolean shiny){return shiny?new Msg("zianrct.legendary.shiny_species","%s shiny",species):new Msg("zianrct.legendary.plain_species","%s",species);}
     private static Msg unit(long count,String name,String one,String many){return new Msg("zianrct.time."+name+(count==1?"":"s"),"%s "+(count==1?one:many),count);}
     private static Msg and(Msg first,Msg second){return new Msg("zianrct.time.and","%s y %s",first,second);}
     public static Msg waitFor(long millis) {

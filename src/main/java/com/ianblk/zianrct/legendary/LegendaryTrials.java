@@ -148,7 +148,7 @@ public final class LegendaryTrials {
         var stats=List.of(Stats.HP,Stats.ATTACK,Stats.DEFENCE,Stats.SPECIAL_ATTACK,Stats.SPECIAL_DEFENCE,Stats.SPEED);
         for(int i=0;i<6;i++)if(savedPokemon.getIvs().getOrDefault(stats.get(i))!=entry.ivs().get(i))throw new IllegalStateException("Los IV guardados no coinciden con el premio reservado");
         journal.phase(entry.player(),entry.trainer(),TrialJournal.Phase.DELIVERED);
-        player.sendSystemMessage(com.ianblk.zianrct.Messages.format(Component.translatableWithFallback("zianrct.legendary.completed","Prueba completada: recibiste %s en tu PC. No podrás repetir esta recompensa.",entry.species()+(entry.shiny()?" shiny":""))));
+        player.sendSystemMessage(com.ianblk.zianrct.Messages.format(Component.translatableWithFallback("zianrct.legendary.completed","Prueba completada: recibiste %s en tu PC. No podrás repetir esta recompensa.",com.ianblk.zianrct.Messages.c(com.ianblk.zianrct.reward.RewardMessages.species(entry.species(),entry.shiny())))));
         ZianRCT.LOGGER.info("[ZIAN-AUDIT] action=legendary_delivered player={} trainer={} pokemon={} shiny={} ivs={} battle={}",entry.player(),entry.trainer(),entry.pokemon(),entry.shiny(),entry.ivs(),entry.victoryBattle());return true;
     }
     private static com.cobblemon.mod.common.pokemon.Pokemon findPersisted(com.cobblemon.mod.common.api.storage.PokemonStore<?> store,UUID uuid){
