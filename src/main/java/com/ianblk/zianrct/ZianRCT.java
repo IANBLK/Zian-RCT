@@ -48,7 +48,7 @@ public final class ZianRCT {
         if (FMLEnvironment.dist == Dist.CLIENT) {
             ZianRctClient.init(modEventBus);
         }
-        LOGGER.info("Zian RCT initialized with profile '{}'", bootstrapDefaults.activeProfile());
+        LOGGER.info("Zian RCT initialized with profile '{}'", ConfigState.current().activeProfile());
     }
 
     public RctPackController rctPackController() {

@@ -77,8 +77,8 @@ public final class RctPackController {
             TrainerModel model=gson.fromJson(team,TrainerModel.class);
             BattleFormat format=BattleFormat.valueOf(team.has("battleFormat")?team.get("battleFormat").getAsString():"GEN_9_SINGLES");
             if(model==null || model.getTeam()==null || model.getTeam().isEmpty() || model.getTeam().size()>6)
-                throw new IllegalArgumentException("Equipo inválido: "+id);
-            if(format==BattleFormat.GEN_9_DOUBLES && model.getTeam().size()<2)throw new IllegalArgumentException("Dobles requiere dos Pokémon: "+id);
+                throw new com.ianblk.zianrct.LocalizedException.Argument("zianrct.err.pack_bad_team","Equipo inválido: %s",id);
+            if(format==BattleFormat.GEN_9_DOUBLES && model.getTeam().size()<2)throw new com.ianblk.zianrct.LocalizedException.Argument("zianrct.err.pack_doubles_two","Dobles requiere dos Pokémon: %s",id);
             BattleRules rules=team.has("battleRules")?gson.fromJson(team.get("battleRules"),BattleRules.class):new BattleRules.Builder().withMaxItemUses(3).build();
             // Public API validation; temporary Pokemon objects are released after each team.
             String validationKey="validate:"+id;
@@ -103,7 +103,7 @@ public final class RctPackController {
     private static JsonObject json(MinecraftServer server,GeneratedCandidate candidate,String key,boolean optional){
         byte[] generated=candidate.generated().get(key);
         String source=generated==null?readOriginalJsonIfPresent(server,ResourceLocation.fromNamespaceAndPath("rctmod",key)).orElse(optional?"{}":null):new String(generated,java.nio.charset.StandardCharsets.UTF_8);
-        if(source==null)throw new IllegalArgumentException("Falta la definición: "+key);
+        if(source==null)throw new com.ianblk.zianrct.LocalizedException.Argument("zianrct.err.pack_missing_definition","Falta la definición: %s",key);
         return JsonParser.parseString(source).getAsJsonObject();
     }
     public boolean isBusy(){return gate.isRunning();}
@@ -111,7 +111,7 @@ public final class RctPackController {
         if(com.ianblk.zianrct.creator.CustomTrainerStore.get(trainer)!=null)return;
         String key=(mob?"mobs/trainers/single/":"trainers/")+trainer+".json";
         if(readOriginalJsonIfPresent(server,ResourceLocation.fromNamespaceAndPath("rctmod",key)).isEmpty())
-            throw new IllegalArgumentException("Definición de entrenador no encontrada: "+key);
+            throw new com.ianblk.zianrct.LocalizedException.Argument("zianrct.err.pack_trainer_not_found","Definición de entrenador no encontrada: %s",key);
     }
     private GeneratedCandidate buildCandidate(MinecraftServer server, ZianRctConfig config) {
         ZianRctConfig.Profile profile = config.activeProfileConfig();
