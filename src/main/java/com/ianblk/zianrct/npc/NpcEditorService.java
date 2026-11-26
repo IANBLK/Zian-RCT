@@ -288,7 +288,7 @@ public final class NpcEditorService {
                     new RewardClaim.Part(RewardClaim.Kind.ITEM,item,1,RewardClaim.Phase.PENDING,"")));
         }catch(Exception error){descriptions.add(note("zianrct.npc.rewards_unavailable_log","Recompensas no disponibles; revisa el log."));}
         descriptions=descriptions.stream().map(s -> s.length()>256?s.substring(0,256):s).toList();
-        if(notice.length()>1024)notice=com.ianblk.zianrct.Messages.encode(Component.literal(com.ianblk.zianrct.Messages.decode(notice).getString().substring(0,256)));
+        if(notice.length()>1024)notice=com.ianblk.zianrct.Messages.encode(Component.literal(com.ianblk.zianrct.Messages.decode(notice).getString().codePoints().limit(256).collect(StringBuilder::new,StringBuilder::appendCodePoint,StringBuilder::append).toString()));
         String next="";
         if(mode==NpcEditorState.Mode.EDIT)try{next=com.ianblk.zianrct.Messages.encode(rewards.next(player,trainer));}catch(RuntimeException error){next=note("zianrct.npc.rewards_unavailable","Recompensas no disponibles.");}
         String draft="";
