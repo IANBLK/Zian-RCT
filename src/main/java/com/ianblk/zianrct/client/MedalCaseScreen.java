@@ -165,13 +165,13 @@ public final class MedalCaseScreen extends ResponsiveScreen {
                         snapshot.activeProfile(), owned.size(), snapshot.definitions().size()
                 ),
                 width / 2,
-                layout.y() + layout.height() - 44,
+                layout.y() + layout.height() - 41,
                 0xB8B8B8
         );
 
         var nextMedal=snapshot.definitions().stream().filter(d->!owned.containsKey(d.id())).min(java.util.Comparator.comparingInt(MedalClientSnapshot.MedalDefinitionView::order));
         String goal=nextMedal.map(d->t("screen.zianrct.medals.next","Por obtener: %s",d.trainerName())).orElse(t("screen.zianrct.medals.complete","Colección completada"));
-        graphics.drawCenteredString(font,font.plainSubstrByWidth(goal,layout.width()-24),width/2,layout.y()+layout.height()-56,0xFF99D6E8);
+        graphics.drawCenteredString(font,font.plainSubstrByWidth(goal,layout.width()-24),width/2,layout.y()+layout.height()-52,0xFF99D6E8);
         if (hovered != null) {
             queueTooltip(tooltipFor(hovered, hoveredOwned));
         }
