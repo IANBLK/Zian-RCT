@@ -84,8 +84,12 @@ public final class MedalCaseScreen extends ResponsiveScreen {
         };
     }
 
+    /* Sin blur de 1.21.1: Screen.render lo llama al dibujar los widgets, así que no hace nada y el fondo se dibuja una sola vez en renderCanvas. */
     @Override
     public void renderBackground(GuiGraphics graphics, int mouseX, int mouseY, float partialTick) {
+    }
+
+    private void drawBackdrop(GuiGraphics graphics) {
         graphics.fill(0, 0, width, height, 0x90000000);
 
         updateLayout();
@@ -107,7 +111,7 @@ public final class MedalCaseScreen extends ResponsiveScreen {
 
     @Override
     protected void renderCanvas(GuiGraphics graphics, int mouseX, int mouseY, float partialTick) {
-        updateLayout();
+        drawBackdrop(graphics);
         renderWidgets(graphics, mouseX, mouseY, partialTick);
         graphics.drawCenteredString(font, title, width / 2, layout.y() + 12, 0xFFF2C14E);
 
