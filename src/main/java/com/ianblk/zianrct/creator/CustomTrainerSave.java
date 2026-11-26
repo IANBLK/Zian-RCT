@@ -1,4 +1,5 @@
 package com.ianblk.zianrct.creator;
+import com.ianblk.zianrct.LocalizedException;
 import net.minecraft.network.RegistryFriendlyByteBuf;
 import net.minecraft.network.codec.StreamCodec;
 import net.minecraft.network.protocol.common.custom.CustomPacketPayload;
@@ -11,6 +12,6 @@ public record CustomTrainerSave(String nonce,String json) implements CustomPacke
         public CustomTrainerSave decode(RegistryFriendlyByteBuf b){return new CustomTrainerSave(b.readUtf(40),b.readUtf(16384));}
         public void encode(RegistryFriendlyByteBuf b,CustomTrainerSave p){b.writeUtf(p.nonce,40);b.writeUtf(p.json,16384);}
     };
-    public CustomTrainerSave {UUID.fromString(nonce);if(json==null || json.length()>16384)throw new IllegalArgumentException("Definición demasiado grande");}
+    public CustomTrainerSave {UUID.fromString(nonce);if(json==null || json.length()>16384)throw new LocalizedException.Argument("zianrct.err.definition_too_large","Definición demasiado grande");}
     public Type<CustomTrainerSave> type(){return TYPE;}
 }

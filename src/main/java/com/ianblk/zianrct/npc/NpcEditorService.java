@@ -1,4 +1,5 @@
 package com.ianblk.zianrct.npc;
+import com.ianblk.zianrct.LocalizedException;
 import com.ianblk.zianrct.standalone.StandaloneRuntime;
 import com.ianblk.zianrct.creator.IndependentTrainerMob;
 import com.google.gson.Gson;
@@ -44,7 +45,7 @@ public final class NpcEditorService {
         if(session==null){
             var active=sessions.peek(player.getUUID());
             if(active!=null && active.mode()==NpcEditorState.Mode.DESIGN && active.token().equals(token))
-                send(player,null,active.trainer(),NpcEditorState.Mode.DESIGN,"",0,"","Sesión renovada. Tu borrador se conserva; pulsa Guardar de nuevo.");
+                send(player,null,active.trainer(),NpcEditorState.Mode.DESIGN,"",0,"",note("zianrct.npc.session_renewed","Sesión renovada. Tu borrador se conserva; pulsa Guardar de nuevo."));
             return;
         }
         if(session.mode()!=NpcEditorState.Mode.DESIGN)return;
@@ -53,21 +54,21 @@ public final class NpcEditorService {
             var old=com.ianblk.zianrct.creator.CustomTrainerStore.get(definition.id());
             boolean trialChanged=!Objects.equals(definition.trial(),old==null?null:old.trial())
                 || (definition.trial()!=null && old!=null && (!definition.team().equals(old.team()) || !definition.format().equals(old.format())));
-            if(trialChanged && !allowed(player,"admin.legendary.configure"))throw new IllegalArgumentException("Necesitas zianrct.admin.legendary.configure para cambiar una prueba.");
-            if(!session.trainer().isEmpty() && !session.trainer().equals(definition.id()))throw new IllegalArgumentException("No cambies el ID de una definición existente.");
+            if(trialChanged && !allowed(player,"admin.legendary.configure"))throw new LocalizedException.Argument("zianrct.err.need_legendary_perm","Necesitas zianrct.admin.legendary.configure para cambiar una prueba.");
+            if(!session.trainer().isEmpty() && !session.trainer().equals(definition.id()))throw new LocalizedException.Argument("zianrct.err.keep_id","No cambies el ID de una definición existente.");
             if(session.trainer().isEmpty() && (com.ianblk.zianrct.creator.CustomTrainerStore.get(definition.id())!=null
-                    || StandaloneRuntime.getInstance().getTrainerManager().isValidId(definition.id())))throw new IllegalArgumentException("Ya existe este ID. Edita su definición desde un NPC propio.");
+                    || StandaloneRuntime.getInstance().getTrainerManager().isValidId(definition.id())))throw new LocalizedException.Argument("zianrct.err.id_exists","Ya existe este ID. Edita su definición desde un NPC propio.");
             rewards.saveCustom(definition);
-            send(player,null,definition.id(),NpcEditorState.Mode.CREATE,definition.id(),0,"","Definición guardada. Espera la recarga y crea el NPC seleccionado.");
+            send(player,null,definition.id(),NpcEditorState.Mode.CREATE,definition.id(),0,"",note("zianrct.npc.definition_saved","Definición guardada. Espera la recarga y crea el NPC seleccionado."));
         }catch(Exception error){
-            String message=error.getMessage()==null?"No se pudo guardar":error.getMessage();
+            String message=error.getMessage()==null?note("zianrct.npc.save_failed","No se pudo guardar"):com.ianblk.zianrct.Messages.encode(com.ianblk.zianrct.Messages.of(error));
             // Refresh the nonce, while the client preserves the submitted draft after a failed save.
             send(player,null,session.trainer(),NpcEditorState.Mode.DESIGN,"",0,"",message);
         }
     }
     private int command(net.minecraft.commands.CommandSourceStack source) {
         try { open(source.getPlayerOrException()); return 1; }
-        catch (Exception e) { source.sendFailure(Component.translatableWithFallback("zianrct.cmd.error","%s",String.valueOf(e.getMessage()))); return 0; }
+        catch (Exception e) { source.sendFailure(Component.translatableWithFallback("zianrct.cmd.error","%s",com.ianblk.zianrct.Messages.of(e))); return 0; }
     }
     private void registerCommands(RegisterCommandsEvent event) {
         event.getDispatcher().register(Commands.literal("zianrct").requires(s -> true)
@@ -79,7 +80,7 @@ public final class NpcEditorService {
         return RctPermissions.allows(player.createCommandSourceStack(), permission, true);
     }
     public void open(ServerPlayer player) {
-        if (!allowed(player,"admin.npc.edit")) throw new IllegalStateException("No tienes permiso para editar NPC.");
+        if (!allowed(player,"admin.npc.edit")) throw new LocalizedException.State("zianrct.err.no_edit_permission","No tienes permiso para editar NPC.");
         send(player,null,"",NpcEditorState.Mode.LIST,"",0,"","");
     }
     private List<String> search(String query) {
@@ -96,17 +97,17 @@ public final class NpcEditorService {
     private IndependentTrainerMob lookup(ServerPlayer player, UUID id) {
         var entity = player.serverLevel().getEntity(id);
         if (!(entity instanceof IndependentTrainerMob npc) || !npc.isAlive() || npc.isRemoved())
-            throw new IllegalStateException("El NPC ya no está cargado en tu dimensión. Actualiza la lista.");
+            throw new LocalizedException.State("zianrct.err.npc_not_loaded","El NPC ya no está cargado en tu dimensión. Actualiza la lista.");
         return npc;
     }
     private IndependentTrainerMob target(ServerPlayer player, NpcEditorSessions.Session session) {
-        if (session.npc() == null) throw new IllegalStateException("Selecciona Modificar en la lista de NPC.");
+        if (session.npc() == null) throw new LocalizedException.State("zianrct.err.select_modify","Selecciona Modificar en la lista de NPC.");
         IndependentTrainerMob npc = lookup(player,session.npc());
-        if (!session.trainer().equals(npc.getTrainerId())) throw new IllegalStateException("El entrenador cambió; selecciónalo de nuevo.");
+        if (!session.trainer().equals(npc.getTrainerId())) throw new LocalizedException.State("zianrct.err.trainer_changed","El entrenador cambió; selecciónalo de nuevo.");
         return npc;
     }
     private void editable(IndependentTrainerMob npc) {
-        if (npc.isInBattle()) throw new IllegalStateException("Espera a que termine el combate.");
+        if (npc.isInBattle()) throw new LocalizedException.State("zianrct.err.wait_battle","Espera a que termine el combate.");
     }
     public void action(ServerPlayer player, NpcEditorAction action) {
         if (!allowed(player,"admin.npc.edit")) return;
@@ -122,7 +123,7 @@ public final class NpcEditorService {
         String notice="";
         try {
             if (!NpcEditorProtocol.allowed(mode,session.confirmation(),action.action()))
-                throw new IllegalStateException("Acción no disponible en esta pantalla.");
+                throw new LocalizedException.State("zianrct.err.action_unavailable","Acción no disponible en esta pantalla.");
             // Navigation never needs to resolve a stale entity.
             if (mode==NpcEditorState.Mode.EDIT && !Set.of("list","create","designer").contains(action.action())) npc=target(player,session);
             switch(action.action()) {
@@ -131,20 +132,20 @@ public final class NpcEditorService {
                 case "designer" -> {
                     require(player,"admin.trainer.create");
                     if(mode==NpcEditorState.Mode.EDIT && com.ianblk.zianrct.creator.CustomTrainerStore.get(selected)==null)
-                        throw new IllegalArgumentException("Solo puedes editar definiciones propias; las de RCT se conservan.");
+                        throw new LocalizedException.Argument("zianrct.err.own_only","Solo puedes editar definiciones propias; las de RCT se conservan.");
                     if(mode==NpcEditorState.Mode.CREATE)selected="";
                     mode=NpcEditorState.Mode.DESIGN;npc=null;query="";page=0;
                 }
                 case "search" -> {query=action.value();page=0;}
                 case "choose_template" -> {
-                    if (!StandaloneRuntime.getInstance().getTrainerManager().isValidId(action.value())) throw new IllegalArgumentException("ID de entrenador inexistente.");
+                    if (!StandaloneRuntime.getInstance().getTrainerManager().isValidId(action.value())) throw new LocalizedException.Argument("zianrct.err.trainer_id_missing","ID de entrenador inexistente.");
                     selected=action.value();
                 }
                 case "next" -> page++;
                 case "previous" -> page--;
                 case "select_npc", "select_delete" -> {
                     UUID id=UUID.fromString(action.value());
-                    if (!session.visibleNpcs().contains(id)) throw new IllegalArgumentException("Selecciona un NPC de la página actual.");
+                    if (!session.visibleNpcs().contains(id)) throw new LocalizedException.Argument("zianrct.err.select_npc_page","Selecciona un NPC de la página actual.");
                     npc=lookup(player,id);selected=npc.getTrainerId();mode=NpcEditorState.Mode.EDIT;
                     if(action.action().equals("select_delete")){
                         require(player,"admin.npc.delete");editable(npc);confirmation="delete";
@@ -153,48 +154,48 @@ public final class NpcEditorService {
                 case "spawn_prompt" -> {
                     require(player,"admin.npc.spawn");
                     if(selected.isEmpty() || !StandaloneRuntime.getInstance().getTrainerManager().isValidId(selected))
-                        throw new IllegalArgumentException("Selecciona primero un entrenador de la lista.");
+                        throw new LocalizedException.Argument("zianrct.err.select_trainer_first","Selecciona primero un entrenador de la lista.");
                     confirmation="spawn";
                 }
                 case "spawn" -> {
                     require(player,"admin.npc.spawn");
-                    if(!StandaloneRuntime.getInstance().getTrainerManager().isValidId(selected)) throw new IllegalArgumentException("El entrenador ya no está disponible.");
+                    if(!StandaloneRuntime.getInstance().getTrainerManager().isValidId(selected)) throw new LocalizedException.Argument("zianrct.err.trainer_unavailable","El entrenador ya no está disponible.");
                     String id=selected;
                     if(loaded(player).stream().anyMatch(n -> id.equals(n.getTrainerId()) && n.distanceToSqr(player)<=256))
-                        throw new IllegalStateException("Ya existe este entrenador a menos de 16 bloques. Modifícalo desde la lista.");
+                        throw new LocalizedException.State("zianrct.err.trainer_nearby","Ya existe este entrenador a menos de 16 bloques. Modifícalo desde la lista.");
                     if(player.serverLevel().getEntitiesOfClass(IndependentTrainerMob.class,player.getBoundingBox().inflate(32)).size()>=32)
-                        throw new IllegalStateException("Demasiados entrenadores cercanos.");
+                        throw new LocalizedException.State("zianrct.err.too_many_nearby","Demasiados entrenadores cercanos.");
                     Vec3 ahead=Vec3.directionFromRotation(0,player.getYRot()).scale(2);
                     Vec3 at=player.position().add(ahead);
                     IndependentTrainerMob created=com.ianblk.zianrct.creator.CustomTrainerStore.get(selected)!=null
                             ?com.ianblk.zianrct.creator.CustomTrainerEntities.TYPE.get().create(player.serverLevel())
                             :IndependentTrainerMob.getEntityType().create(player.serverLevel());
-                    if(created==null) throw new IllegalStateException("No se pudo crear el entrenador.");
+                    if(created==null) throw new LocalizedException.State("zianrct.err.create_failed","No se pudo crear el entrenador.");
                     created.setTrainerId(selected);created.moveTo(at.x,at.y,at.z,player.getYRot()+180,0);
                     created.setHomePos(BlockPos.containing(at));
                     if(!player.serverLevel().getChunkSource().hasChunk(created.blockPosition().getX()>>4,created.blockPosition().getZ()>>4)
                             || !player.serverLevel().noCollision(created)
                             || !player.serverLevel().getWorldBorder().isWithinBounds(created.getBoundingBox()))
-                        throw new IllegalStateException("Libera espacio delante de ti.");
-                    if(!player.serverLevel().addFreshEntity(created)) throw new IllegalStateException("No se pudo añadir el NPC.");
+                        throw new LocalizedException.State("zianrct.err.free_space","Libera espacio delante de ti.");
+                    if(!player.serverLevel().addFreshEntity(created)) throw new LocalizedException.State("zianrct.err.add_failed","No se pudo añadir el NPC.");
                     npc=created;mode=NpcEditorState.Mode.EDIT;
                     var spawner=StandaloneRuntime.getInstance().getTrainerSpawner();
                     if(!spawner.isRegistered(created)) spawner.register(created);
                     created.setPersistent(true);freeze(created,true);
-                    notice="NPC creado. Ahora estás modificando ese NPC.";
+                    notice=note("zianrct.npc.created","NPC creado. Ahora estás modificando ese NPC.");
                 }
                 case "persistent" -> {editable(npc);npc.setPersistent(!npc.isPersistenceRequired());}
                 case "movement" -> {editable(npc);freeze(npc,!(npc.isNoAi()||npc.getPersistentData().getBoolean(FROZEN)));}
-                case "move" -> {require(player,"admin.npc.move");editable(npc);moveHere(player,npc);notice="NPC movido a tu bloque y orientación.";}
+                case "move" -> {require(player,"admin.npc.move");editable(npc);moveHere(player,npc);notice=note("zianrct.npc.moved","NPC movido a tu bloque y orientación.");}
                 case "format" -> {
                     require(player,"admin.npc.configure");editable(npc);rewards.format(selected,action.value());
-                    notice="Formato guardado para este ID. Aplicando recarga de RCT.";
+                    notice=note("zianrct.npc.format_saved","Formato guardado para este ID. Aplicando recarga de RCT.");
                 }
                 case "delete_prompt" -> {require(player,"admin.npc.delete");editable(npc);confirmation="delete";}
                 case "delete" -> {
                     require(player,"admin.npc.delete");editable(npc);
                     com.ianblk.zianrct.ZianRCT.LOGGER.info("[ZIAN-AUDIT] action=npc_delete admin={} npc={} trainer={}",player.getUUID(),npc.getUUID(),selected);
-                    npc.discard();npc=null;selected="";mode=NpcEditorState.Mode.LIST;page=0;notice="NPC eliminado. Medallas y recompensas conservadas.";
+                    npc.discard();npc=null;selected="";mode=NpcEditorState.Mode.LIST;page=0;notice=note("zianrct.npc.deleted","NPC eliminado. Medallas y recompensas conservadas.");
                 }
                 case "cancel", "refresh" -> {}
                 case "add_item","clear_items","money","remove_reward","policy" -> {
@@ -202,7 +203,7 @@ public final class NpcEditorService {
                     String id=selected;
                     if(StandaloneRuntime.getInstance().getTrainerSpawner().getSpawns().stream()
                             .anyMatch(n -> n.isInBattle() && id.equals(n.getTrainerId())))
-                        throw new IllegalStateException("Espera a que terminen los combates contra este ID.");
+                        throw new LocalizedException.State("zianrct.err.wait_battles_id","Espera a que terminen los combates contra este ID.");
                     switch(action.action()){
                         case "add_item" -> rewards.addItem(selected,player);
                         case "clear_items" -> rewards.clearItems(selected);
@@ -210,19 +211,19 @@ public final class NpcEditorService {
                         case "remove_reward" -> rewards.remove(selected);
                         case "policy" -> rewards.policy(selected,RewardDefinition.Mode.valueOf(action.value()),Long.parseLong(action.extra()));
                     }
-                    notice=action.action().equals("policy")?"Tipo guardado. Aplicando revancha; premios previos conservados.":"Loot guardado; premios reservados conservados.";
+                    notice=action.action().equals("policy")?note("zianrct.npc.policy_saved","Tipo guardado. Aplicando revancha; premios previos conservados."):note("zianrct.npc.loot_saved","Loot guardado; premios reservados conservados.");
                 }
             }
             com.ianblk.zianrct.ZianRCT.LOGGER.info("[ZIAN-AUDIT] action=npc_manager admin={} npc={} trainer={} operation={} result=APPLIED",
                     player.getUUID(),npc==null?"template":npc.getUUID(),selected,action.action());
         } catch(Exception error) {
-            notice=error.getMessage()==null?"No se pudo aplicar el cambio.":error.getMessage();
+            notice=error.getMessage()==null?note("zianrct.npc.apply_failed","No se pudo aplicar el cambio."):com.ianblk.zianrct.Messages.encode(com.ianblk.zianrct.Messages.of(error));
             if(mode==NpcEditorState.Mode.EDIT && npc==null){mode=NpcEditorState.Mode.LIST;selected="";}
         }
         send(player,npc,selected,mode,query,page,confirmation,notice);
     }
     private void require(ServerPlayer player,String permission){
-        if(!allowed(player,permission))throw new IllegalStateException("No tienes permiso: zianrct."+permission);
+        if(!allowed(player,permission))throw new LocalizedException.State("zianrct.err.no_permission","No tienes permiso: zianrct.%s",permission);
     }
     private void moveHere(ServerPlayer player,IndependentTrainerMob npc){
         var at=NpcPlacement.at(player.getX(),player.getY(),player.getZ(),player.getYRot());
@@ -232,7 +233,7 @@ public final class NpcEditorService {
                 || !level.getWorldBorder().isWithinBounds(box) || level.getBlockCollisions(npc,box).iterator().hasNext()
                 || !level.getEntitiesOfClass(net.minecraft.world.entity.LivingEntity.class,box,
                         e -> e!=npc && e!=player && e.isAlive()).isEmpty())
-            throw new IllegalStateException("Tu bloque no tiene espacio libre para el NPC.");
+            throw new LocalizedException.State("zianrct.err.block_no_space","Tu bloque no tiene espacio libre para el NPC.");
         boolean persistent=npc.isPersistenceRequired();
         // Release the old RCT persistence registration before relocation, then register the new location.
         if(persistent)npc.setPersistent(false);
@@ -264,6 +265,7 @@ public final class NpcEditorService {
         double x = data.getDouble("ZianRctEditorX"), y = data.getDouble("ZianRctEditorY"), z = data.getDouble("ZianRctEditorZ");
         if (npc.position().distanceToSqr(new Vec3(x,y,z)) > 0.0001) npc.teleportTo(x,y,z);
     }
+    private static String note(String key,String es){return com.ianblk.zianrct.Messages.encode(com.ianblk.zianrct.Messages.c(new com.ianblk.zianrct.Msg(key,es)));}
     private void send(ServerPlayer player,IndependentTrainerMob npc,String trainer,NpcEditorState.Mode mode,String query,int requestedPage,String confirmation,String notice){
         List<IndependentTrainerMob> all=mode==NpcEditorState.Mode.LIST?loaded(player):List.of();
         List<String> templates=mode==NpcEditorState.Mode.CREATE?search(query):List.of();
@@ -286,7 +288,7 @@ public final class NpcEditorService {
                     new RewardClaim.Part(RewardClaim.Kind.ITEM,item,1,RewardClaim.Phase.PENDING,"")));
         }catch(Exception error){descriptions.add("Recompensas no disponibles; revisa el log.");}
         descriptions=descriptions.stream().map(s -> s.length()>256?s.substring(0,256):s).toList();
-        if(notice.length()>256)notice=notice.substring(0,256);
+        if(notice.length()>1024)notice=com.ianblk.zianrct.Messages.encode(Component.literal(com.ianblk.zianrct.Messages.decode(notice).getString().substring(0,256)));
         String next="";
         if(mode==NpcEditorState.Mode.EDIT)try{next=com.ianblk.zianrct.Messages.plain(rewards.next(player,trainer));}catch(RuntimeException error){next="Recompensas no disponibles.";}
         String draft="";

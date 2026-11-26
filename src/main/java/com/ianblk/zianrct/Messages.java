@@ -27,6 +27,14 @@ public final class Messages {
   }else c.getContents().visit(s->{sb.append(s);return java.util.Optional.empty();});
   for(Component sibling:c.getSiblings())plain(sibling,sb);
  }
+ /** Error para el jugador: traducible si es una LocalizedException, literal en otro caso. */
+ public static Component of(Throwable error){return error instanceof LocalizedException.Info info?c(info.msg()):Component.literal(String.valueOf(error.getMessage()));}
+ /** Aviso de red como JSON de Component (el cliente lo muestra en su idioma); decode acepta también texto plano antiguo. */
+ public static String encode(Component c){return net.minecraft.network.chat.ComponentSerialization.CODEC.encodeStart(com.mojang.serialization.JsonOps.INSTANCE,c).getOrThrow().toString();}
+ public static Component decode(String s){
+  if(s.startsWith("{"))try{return net.minecraft.network.chat.ComponentSerialization.CODEC.parse(com.mojang.serialization.JsonOps.INSTANCE,com.google.gson.JsonParser.parseString(s)).result().orElse(Component.literal(s));}catch(RuntimeException ignored){}
+  return Component.literal(s);
+ }
  public static Component c(Msg m){Object[] a=m.args().clone();for(int i=0;i<a.length;i++)if(a[i] instanceof Msg n)a[i]=c(n);return Component.translatableWithFallback(m.key(),m.fallback(),a);}
  /** Texto traducible con respaldo en español; para etiquetas de pantalla que reciben String. */
  public static String t(String key,String fallback,Object... args){return Component.translatableWithFallback(key,fallback,args).getString();}

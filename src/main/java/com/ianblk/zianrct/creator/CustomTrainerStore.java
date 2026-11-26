@@ -1,4 +1,5 @@
 package com.ianblk.zianrct.creator;
+import com.ianblk.zianrct.LocalizedException;
 import com.ianblk.zianrct.storage.StorageFiles;
 import com.google.gson.*;
 import java.nio.file.*;
@@ -18,12 +19,12 @@ public final class CustomTrainerStore {
             try(var reader=StorageFiles.newBufferedReader(candidatePath)){
                 var json=JsonParser.parseReader(reader).getAsJsonObject();
                 if(!json.keySet().equals(Set.of("schemaVersion","trainers")) || json.get("schemaVersion").getAsBigDecimal().intValueExact()!=1)
-                    throw new IllegalArgumentException("Esquema inválido");
+                    throw new LocalizedException.Argument("zianrct.err.bad_schema","Esquema inválido");
                 for(var entry:json.getAsJsonArray("trainers")){
                     CustomTrainer trainer=GSON.fromJson(entry,CustomTrainer.class);
-                    if(parsed.putIfAbsent(trainer.id(),trainer)!=null)throw new IllegalArgumentException("ID duplicado");
+                    if(parsed.putIfAbsent(trainer.id(),trainer)!=null)throw new LocalizedException.Argument("zianrct.err.duplicate_id","ID duplicado");
                 }
-                if(parsed.size()>64)throw new IllegalArgumentException("Máximo 64 definiciones propias.");
+                if(parsed.size()>64)throw new LocalizedException.Argument("zianrct.err.max_definitions","Máximo 64 definiciones propias.");
             }catch(RuntimeException e){throw new IOException("Definiciones inválidas; archivo conservado",e);}
         }
         path=candidatePath;definitions=Map.copyOf(parsed);
@@ -47,7 +48,7 @@ public final class CustomTrainerStore {
         }finally{StorageFiles.deleteIfExists(temp);}
     }
     public static CustomTrainer decode(String json){
-        if(json==null || json.length()>16384)throw new IllegalArgumentException("Definición demasiado grande");
+        if(json==null || json.length()>16384)throw new LocalizedException.Argument("zianrct.err.definition_too_large","Definición demasiado grande");
         return GSON.fromJson(json,CustomTrainer.class);
     }
     public static Map<String,String> skins(){

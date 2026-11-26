@@ -16,7 +16,7 @@ public record NpcEditorState(String nonce, Mode mode, String trainer, String npc
     public NpcEditorState {
         UUID.fromString(nonce);
         if (mode == null || trainer == null || trainer.length() > 128 || npc == null || npc.length() > 40 || currency == null
-                || currency.length() > 128 || coins < 0 || coins > 1728 || notice == null || notice.length() > 256
+                || currency.length() > 128 || coins < 0 || coins > 1728 || notice == null || notice.length() > 1024
                 || query == null || query.length() > 128 || page < 0 || pages < 1 || page >= pages
                 || !java.util.Set.of("", "spawn", "delete").contains(confirmation)
                 || !java.util.Set.of("UNIQUE","REPEAT").contains(rewardMode) || cooldownMinutes<0 || cooldownMinutes>43200

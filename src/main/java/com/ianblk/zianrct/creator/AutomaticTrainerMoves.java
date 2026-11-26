@@ -1,4 +1,5 @@
 package com.ianblk.zianrct.creator;
+import com.ianblk.zianrct.LocalizedException;
 import java.util.*;
 import com.cobblemon.mod.common.api.pokemon.PokemonSpecies;
 import com.cobblemon.mod.common.api.moves.MoveTemplate;
@@ -12,7 +13,7 @@ public final class AutomaticTrainerMoves {
         for(var member:definition.team()){
             var id=ResourceLocation.tryParse(member.species().contains(":")?member.species():"cobblemon:"+member.species());
             var species=id==null?null:PokemonSpecies.getByIdentifier(id);
-            if(species==null)throw new IllegalArgumentException("Especie desconocida: "+member.species());
+            if(species==null)throw new LocalizedException.Argument("zianrct.err.unknown_species","Especie desconocida: %s",member.species());
             var learnset=species.getStandardForm().getMoves();
             var pool=new LinkedHashSet<MoveTemplate>(learnset.getLevelUpMovesUpTo(member.level()));
             if(definition.difficulty().equals("DIFICIL") || definition.difficulty().equals("JEFE")){
@@ -23,7 +24,7 @@ public final class AutomaticTrainerMoves {
                 move.getPower(),move.getAccuracy(),move.getDamageCategory().getName().equalsIgnoreCase("status"),
                 move.getElementalType().equals(species.getPrimaryType()) || move.getElementalType().equals(species.getSecondaryType()))).toList();
             var chosen=AutomaticMovePolicy.select(definition.difficulty(),candidates);
-            if(chosen.isEmpty())throw new IllegalArgumentException("Sin movimientos disponibles a nivel "+member.level()+": "+member.species()+". Usa el modo manual.");
+            if(chosen.isEmpty())throw new LocalizedException.Argument("zianrct.err.no_moves","Sin movimientos disponibles a nivel %s: %s. Usa el modo manual.",member.level(),member.species());
             team.add(new CustomTrainer.Member(member.species(),member.level(),chosen));
         }
         return new CustomTrainer(definition.id(),definition.name(),definition.difficulty(),definition.format(),definition.skin(),team,

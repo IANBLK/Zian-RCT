@@ -31,7 +31,7 @@ public final class CustomTrainerScreen extends ResponsiveScreen {
         species[0]="pikachu";moves[0]="tackle,thunderbolt";
         if(!state.customDraft().isBlank())load(CustomTrainerStore.decode(state.customDraft()));
         var previous=net.minecraft.client.Minecraft.getInstance().screen;
-        if(!state.notice().isBlank() && previous instanceof CustomTrainerScreen p){p.read();copy(p);error=state.notice();}
+        if(!state.notice().isBlank() && previous instanceof CustomTrainerScreen p){p.read();copy(p);error=com.ianblk.zianrct.Messages.decode(state.notice()).getString();}
     }
     private void load(CustomTrainer d){
         id=d.id();name=d.name();difficulty=d.difficulty();format=d.format();skin=d.skin();start=d.start();win=d.playerWins();loss=d.playerLoses();
@@ -111,7 +111,7 @@ public final class CustomTrainerScreen extends ResponsiveScreen {
             var d=new CustomTrainer(id.trim(),name.trim(),difficulty,format,skin,team,start,win,loss,autoMoves,trial);
             d=AutomaticTrainerMoves.prepare(d);
             PacketDistributor.sendToServer(new CustomTrainerSave(state.nonce(),new Gson().toJson(d)));
-        }catch(RuntimeException e){error=e.getMessage()==null?t("zianrct.designer.check_definition","Revisa la definición"):e.getMessage();}
+        }catch(RuntimeException e){error=e.getMessage()==null?t("zianrct.designer.check_definition","Revisa la definición"):com.ianblk.zianrct.Messages.of(e).getString();}
     }
     private void selectSpecies(int slot){
         read();

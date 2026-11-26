@@ -173,7 +173,7 @@ public final class NpcEditorScreen extends ResponsiveScreen {
         g.disableScissor();
         close.render(g,mx,my,partial);
         if(!state.notice().isBlank()&&minecraft.player!=null){
-            g.drawString(font,font.plainSubstrByWidth(state.notice(),w-24),x+12,y+h-35,0xF2C14E,false);
+            g.drawString(font,font.plainSubstrByWidth(com.ianblk.zianrct.Messages.decode(state.notice()).getString(),w-24),x+12,y+h-35,0xF2C14E,false);
         }
         if(contentHeight>h-66)g.drawString(font,"↕",x+w-12,y+h-50,0xF2C14E,false);
     }

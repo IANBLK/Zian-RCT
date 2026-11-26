@@ -1,4 +1,5 @@
 package com.ianblk.zianrct.reward;
+import com.ianblk.zianrct.LocalizedException;
 import com.ianblk.zianrct.storage.StorageFiles;
 
 import com.ianblk.zianrct.standalone.StandaloneRuntime;
@@ -151,8 +152,8 @@ public final class TrainerRewardService {
     }
     private void noBattle(String trainer){
         if(StandaloneRuntime.getInstance().getTrainerSpawner().getSpawns().stream().anyMatch(n->trainer.equals(n.getTrainerId()) && n.isInBattle()))
-            throw new IllegalStateException("Espera a que terminen los combates contra este entrenador.");
-        if(packs==null || packs.isBusy())throw new IllegalStateException("Ya hay una recarga de entrenadores en curso.");
+            throw new LocalizedException.State("zianrct.err.wait_battles_trainer","Espera a que terminen los combates contra este entrenador.");
+        if(packs==null || packs.isBusy())throw new LocalizedException.State("zianrct.err.reload_running","Ya hay una recarga de entrenadores en curso.");
     }
     public void policy(String trainer,RewardDefinition.Mode mode,long minutes) throws IOException {
         trainer(trainer);noBattle(trainer);
@@ -200,7 +201,7 @@ public final class TrainerRewardService {
         ready();
         long now = System.nanoTime();
         Long before = lastClaim.get(player.getUUID());
-        if (before != null && now - before < 1_000_000_000L) throw new IllegalStateException("Espera un segundo antes de reclamar otra vez");
+        if (before != null && now - before < 1_000_000_000L) throw new LocalizedException.State("zianrct.err.claim_wait","Espera un segundo antes de reclamar otra vez");
         lastClaim.put(player.getUUID(), now);
         deliver(player, id);
     }
@@ -263,11 +264,11 @@ public final class TrainerRewardService {
     }
     private void trainer(String trainer) {
         ready(); TrainerRewardConfig.validId(trainer);
-        if (!StandaloneRuntime.getInstance().getTrainerManager().isValidId(trainer)) throw new IllegalArgumentException("Entrenador RCT inexistente: " + trainer);
+        if (!StandaloneRuntime.getInstance().getTrainerManager().isValidId(trainer)) throw new LocalizedException.Argument("zianrct.err.rct_trainer_missing","Entrenador RCT inexistente: %s",trainer);
     }
     public void coins(String trainer, String currency, long amount) throws IOException {
         trainer(trainer);
-        if (wallet != null && amount > 0 && !wallet.currency(currency)) throw new IllegalArgumentException("Moneda no gestionada por AVECOINS");
+        if (wallet != null && amount > 0 && !wallet.currency(currency)) throw new LocalizedException.Argument("zianrct.err.currency_unmanaged","Moneda no gestionada por AVECOINS");
         RewardDefinition previous = config.definition(trainer);
         if(previous==null)previous=new RewardDefinition("",0,List.of());
         config.set(trainer, previous.prize(currency, amount, previous.items()));
@@ -275,9 +276,9 @@ public final class TrainerRewardService {
     public void addItem(String trainer, ServerPlayer admin) throws IOException {
         trainer(trainer);
         ItemStack stack = admin.getMainHandItem();
-        if (stack.isEmpty() || stack.getCount() > stack.getMaxStackSize()) throw new IllegalArgumentException("Sostén un objeto válido en la mano principal");
+        if (stack.isEmpty() || stack.getCount() > stack.getMaxStackSize()) throw new LocalizedException.Argument("zianrct.err.hold_item","Sostén un objeto válido en la mano principal");
         var saved = stack.copy().save(admin.registryAccess());
-        if (!(saved instanceof CompoundTag tag)) throw new IllegalArgumentException("No se pudo guardar el objeto");
+        if (!(saved instanceof CompoundTag tag)) throw new LocalizedException.Argument("zianrct.err.item_save_failed","No se pudo guardar el objeto");
         RewardDefinition previous = config.definition(trainer);
         List<String> items = new ArrayList<>(previous == null ? List.of() : previous.items());
         items.add(tag.toString());
