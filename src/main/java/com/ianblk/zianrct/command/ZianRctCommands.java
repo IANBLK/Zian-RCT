@@ -274,7 +274,7 @@ public final class ZianRctCommands {
             );
             return 1;
         } catch (IllegalArgumentException exception) {
-            source.sendFailure(Component.translatableWithFallback("zianrct.cmd.error", "%s", String.valueOf(exception.getMessage())));
+            source.sendFailure(Component.translatableWithFallback("zianrct.cmd.error", "%s", com.ianblk.zianrct.Messages.of(exception)));
             return 0;
         } catch (RuntimeException exception) {
             source.sendFailure(Component.translatableWithFallback("zianrct.cmd.progress_modify_failed","No se pudo modificar el progreso de RCT: %s",String.valueOf(exception.getMessage())));

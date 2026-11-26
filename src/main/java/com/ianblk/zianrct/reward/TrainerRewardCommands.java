@@ -14,7 +14,7 @@ public final class TrainerRewardCommands {
     @FunctionalInterface private interface Action { void run() throws Exception; }
     private static int execute(CommandSourceStack source, Action action) {
         try { action.run(); return 1; }
-        catch (Exception error) { source.sendFailure(Component.translatableWithFallback("zianrct.cmd.error", "%s", error.getMessage() == null ? Component.translatableWithFallback("zianrct.reward.cmd.failed_generic", "No se pudo completar la operación") : Component.literal(error.getMessage()))); return 0; }
+        catch (Exception error) { source.sendFailure(Component.translatableWithFallback("zianrct.cmd.error", "%s", error.getMessage() == null ? Component.translatableWithFallback("zianrct.reward.cmd.failed_generic", "No se pudo completar la operación") : com.ianblk.zianrct.Messages.of(error))); return 0; }
     }
     private static UUID admin(CommandSourceStack source) { return source.getEntity() instanceof ServerPlayer player ? player.getUUID() : new UUID(0, 0); }
     private static void saved(CommandSourceStack source, String trainer) {

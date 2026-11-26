@@ -16,7 +16,7 @@ public final class CustomTrainerRenderer extends MobRenderer<IndependentTrainerM
     @Override public void render(IndependentTrainerMob trainer,float yaw,float partial,com.mojang.blaze3d.vertex.PoseStack pose,net.minecraft.client.renderer.MultiBufferSource buffers,int light){model=com.ianblk.zianrct.creator.CustomTrainer.slim(getTextureLocation(trainer).toString())?slim:classic;super.render(trainer,yaw,partial,pose,buffers,light);}
     @Override protected void renderNameTag(IndependentTrainerMob trainer,net.minecraft.network.chat.Component title,
             com.mojang.blaze3d.vertex.PoseStack pose,net.minecraft.client.renderer.MultiBufferSource buffers,int light,float partialTick){
-        super.renderNameTag(trainer,trainer.getSpeech().isBlank()?title:net.minecraft.network.chat.Component.literal(trainer.getSpeech()),pose,buffers,light,partialTick);
+        super.renderNameTag(trainer,trainer.getSpeech().getString().isBlank()?title:trainer.getSpeech(),pose,buffers,light,partialTick);
     }
     @Override public ResourceLocation getTextureLocation(IndependentTrainerMob trainer){
         ResourceLocation skin=CustomTrainerSkinState.get(trainer.getTrainerId());

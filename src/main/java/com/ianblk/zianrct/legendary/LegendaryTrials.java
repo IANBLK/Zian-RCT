@@ -1,4 +1,5 @@
 package com.ianblk.zianrct.legendary;
+import com.ianblk.zianrct.LocalizedException;
 import com.ianblk.zianrct.creator.*;
 import com.ianblk.zianrct.ZianRCT;
 import com.ianblk.zianrct.permission.RctPermissions;
@@ -36,13 +37,13 @@ public final class LegendaryTrials {
                                 try{
                                     var player=net.minecraft.commands.arguments.EntityArgument.getPlayer(c,"player");
                                     String trainer=com.mojang.brigadier.arguments.StringArgumentType.getString(c,"trainer"),evidence=com.mojang.brigadier.arguments.StringArgumentType.getString(c,"evidence");
-                                    if(journal==null || evidence.length()<8 || evidence.length()>256)throw new IllegalArgumentException("Registro no disponible o evidencia inválida (8–256 caracteres).");
+                                    if(journal==null || evidence.length()<8 || evidence.length()>256)throw new LocalizedException.Argument("zianrct.err.bad_evidence","Registro no disponible o evidencia inválida (8–256 caracteres).");
                                     var entry=journal.get(player.getUUID(),trainer);
-                                    if(entry==null || entry.phase()!=TrialJournal.Phase.REVIEW)throw new IllegalArgumentException("Solo permite cerrar una entrega en revisión, tras verificarla o compensarla manualmente.");
+                                    if(entry==null || entry.phase()!=TrialJournal.Phase.REVIEW)throw new LocalizedException.Argument("zianrct.err.close_review_only","Solo permite cerrar una entrega en revisión, tras verificarla o compensarla manualmente.");
                                     journal.phase(player.getUUID(),trainer,TrialJournal.Phase.DELIVERED);
                                     ZianRCT.LOGGER.warn("[ZIAN-AUDIT] action=legendary_operator_confirmed admin={} player={} trainer={} pokemon={} evidence={}",c.getSource().getTextName(),player.getUUID(),trainer,entry.pokemon(),evidence);
                                     c.getSource().sendSuccess(()->Component.translatableWithFallback("zianrct.legendary.cmd.closed","Entrega cerrada. No se generó otro Pokémon."),true);return 1;
-                                }catch(Exception error){c.getSource().sendFailure(Component.translatableWithFallback("zianrct.cmd.error","%s",error.getMessage()==null?Component.translatableWithFallback("zianrct.legendary.cmd.unresolved","No se pudo resolver"):Component.literal(error.getMessage())));return 0;}
+                                }catch(Exception error){c.getSource().sendFailure(Component.translatableWithFallback("zianrct.cmd.error","%s",error.getMessage()==null?Component.translatableWithFallback("zianrct.legendary.cmd.unresolved","No se pudo resolver"):com.ianblk.zianrct.Messages.of(error)));return 0;}
                             }))))))));
     }
     public static void start(MinecraftServer s){server=s;journal=null;verifying.clear();ticks=0;smokePlayer=null;smokeBegan=0;smokeDone=false;
@@ -72,19 +73,19 @@ public final class LegendaryTrials {
     }
     public static void validate(CustomTrainer d){
         if(CustomTrainerStore.all().values().stream().anyMatch(t->t.trial()!=null && t.trial().boss().equals(d.id())) && (!d.difficulty().equals("JEFE") || d.trial()!=null))
-            throw new IllegalArgumentException("Este entrenador desbloquea una prueba: debe seguir siendo JEFE y no puede convertirse en otra prueba.");
+            throw new LocalizedException.Argument("zianrct.err.trial_boss_locked","Este entrenador desbloquea una prueba: debe seguir siendo JEFE y no puede convertirse en otra prueba.");
         if(d.trial()==null){
-            if(journal!=null && journal.all().stream().anyMatch(e->e.trainer().equals(d.id())))throw new IllegalArgumentException("No elimines una prueba con progreso registrado.");
+            if(journal!=null && journal.all().stream().anyMatch(e->e.trainer().equals(d.id())))throw new LocalizedException.Argument("zianrct.err.trial_has_progress","No elimines una prueba con progreso registrado.");
             return;
         }
-        if(!d.format().equals("GEN_9_SINGLES") || d.team().size()!=1 || d.trial().boss().equals(d.id()))throw new IllegalArgumentException("La prueba requiere un solo legendario, batalla individual y otro jefe.");
+        if(!d.format().equals("GEN_9_SINGLES") || d.team().size()!=1 || d.trial().boss().equals(d.id()))throw new LocalizedException.Argument("zianrct.err.trial_requirements","La prueba requiere un solo legendario, batalla individual y otro jefe.");
         var boss=CustomTrainerStore.get(d.trial().boss());
-        if(boss==null || !boss.difficulty().equals("JEFE") || boss.trial()!=null)throw new IllegalArgumentException("Selecciona un jefe propio de dificultad JEFE, sin otra prueba legendaria.");
+        if(boss==null || !boss.difficulty().equals("JEFE") || boss.trial()!=null)throw new LocalizedException.Argument("zianrct.err.trial_pick_boss","Selecciona un jefe propio de dificultad JEFE, sin otra prueba legendaria.");
         var m=d.team().getFirst();var species=PokemonSpecies.getByIdentifier(net.minecraft.resources.ResourceLocation.parse(m.species().contains(":")?m.species():"cobblemon:"+m.species()));
-        if(species==null || !species.getImplemented() || !(species.getLabels().contains("legendary") || species.getLabels().contains("mythical")))throw new IllegalArgumentException("El equipo de esta prueba debe ser un Pokémon legendario o singular implementado.");
-        if(journal==null)throw new IllegalArgumentException("Registro de pruebas no disponible.");
+        if(species==null || !species.getImplemented() || !(species.getLabels().contains("legendary") || species.getLabels().contains("mythical")))throw new LocalizedException.Argument("zianrct.err.trial_species","El equipo de esta prueba debe ser un Pokémon legendario o singular implementado.");
+        if(journal==null)throw new LocalizedException.Argument("zianrct.err.trial_journal","Registro de pruebas no disponible.");
         for(var e:journal.all())if(e.trainer().equals(d.id()) && (!e.boss().equals(d.trial().boss()) || !e.species().equals(m.species()) || e.level()!=m.level() || e.shinyDenominator()!=d.trial().shinyDenominator()))
-            throw new IllegalArgumentException("No cambies jefe, especie, nivel o shiny de una prueba que ya tiene progreso. Usa un ID nuevo.");
+            throw new LocalizedException.Argument("zianrct.err.trial_no_change","No cambies jefe, especie, nivel o shiny de una prueba que ya tiene progreso. Usa un ID nuevo.");
     }
     public static void won(ServerPlayer player,String trainer,UUID battle){
         if(journal==null){if(interested(trainer))player.sendSystemMessage(com.ianblk.zianrct.Messages.format(Component.translatableWithFallback("zianrct.legendary.register_failed","No se pudo registrar la prueba legendaria. Consulta al administrador antes de continuar.")));return;}
@@ -147,7 +148,7 @@ public final class LegendaryTrials {
         var stats=List.of(Stats.HP,Stats.ATTACK,Stats.DEFENCE,Stats.SPECIAL_ATTACK,Stats.SPECIAL_DEFENCE,Stats.SPEED);
         for(int i=0;i<6;i++)if(savedPokemon.getIvs().getOrDefault(stats.get(i))!=entry.ivs().get(i))throw new IllegalStateException("Los IV guardados no coinciden con el premio reservado");
         journal.phase(entry.player(),entry.trainer(),TrialJournal.Phase.DELIVERED);
-        player.sendSystemMessage(com.ianblk.zianrct.Messages.format(Component.translatableWithFallback("zianrct.legendary.completed","Prueba completada: recibiste %s en tu PC. No podrás repetir esta recompensa.",entry.species()+(entry.shiny()?" shiny":""))));
+        player.sendSystemMessage(com.ianblk.zianrct.Messages.format(Component.translatableWithFallback("zianrct.legendary.completed","Prueba completada: recibiste %s en tu PC. No podrás repetir esta recompensa.",com.ianblk.zianrct.Messages.c(com.ianblk.zianrct.reward.RewardMessages.species(entry.species(),entry.shiny())))));
         ZianRCT.LOGGER.info("[ZIAN-AUDIT] action=legendary_delivered player={} trainer={} pokemon={} shiny={} ivs={} battle={}",entry.player(),entry.trainer(),entry.pokemon(),entry.shiny(),entry.ivs(),entry.victoryBattle());return true;
     }
     private static com.cobblemon.mod.common.pokemon.Pokemon findPersisted(com.cobblemon.mod.common.api.storage.PokemonStore<?> store,UUID uuid){

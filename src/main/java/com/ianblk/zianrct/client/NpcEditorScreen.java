@@ -90,7 +90,7 @@ public final class NpcEditorScreen extends ResponsiveScreen {
                     label(t("zianrct.npc.cooldown_minutes","Espera en minutos (24 h = 1440):"),116,0xB8B8B8);
                     cooldown=field(left,132,usable-100,Long.toString(state.cooldownMinutes()==0?1440:state.cooldownMinutes()));
                     button(left+usable-94,132,94,t("zianrct.npc.save_type","Guardar tipo"),()->send("policy",repeatChoice?"REPEAT":"UNIQUE",repeatChoice?cooldown.getValue():"0"));
-                    label(t("zianrct.npc.for_you","Para ti: %s",state.nextReward()),156,0xF7E2AC);
+                    label(t("zianrct.npc.for_you","Para ti: %s",com.ianblk.zianrct.Messages.decode(state.nextReward())),156,0xF7E2AC);
                     button(left,174,usable,t("zianrct.npc.refresh_cooldown","Actualizar mi espera"),()->send("refresh","",""));
                     label(t("zianrct.npc.currency_amount","Moneda AVECOINS / cantidad"),198,0xB8B8B8);
                     currency=field(left,214,usable-72,state.currency().isEmpty()?"avecoins:coppercoin":state.currency());
@@ -98,7 +98,7 @@ public final class NpcEditorScreen extends ResponsiveScreen {
                     button(left,238,usable,t("zianrct.npc.save_coins","Guardar monedas (0 = quitar)"),()->send("money",currency.getValue(),coins.getValue()));
                     row=264;
                     label(t("zianrct.npc.items_saved","Objetos guardados: %s",state.rewards().size()),row,0xF7E2AC);row+=18;
-                    for(String item:state.rewards()){label(item,row,0xB8B8B8);row+=16;}
+                    for(String item:state.rewards()){label(com.ianblk.zianrct.Messages.decode(item).getString(),row,0xB8B8B8);row+=16;}
                     button(left,row,usable,t("zianrct.npc.add_stack","Añadir stack de mi mano principal"),()->send("add_item","",""));row+=24;
                     button(left,row,usable,t("zianrct.npc.clear_items","Vaciar objetos"),()->destructive("clear_items"));row+=24;
                     button(left,row,usable,t("zianrct.npc.remove_loot","Quitar loot del entrenador"),()->destructive("remove_reward"));row+=26;
@@ -144,9 +144,9 @@ public final class NpcEditorScreen extends ResponsiveScreen {
     private void label(String text,int row,int color,int maxWidth){labels.add(new TextLine(text,row,color,maxWidth,-1));}
     private void centered(String text,int from,int to,int row){labels.add(new TextLine(text,row,0xB8B8B8,to-from,(from+to)/2));}
     private void position(){
-        int viewport=h-66;
+        int viewport=h-78;
         scroll=Math.max(0,Math.min(scroll,Math.max(0,contentHeight-viewport)));
-        base.forEach((widget,row)->{widget.setY(y+32+row-scroll);widget.visible=widget.getY()+widget.getHeight()>y+30&&widget.getY()<y+h-36;});
+        base.forEach((widget,row)->{widget.setY(y+32+row-scroll);widget.visible=widget.getY()+widget.getHeight()>y+30&&widget.getY()<y+h-48;});
     }
     private void destructive(String action){
         if(!confirm.equals(action)){
@@ -167,22 +167,22 @@ public final class NpcEditorScreen extends ResponsiveScreen {
         g.fill(0,0,width,height,0x90000000);
         g.fill(x,y,x+w,y+h,0xF0181818);g.fill(x,y,x+w,y+2,0xFFF2C14E);
         g.drawCenteredString(font,title,width/2,y+12,0xFFF2C14E);
-        canvasScissor(g,x+6,y+30,x+w-6,y+h-36);
+        canvasScissor(g,x+6,y+30,x+w-6,y+h-48);
         for(var label:labels){var shown=font.plainSubstrByWidth(label.text,label.maxWidth);if(label.centerX>=0)g.drawCenteredString(font,shown,label.centerX,y+32+label.row-scroll,label.color);else g.drawString(font,shown,x+12,y+32+label.row-scroll,label.color,false);}
         for(var renderable:renderables)if(renderable!=close)renderable.render(g,mx,my,partial);
         g.disableScissor();
         close.render(g,mx,my,partial);
         if(!state.notice().isBlank()&&minecraft.player!=null){
-            g.drawString(font,font.plainSubstrByWidth(state.notice(),w-24),x+12,y+h-35,0xF2C14E,false);
+            {String n=font.plainSubstrByWidth(com.ianblk.zianrct.Messages.decode(state.notice()).getString(),w-24);g.drawString(font,n,x+(w-font.width(n))/2,y+h-41,0xF2C14E,false);}
         }
-        if(contentHeight>h-66)g.drawString(font,"↕",x+w-12,y+h-50,0xF2C14E,false);
+        if(contentHeight>h-78)g.drawString(font,"↕",x+w-12,y+h-62,0xF2C14E,false);
     }
     @Override public boolean canvasMouseScrolled(double mx,double my,double horizontal,double vertical){
         scroll-=(int)(vertical*24);position();return true;
     }
     @Override public boolean canvasMouseClicked(double mx,double my,int button){
         if(close.isMouseOver(mx,my))return super.canvasMouseClicked(mx,my,button);
-        if(my<y+30||my>=y+h-36||mx<x||mx>=x+w)return false;
+        if(my<y+30||my>=y+h-48||mx<x||mx>=x+w)return false;
         return super.canvasMouseClicked(mx,my,button);
     }
     @Override public boolean isPauseScreen(){return false;}
