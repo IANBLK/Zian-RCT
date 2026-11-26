@@ -84,8 +84,12 @@ public final class MedalCaseScreen extends ResponsiveScreen {
         };
     }
 
+    /* Sin blur de 1.21.1: Screen.render lo llama al dibujar los widgets, así que no hace nada y el fondo se dibuja una sola vez en renderCanvas. */
     @Override
     public void renderBackground(GuiGraphics graphics, int mouseX, int mouseY, float partialTick) {
+    }
+
+    private void drawBackdrop(GuiGraphics graphics) {
         graphics.fill(0, 0, width, height, 0x90000000);
 
         updateLayout();
@@ -107,7 +111,7 @@ public final class MedalCaseScreen extends ResponsiveScreen {
 
     @Override
     protected void renderCanvas(GuiGraphics graphics, int mouseX, int mouseY, float partialTick) {
-        updateLayout();
+        drawBackdrop(graphics);
         renderWidgets(graphics, mouseX, mouseY, partialTick);
         graphics.drawCenteredString(font, title, width / 2, layout.y() + 12, 0xFFF2C14E);
 
@@ -161,13 +165,13 @@ public final class MedalCaseScreen extends ResponsiveScreen {
                         snapshot.activeProfile(), owned.size(), snapshot.definitions().size()
                 ),
                 width / 2,
-                layout.y() + layout.height() - 44,
+                layout.y() + layout.height() - 41,
                 0xB8B8B8
         );
 
         var nextMedal=snapshot.definitions().stream().filter(d->!owned.containsKey(d.id())).min(java.util.Comparator.comparingInt(MedalClientSnapshot.MedalDefinitionView::order));
         String goal=nextMedal.map(d->t("screen.zianrct.medals.next","Por obtener: %s",d.trainerName())).orElse(t("screen.zianrct.medals.complete","Colección completada"));
-        graphics.drawCenteredString(font,font.plainSubstrByWidth(goal,layout.width()-24),width/2,layout.y()+layout.height()-56,0xFF99D6E8);
+        graphics.drawCenteredString(font,font.plainSubstrByWidth(goal,layout.width()-24),width/2,layout.y()+layout.height()-52,0xFF99D6E8);
         if (hovered != null) {
             queueTooltip(tooltipFor(hovered, hoveredOwned));
         }
